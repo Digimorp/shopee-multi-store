@@ -9,3 +9,10 @@ dist
 .vercel
 npm-debug.log*
 .DS_Store
+
+# Portable PostgreSQL (lokal, jangan commit)
+.localpg/
+
+
+# Next.js generated
+next-env.d.ts

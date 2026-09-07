@@ -1,6 +1,6 @@
 # Sistem Management Input & Laporan Penjualan Shopee Multi-Toko
 
-Stack: Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma (SQLite lokal / PostgreSQL produksi) + NextAuth.
+Stack: Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma + PostgreSQL + NextAuth.
 
 ## Fitur
 
@@ -11,36 +11,41 @@ Stack: Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma (SQLite loka
 - Keuangan: tab Uang Cair / Mengambang / Transit.
 - Retur & Cancel: action Restok Gudang / Barang Rusak (kerugian HPP).
 - Laporan Rekapan: siklus cut-off 26–25, komparasi bulanan, rekap tahunan multi-toko, export Excel & PDF.
-- Settings: User Management + mapping toko, Master Data Toko, Master Produk & HPP (+import Excel), Period & Cut-Off Lock.
+- Settings: User Management + mapping toko, Master Data Toko, Master Produk & HPP global (+import Excel), Period & Cut-Off Lock.
 
 ---
 
 ## 1. Jalankan di Lokal (via terminal / Claude Code)
 
-Prasyarat: Node.js 18+ dan npm sudah terinstall.
+Prasyarat: Node.js 18+ dan npm. **Tidak perlu install PostgreSQL** — script `db:setup` mengunduh
+PostgreSQL 17 portable (binaries dari Maven Central, tanpa admin / tanpa Windows service) ke folder `.localpg/`.
 
 ```bash
-# 1. Masuk ke folder project
+# 1. Masuk ke folder project & install dependencies
 cd shopee-multi-store
-
-# 2. Install dependencies
 npm install
 
-# 3. Copy environment variable
+# 2. Environment variable
 cp .env.example .env
-# .env sudah default pakai SQLite (file:./dev.db), tidak perlu setup database server.
-# Ganti NEXTAUTH_SECRET dengan random string (bisa generate: openssl rand -base64 32)
+# .env.example sudah menunjuk ke Postgres lokal (postgres:postgres@localhost:5432/shopee_multi_store).
+# Ganti NEXTAUTH_SECRET: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-# 4. Generate Prisma client & buat database + tabel
-npx prisma generate
-npx prisma migrate dev --name init
+# 3. Siapkan database lokal (unduh + initdb + start server di port 5432)
+npm run db:setup
 
-# 5. Isi data awal (14 toko, 1 Owner, 4 Admin Toko, contoh produk)
-npm run prisma:seed
+# 4. Buat tabel + isi data awal (14 toko, 1 Owner, 4 Admin Toko, contoh produk)
+npx prisma migrate deploy
+npx prisma db seed
 
-# 6. Jalankan aplikasi
+# 5. Jalankan aplikasi
 npm run dev
 ```
+
+Kontrol server DB kapan saja: `npm run db:start` · `npm run db:stop` · `npm run db:status` · `npm run db:restart`.
+Server tidak auto-start saat Windows boot — jalankan `npm run db:start` sebelum `npm run dev`.
+
+> Sudah punya PostgreSQL sendiri (service Windows, Docker, Supabase/Neon)? Lewati `db:setup`,
+> cukup set `DATABASE_URL` di `.env` lalu lanjut ke langkah 4.
 
 Buka `http://localhost:3000`. Login dengan salah satu akun hasil seed:
 
@@ -83,20 +88,14 @@ gh repo create <nama-repo> --private --source=. --remote=origin --push
 
 ## 3. Deploy ke Vercel
 
-SQLite tidak bisa dipakai di Vercel (serverless, filesystem tidak persisten) — untuk produksi **wajib pindah ke PostgreSQL**, misalnya Supabase (gratis untuk mulai) atau Vercel Postgres.
+Skema sudah PostgreSQL, jadi tinggal siapkan database produksi (Supabase / Neon / Vercel Postgres) —
+`.localpg/` hanya untuk dev dan tidak ikut ter-deploy.
 
 ### 3.1 Siapkan database produksi (contoh Supabase)
 
 1. Buat project baru di https://supabase.com.
 2. Ambil connection string di Project Settings > Database > Connection string (pilih mode "Transaction" / pooler untuk serverless).
-3. Ubah `prisma/schema.prisma`, ganti:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
-   ```
-4. Commit perubahan ini.
+3. Simpan sebagai `DATABASE_URL` (dipakai di langkah 3.2 & 3.3).
 
 ### 3.2 Import project ke Vercel
 
@@ -136,7 +135,12 @@ Buka `https://<nama-project>.vercel.app`, login pakai akun yang sudah di-seed. S
 shopee-multi-store/
 ├── prisma/
 │   ├── schema.prisma      # Skema database (User, Store, Product, Order, dst)
+│   ├── migrations/        # Riwayat migrasi (dibuat prisma migrate)
 │   └── seed.ts            # Data awal: 14 toko, owner, 4 admin toko
+├── scripts/
+│   ├── db-setup.mjs       # Unduh + initdb PostgreSQL portable ke .localpg/
+│   └── db.mjs             # start/stop/status/restart server DB lokal
+├── .localpg/              # PostgreSQL portable + data (gitignored, lokal saja)
 ├── src/
 │   ├── app/
 │   │   ├── login/                # Halaman login
@@ -158,6 +162,7 @@ shopee-multi-store/
 ## Catatan Desain
 
 - **RBAC**: Owner otomatis punya akses ke semua toko aktif. Admin Toko dibatasi lewat tabel `UserStore` (mapping banyak-ke-banyak).
+- **Master Produk global**: 1 SKU = 1 HPP + 1 Harga Katalog untuk semua toko (bukan per toko). Hanya Owner yang bisa menambah/mengubah (`/settings/products`).
 - **Klasifikasi status pesanan** dilakukan otomatis saat upload berdasarkan kolom "Status Pesanan" + ada/tidaknya tanggal dana dilepaskan (untuk membedakan "Selesai (cair)" vs "Sudah sampai, belum cair").
 - **Profit HPP vs Profit Agen** dihitung per baris transaksi saat upload (snapshot HPP & harga katalog saat itu), supaya laporan histori tidak berubah kalau HPP di master diedit belakangan.
 - **Cut-off period** (26–25) dihitung otomatis per tanggal transaksi (`src/lib/period.ts`) dan disimpan sebagai `periodKey` di setiap order, dipakai untuk rekap bulanan & lock periode.
