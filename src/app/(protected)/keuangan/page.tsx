@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
+import ExportButtons from "@/components/ExportButtons";
 import { formatDate, formatRupiah } from "@/lib/format";
 
 const TABS = [
@@ -26,7 +27,10 @@ export default function KeuanganPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Keuangan & Cashflow</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-lg font-semibold text-gray-900">Keuangan & Cashflow</h1>
+        <ExportButtons report="cashflow" params={{ tab }} />
+      </div>
 
       <div className="flex gap-2">
         {TABS.map((t) => (

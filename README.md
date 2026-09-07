@@ -6,12 +6,16 @@ Stack: Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma + PostgreSQL
 
 - Role: Owner (akses 14 toko) & Admin Toko (akses toko yang dimapping).
 - Upload & parsing laporan Shopee (xlsx/csv), auto-klasifikasi status: Cancel, Retur, Transit, Pending Settlement, Selesai.
-- Perhitungan Profit HPP (Nett) & Profit Agen (harga katalog diskon 50%) per SKU.
+  Aturan mapping status bisa diedit lewat UI (`/settings/status-mapping`) tanpa deploy.
+- Perhitungan Profit HPP (Nett) & Profit Agen (harga katalog diskon 50%) per SKU, snapshot per transaksi.
 - Dashboard: summary cards, tren omzet/profit, Top 15 produk (omzet & unit).
-- Keuangan: tab Uang Cair / Mengambang / Transit.
-- Retur & Cancel: action Restok Gudang / Barang Rusak (kerugian HPP).
-- Laporan Rekapan: siklus cut-off 26–25, komparasi bulanan, rekap tahunan multi-toko, export Excel & PDF.
-- Settings: User Management + mapping toko, Master Data Toko, Master Produk & HPP global (+import Excel), Period & Cut-Off Lock.
+- Keuangan & Cashflow: tab Uang Cair / Mengambang / Transit.
+- Analisis Barang Keluar: ranking unit terjual per SKU (status Selesai) + kontribusi %.
+- Retur & Pembatalan: kartu ringkasan (unit batal/retur, layak restok, rusak, beban kerugian HPP) + action Restok Gudang / Barang Rusak.
+- Performa Toko: perbandingan omzet & profit per toko (tabel + grafik batang).
+- Laporan Rekapan: siklus cut-off 26–25, komparasi bulanan, rekap tahunan multi-toko.
+- Export: setiap laporan bisa diunduh Excel (angka numerik, bisa disum) atau PDF (tabel detail per baris, multi-halaman) via `/api/reports/export`.
+- Settings: User Management + mapping toko, Master Data Toko, Master Produk & HPP global (+import Excel), Mapping Status Pesanan, Period & Cut-Off Lock.
 
 ---
 
@@ -145,17 +149,14 @@ shopee-multi-store/
 │   ├── app/
 │   │   ├── login/                # Halaman login
 │   │   ├── (protected)/          # Group route yang butuh login (Sidebar + TopBar)
-│   │   │   ├── dashboard/
-│   │   │   ├── input/
-│   │   │   ├── keuangan/
-│   │   │   ├── laporan-profit/
-│   │   │   ├── retur-cancel/
-│   │   │   ├── laporan-rekap/
-│   │   │   └── settings/{users,stores,products,periods}/
-│   │   └── api/                  # Semua API route (upload, orders, reports, dst)
-│   ├── components/               # TopBar, Sidebar, DataTable, TrendChart, dll
-│   ├── lib/                      # prisma client, auth, rbac, parser, profit, export
-│   └── middleware.ts              # Proteksi route + role guard
+│   │   │   ├── dashboard/  input/  keuangan/  laporan-profit/
+│   │   │   ├── laporan-barang-keluar/  performa-toko/  retur-cancel/  laporan-rekap/
+│   │   │   └── settings/{users,stores,products,status-mapping,periods}/
+│   │   └── api/                  # upload, orders, status-mappings, reports/*, reports/export
+│   ├── components/               # TopBar, Sidebar, DataTable, TrendChart, ExportButtons, dll
+│   ├── lib/                      # prisma, auth, rbac, parseShopee, classification, profit,
+│   │                             #   reports (dataset builder), export (xlsx), pdf (tabel PDF)
+│   └── middleware.ts             # Proteksi route + role guard
 └── README.md
 ```
 
@@ -166,4 +167,10 @@ shopee-multi-store/
 - **Klasifikasi status pesanan** dilakukan otomatis saat upload berdasarkan kolom "Status Pesanan" + ada/tidaknya tanggal dana dilepaskan (untuk membedakan "Selesai (cair)" vs "Sudah sampai, belum cair").
 - **Profit HPP vs Profit Agen** dihitung per baris transaksi saat upload (snapshot HPP & harga katalog saat itu), supaya laporan histori tidak berubah kalau HPP di master diedit belakangan.
 - **Cut-off period** (26–25) dihitung otomatis per tanggal transaksi (`src/lib/period.ts`) dan disimpan sebagai `periodKey` di setiap order, dipakai untuk rekap bulanan & lock periode.
-- Export PDF di versi ini berupa ringkasan angka (bukan tabel detail per baris) untuk menjaga kesederhanaan — Export Excel menyediakan data detail lengkap.
+- **Export**: satu endpoint `/api/reports/export?report=<key>&format=xlsx|pdf` melayani semua laporan.
+  Excel (exceljs) menaruh nilai sebagai angka asli (bisa disum/di-pivot); PDF (pdfkit) berupa tabel
+  detail per baris, landscape, header kolom berulang tiap halaman, plus blok Ringkasan. Tidak butuh
+  Chromium/puppeteer.
+- **Klasifikasi status** dibaca dari tabel `status_mappings` (editable di UI). Jika tabel kosong,
+  fallback ke aturan bawaan `src/lib/classification.ts`. Pembeda Selesai-cair vs Belum-cair dari
+  ada/tidaknya "Waktu Dana Dilepaskan", bukan dari teks status.

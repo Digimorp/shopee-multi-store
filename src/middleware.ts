@@ -34,6 +34,7 @@ export const config = {
     "/keuangan/:path*",
     "/laporan-profit/:path*",
     "/laporan-barang-keluar/:path*",
+    "/performa-toko/:path*",
     "/retur-cancel/:path*",
     "/laporan-rekap/:path*",
     "/settings/:path*",

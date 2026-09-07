@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
+import ExportButtons from "@/components/ExportButtons";
 import { formatRupiah } from "@/lib/format";
 
 export default function LaporanProfitPage() {
@@ -17,7 +18,10 @@ export default function LaporanProfitPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Laporan Profit</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-lg font-semibold text-gray-900">Laporan Profit</h1>
+        <ExportButtons report="profit" />
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard label="Total Profit HPP (Nett)" value={formatRupiah(data.summary?.totalProfitHpp ?? 0)} accent="green" />

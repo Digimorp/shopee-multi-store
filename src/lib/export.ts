@@ -1,43 +1,36 @@
 import ExcelJS from "exceljs";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-export type ExportColumn = { header: string; key: string; width?: number };
+export type ExportColumn = { header: string; key: string; width?: number; kind?: "text" | "int" | "money" | "pct" };
 
+/** Bangun file .xlsx dari kolom + baris (nilai numerik tetap numerik agar bisa disum di Excel). */
 export async function buildXlsx(
   sheetName: string,
   columns: ExportColumn[],
-  rows: Record<string, any>[]
+  rows: Record<string, any>[],
+  summary?: { label: string; value: string }[]
 ): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(sheetName);
-  ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width ?? 20 }));
-  ws.getRow(1).font = { bold: true };
-  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEE4D2D" } };
+  const ws = wb.addWorksheet(sheetName.slice(0, 31) || "Laporan");
+
+  ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width ?? 18 }));
   ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-  rows.forEach((r) => ws.addRow(r));
-  const buf = await wb.xlsx.writeBuffer();
-  return Buffer.from(buf);
-}
+  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEE4D2D" } };
 
-export async function buildSimplePdf(title: string, lines: string[]): Promise<Buffer> {
-  const doc = await PDFDocument.create();
-  let page = doc.addPage([595.28, 841.89]); // A4
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  let y = 800;
+  for (const r of rows) ws.addRow(r);
 
-  page.drawText(title, { x: 40, y, size: 16, font: bold, color: rgb(0.93, 0.3, 0.18) });
-  y -= 30;
+  // Format angka kolom uang / persen
+  columns.forEach((c, i) => {
+    const col = ws.getColumn(i + 1);
+    if (c.kind === "money") col.numFmt = '#,##0';
+    else if (c.kind === "pct") col.numFmt = '0.0%';
+  });
 
-  for (const line of lines) {
-    if (y < 40) {
-      page = doc.addPage([595.28, 841.89]);
-      y = 800;
-    }
-    page.drawText(line, { x: 40, y, size: 10, font, color: rgb(0.1, 0.1, 0.1) });
-    y -= 16;
+  if (summary?.length) {
+    ws.addRow([]);
+    ws.addRow(["RINGKASAN"]).font = { bold: true };
+    for (const s of summary) ws.addRow([s.label, s.value]);
   }
 
-  const bytes = await doc.save();
-  return Buffer.from(bytes);
+  const buf = await wb.xlsx.writeBuffer();
+  return Buffer.from(buf);
 }

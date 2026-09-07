@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
 import StatusBadge from "@/components/StatusBadge";
-import { formatDate, formatRupiah } from "@/lib/format";
+import ExportButtons from "@/components/ExportButtons";
+import { formatDate, formatRupiah, formatNumber } from "@/lib/format";
 
 export default function ReturCancelPage() {
   const searchParams = useSearchParams();
@@ -13,8 +14,9 @@ export default function ReturCancelPage() {
   const [tab, setTab] = useState<"cancel" | "retur">("retur");
   const [orders, setOrders] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<any>(null);
 
-  function load() {
+  const load = useCallback(() => {
     const status = tab === "cancel" ? "CANCEL" : "RETUR";
     fetch(`/api/orders?${qs}&status=${status}`)
       .then((r) => r.json())
@@ -22,9 +24,12 @@ export default function ReturCancelPage() {
         setOrders(d.orders ?? []);
         setTotal(d.total ?? 0);
       });
-  }
+    fetch(`/api/reports/returns?${qs}`)
+      .then((r) => r.json())
+      .then((d) => setSummary(d.summary ?? null));
+  }, [qs, tab]);
 
-  useEffect(load, [qs, tab]);
+  useEffect(load, [load]);
 
   async function handleAction(id: string, condition: "GOOD" | "DAMAGED") {
     await fetch(`/api/orders/${id}/retur`, {
@@ -37,24 +42,43 @@ export default function ReturCancelPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Pembatalan & Retur</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-lg font-semibold text-gray-900">Analisis Retur & Pembatalan</h1>
+        <ExportButtons report="retur" />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <SummaryCard label="Unit Batal" value={formatNumber(summary?.batal?.unit ?? 0)} accent="red" />
+        <SummaryCard label="Unit Retur" value={formatNumber(summary?.retur?.unit ?? 0)} accent="red" />
+        <SummaryCard label="Retur Layak Restok (unit)" value={formatNumber(summary?.layakRestok?.unit ?? 0)} accent="green" />
+        <SummaryCard label="Retur Rusak (unit)" value={formatNumber(summary?.rusak?.unit ?? 0)} accent="red" />
+        <SummaryCard label="Beban Kerugian HPP" value={formatRupiah(summary?.rusak?.kerugianHpp ?? 0)} accent="red" />
+      </div>
+      {summary?.belumDiklasifikasi?.unit > 0 && (
+        <p className="text-xs text-amber-700">
+          {formatNumber(summary.belumDiklasifikasi.unit)} unit retur belum diklasifikasi (Bagus/Rusak) — tandai di tabel
+          bawah agar kerugian HPP akurat.
+        </p>
+      )}
 
       <div className="flex gap-2">
-        <button
-          onClick={() => setTab("cancel")}
-          className={`rounded-md px-3 py-1.5 text-sm ${tab === "cancel" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
-        >
-          Cancel (Batal)
-        </button>
         <button
           onClick={() => setTab("retur")}
           className={`rounded-md px-3 py-1.5 text-sm ${tab === "retur" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
         >
           Retur (Pengembalian)
         </button>
+        <button
+          onClick={() => setTab("cancel")}
+          className={`rounded-md px-3 py-1.5 text-sm ${tab === "cancel" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+        >
+          Cancel (Batal)
+        </button>
       </div>
 
-      <SummaryCard label={`Total Transaksi ${tab === "cancel" ? "Batal" : "Retur"}`} value={String(total)} accent="red" />
+      <p className="text-xs text-gray-500">
+        Menampilkan {orders.length} dari {total} transaksi {tab === "cancel" ? "batal" : "retur"} pada periode & toko terpilih.
+      </p>
 
       <DataTable
         rowKey={(r: any) => r.id}
@@ -93,7 +117,10 @@ export default function ReturCancelPage() {
                       </div>
                     ),
                 },
-                { header: "Beban Kerugian HPP", render: (r: any) => (r.returCondition === "DAMAGED" ? formatRupiah(r.hppSnapshot * r.qty) : "-") },
+                {
+                  header: "Beban Kerugian HPP",
+                  render: (r: any) => (r.returCondition === "DAMAGED" ? formatRupiah(r.hppSnapshot * r.qty) : "-"),
+                },
               ]
             : []),
         ]}

@@ -10,7 +10,8 @@ const MENU = [
   { href: "/keuangan", label: "Keuangan & Cashflow" },
   { href: "/laporan-profit", label: "Laporan Profit" },
   { href: "/laporan-barang-keluar", label: "Analisis Barang Keluar" },
-  { href: "/retur-cancel", label: "Pembatalan & Retur" },
+  { href: "/performa-toko", label: "Performa Toko" },
+  { href: "/retur-cancel", label: "Retur & Pembatalan" },
   { href: "/laporan-rekap", label: "Laporan Rekapan" },
 ];
 

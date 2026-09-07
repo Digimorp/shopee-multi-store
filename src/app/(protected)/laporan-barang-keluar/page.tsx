@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
+import ExportButtons from "@/components/ExportButtons";
 import { formatRupiah, formatNumber } from "@/lib/format";
 
 export default function LaporanBarangKeluarPage() {
@@ -21,7 +22,10 @@ export default function LaporanBarangKeluarPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Analisis Barang Keluar</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-lg font-semibold text-gray-900">Analisis Barang Keluar</h1>
+        <ExportButtons report="barang-keluar" />
+      </div>
       <p className="text-sm text-gray-500">
         Total unit terjual per SKU, <strong>hanya pesanan berstatus Selesai (uang cair)</strong>, diurutkan dari yang
         paling laku. Dipakai untuk ranking produk & keputusan restок.

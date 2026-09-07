@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
+import ExportButtons from "@/components/ExportButtons";
 import { formatRupiah } from "@/lib/format";
 
 export default function LaporanRekapPage() {
@@ -16,11 +17,6 @@ export default function LaporanRekapPage() {
       .then((r) => r.json())
       .then((d) => setRows(d.rows ?? []));
   }, [type, storeId]);
-
-  function exportFile(format: "xlsx" | "pdf") {
-    const qs = searchParams.toString();
-    window.open(`/api/reports/export/${format}?${qs}`, "_blank");
-  }
 
   return (
     <div className="space-y-4">
@@ -45,14 +41,7 @@ export default function LaporanRekapPage() {
             Tahunan (Multi-Toko)
           </button>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => exportFile("xlsx")} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
-            Export Excel
-          </button>
-          <button onClick={() => exportFile("pdf")} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
-            Export PDF
-          </button>
-        </div>
+        <ExportButtons report="recap" params={{ type }} />
       </div>
 
       {type === "monthly" ? (
