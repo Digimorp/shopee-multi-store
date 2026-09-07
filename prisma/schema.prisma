@@ -1,0 +1,157 @@
+// Prisma schema — Sistem Management Input & Laporan Penjualan Shopee Multi-Toko
+// Default: SQLite untuk lokal. Untuk produksi (Vercel) ganti provider ke "postgresql"
+// dan DATABASE_URL ke Supabase/Vercel Postgres (lihat README).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN_TOKO
+}
+
+enum OrderStatus {
+  CANCEL
+  RETUR
+  TRANSIT
+  PENDING_SETTLEMENT
+  SELESAI
+}
+
+enum ReturCondition {
+  GOOD
+  DAMAGED
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  storeAccess  UserStore[]
+  uploadLogs   UploadLog[]
+
+  @@map("users")
+}
+
+model Store {
+  id        String      @id @default(cuid())
+  code      String      @unique
+  name      String
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  admins    UserStore[]
+  products  Product[]
+  orders    Order[]
+  uploads   UploadLog[]
+
+  @@map("stores")
+}
+
+model UserStore {
+  id      String @id @default(cuid())
+  userId  String
+  storeId String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId])
+  @@map("user_stores")
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  storeId      String
+  sku          String
+  name         String
+  hpp          Float // HPP / Modal per unit
+  catalogPrice Float // Harga katalog agen (sebelum diskon 50%)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders       Order[]
+
+  @@unique([storeId, sku])
+  @@map("products")
+}
+
+model UploadLog {
+  id          String   @id @default(cuid())
+  storeId     String
+  adminUserId String
+  fileName    String
+  totalRows   Int
+  successRows Int
+  failedRows  Int
+  errorLog    String? // JSON string ringkasan error per baris
+  createdAt   DateTime @default(now())
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  admin       User     @relation(fields: [adminUserId], references: [id])
+  orders      Order[]
+
+  @@map("upload_logs")
+}
+
+model Order {
+  id                 String          @id @default(cuid())
+  storeId            String
+  productId          String?
+  uploadLogId        String
+  orderSn            String // No. Pesanan Shopee
+  sku                String
+  productName        String
+  qty                Int
+  orderCreatedAt      DateTime // Tanggal Pesanan Dibuat (dari file Shopee)
+  status             OrderStatus
+  returCondition     ReturCondition?
+  grossOmzet         Float           @default(0) // Omzet bruto (0 kalau cancel)
+  netSettlement      Float           @default(0) // Uang cair dari Shopee (setelah biaya admin)
+  adminFee           Float           @default(0)
+  hppSnapshot        Float           @default(0) // HPP saat transaksi (snapshot dari master)
+  catalogPriceSnapshot Float         @default(0) // Harga katalog saat transaksi
+  profitHpp          Float           @default(0) // netSettlement - hppSnapshot (khusus SELESAI)
+  profitAgen         Float           @default(0) // (catalogPrice*0.5) - hppSnapshot
+  periodKey          String // Label periode cut-off, format YYYY-MM-DD_YYYY-MM-DD (26 s/d 25)
+  rawRow             String? // JSON string baris asli untuk audit/debug
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product   Product?  @relation(fields: [productId], references: [id])
+  uploadLog UploadLog @relation(fields: [uploadLogId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+  @@index([storeId, periodKey])
+  @@index([orderSn])
+  @@map("orders")
+}
+
+model PeriodSetting {
+  id        String   @id @default(cuid())
+  cutoffDay Int      @default(25)
+  updatedAt DateTime @updatedAt
+
+  @@map("period_settings")
+}
+
+model PeriodLock {
+  id        String   @id @default(cuid())
+  periodKey String   @unique
+  locked    Boolean  @default(true)
+  lockedAt  DateTime @default(now())
+  lockedBy  String?
+
+  @@map("period_locks")
+}
