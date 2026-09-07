@@ -40,9 +40,9 @@ export default function SettingsPeriodsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Settings Period & Cut-Off</h1>
+      <h1 className="text-xl font-bold text-gray-900">Settings Period & Cut-Off</h1>
 
-      <form onSubmit={saveCutoff} className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white p-4">
+      <form onSubmit={saveCutoff} className="flex flex-wrap items-center gap-2 card p-5">
         <label className="text-sm text-gray-600">Tanggal Cut-Off tiap bulan:</label>
         <input
           type="number"
@@ -50,15 +50,15 @@ export default function SettingsPeriodsPage() {
           max={28}
           value={cutoffDay}
           onChange={(e) => setCutoffDay(parseInt(e.target.value))}
-          className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="w-20 rounded-xl border border-gray-200 px-3 py-2 text-sm"
         />
-        <button type="submit" className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+        <button type="submit" className="btn-primary">
           Simpan
         </button>
         <span className="text-xs text-gray-500">Periode berjalan saat ini: {formatPeriodLabel(currentPeriod)}</span>
       </form>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="card p-5">
         <h2 className="mb-2 text-sm font-semibold text-gray-700">Lock Periode</h2>
         <p className="mb-2 text-xs text-gray-500">
           Periode yang dikunci tidak bisa menerima input data baru dari upload — dipakai setelah rekap bulanan final.
@@ -69,11 +69,11 @@ export default function SettingsPeriodsPage() {
             placeholder={`contoh: ${currentPeriod.key}`}
             value={newPeriodKey}
             onChange={(e) => setNewPeriodKey(e.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
           />
           <button
             onClick={() => newPeriodKey && toggleLock(newPeriodKey, true)}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="btn-ghost"
           >
             Kunci Periode Ini
           </button>

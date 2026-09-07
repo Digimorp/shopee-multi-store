@@ -43,7 +43,7 @@ export default function ReturCancelPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold text-gray-900">Analisis Retur & Pembatalan</h1>
+        <h1 className="text-xl font-bold text-gray-900">Analisis Retur & Pembatalan</h1>
         <ExportButtons report="retur" />
       </div>
 
@@ -64,13 +64,13 @@ export default function ReturCancelPage() {
       <div className="flex gap-2">
         <button
           onClick={() => setTab("retur")}
-          className={`rounded-md px-3 py-1.5 text-sm ${tab === "retur" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+          className={`tab-pill ${tab === "retur" ? "tab-pill-active" : "tab-pill-idle"}`}
         >
           Retur (Pengembalian)
         </button>
         <button
           onClick={() => setTab("cancel")}
-          className={`rounded-md px-3 py-1.5 text-sm ${tab === "cancel" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+          className={`tab-pill ${tab === "cancel" ? "tab-pill-active" : "tab-pill-idle"}`}
         >
           Cancel (Batal)
         </button>

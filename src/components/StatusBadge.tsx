@@ -1,9 +1,9 @@
 const STYLES: Record<string, string> = {
-  CANCEL: "bg-red-100 text-red-700",
-  RETUR: "bg-amber-100 text-amber-700",
-  TRANSIT: "bg-blue-100 text-blue-700",
-  PENDING_SETTLEMENT: "bg-purple-100 text-purple-700",
-  SELESAI: "bg-green-100 text-green-700",
+  CANCEL: "bg-rose-500",
+  RETUR: "bg-amber-500",
+  TRANSIT: "bg-blue-500",
+  PENDING_SETTLEMENT: "bg-purple-500",
+  SELESAI: "bg-emerald-500",
 };
 
 const LABELS: Record<string, string> = {
@@ -11,12 +11,16 @@ const LABELS: Record<string, string> = {
   RETUR: "Retur",
   TRANSIT: "Transit",
   PENDING_SETTLEMENT: "Belum Cair",
-  SELESAI: "Selesai (Cair)",
+  SELESAI: "Selesai",
 };
 
 export default function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STYLES[status] ?? "bg-gray-100 text-gray-700"}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white ${
+        STYLES[status] ?? "bg-gray-400"
+      }`}
+    >
       {LABELS[status] ?? status}
     </span>
   );

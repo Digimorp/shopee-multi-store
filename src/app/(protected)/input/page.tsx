@@ -23,7 +23,7 @@ export default function InputPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Input & Import Data</h1>
+      <h1 className="text-xl font-bold text-gray-900">Input & Import Data</h1>
       <p className="text-sm text-gray-500">
         Upload file export pesanan Shopee (Excel/CSV) dari Seller Centre. Sistem akan otomatis mengklasifikasi status
         pesanan (Batal, Retur, Transit, Belum Cair, Selesai) dan menghitung profit berdasarkan Master Data HPP.

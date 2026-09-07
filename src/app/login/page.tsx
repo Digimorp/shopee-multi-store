@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/icons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,43 +28,48 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="mb-1 text-lg font-semibold text-gray-900">Sistem Penjualan Shopee Multi-Toko</h1>
-        <p className="mb-6 text-sm text-gray-500">Masuk untuk mengelola input & laporan penjualan.</p>
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-7 shadow-card-lg">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-gradient text-white shadow-[0_8px_20px_rgba(236,72,153,0.4)]">
+            <Icon name="store" size={20} strokeWidth={2} />
+          </span>
+          <div className="leading-tight">
+            <div className="text-base font-bold text-gray-900">Shopee Multi-Toko</div>
+            <div className="text-xs text-gray-400">Sistem Input & Laporan Penjualan</div>
+          </div>
+        </div>
+
+        <p className="mb-5 text-sm text-gray-500">Masuk untuk mengelola input &amp; laporan penjualan.</p>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Email</label>
+            <label className="mb-1 block text-xs font-semibold text-gray-500">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-gray-200 bg-canvas px-3 py-2.5 text-sm outline-none focus:border-brand-400"
               placeholder="owner@company.com"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Password</label>
+            <label className="mb-1 block text-xs font-semibold text-gray-500">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-gray-200 bg-canvas px-3 py-2.5 text-sm outline-none focus:border-brand-400"
               placeholder="••••••••"
             />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-rose-600">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-brand-500 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-          >
-            {loading ? "Memproses..." : "Masuk"}
+          <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
+            {loading ? "Memproses…" : "Masuk"}
           </button>
         </form>
       </div>

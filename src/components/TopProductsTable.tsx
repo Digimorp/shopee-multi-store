@@ -15,13 +15,13 @@ export default function TopProductsTable({ byOmzet, byQty }: { byOmzet: ProductR
       <div className="mb-3 flex gap-2">
         <button
           onClick={() => setTab("omzet")}
-          className={`rounded-md px-3 py-1.5 text-sm ${tab === "omzet" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+          className={`tab-pill ${tab === "omzet" ? "tab-pill-active" : "tab-pill-idle"}`}
         >
           Nominal Omzet
         </button>
         <button
           onClick={() => setTab("qty")}
-          className={`rounded-md px-3 py-1.5 text-sm ${tab === "qty" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+          className={`tab-pill ${tab === "qty" ? "tab-pill-active" : "tab-pill-idle"}`}
         >
           Unit Terjual
         </button>

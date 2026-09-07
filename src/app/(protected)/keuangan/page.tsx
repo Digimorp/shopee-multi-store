@@ -28,7 +28,7 @@ export default function KeuanganPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold text-gray-900">Keuangan & Cashflow</h1>
+        <h1 className="text-xl font-bold text-gray-900">Keuangan & Cashflow</h1>
         <ExportButtons report="cashflow" params={{ tab }} />
       </div>
 
@@ -37,7 +37,7 @@ export default function KeuanganPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`rounded-md px-3 py-1.5 text-sm ${tab === t.key ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+            className={`tab-pill ${tab === t.key ? "tab-pill-active" : "tab-pill-idle"}`}
           >
             {t.label}
           </button>

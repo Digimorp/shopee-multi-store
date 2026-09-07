@@ -45,14 +45,14 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white p-4">
+    <form onSubmit={handleSubmit} className="card p-5">
       <div className="mb-3 grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium text-gray-600">Toko</label>
           <select
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
           >
             <option value="">-- pilih toko --</option>
             {stores.map((s) => (
@@ -68,7 +68,7 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
             type="file"
             accept=".xlsx,.xls,.csv"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
           />
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
       <button
         type="submit"
         disabled={loading}
-        className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+        className="btn-primary disabled:opacity-50"
       >
         {loading ? "Memproses..." : "Upload & Proses"}
       </button>

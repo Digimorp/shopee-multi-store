@@ -27,7 +27,7 @@ export default function PerformaTokoPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold text-gray-900">Performa Toko</h1>
+        <h1 className="text-xl font-bold text-gray-900">Performa Toko</h1>
         <ExportButtons report="performa-toko" />
       </div>
       <p className="text-sm text-gray-500">
@@ -35,19 +35,29 @@ export default function PerformaTokoPage() {
         pilih toko itu di filter atas lalu buka Dashboard.
       </p>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="card p-5">
+        <p className="mb-3 text-sm font-semibold text-gray-800">Omzet &amp; Profit per Toko</p>
         {chartData.length === 0 ? (
           <div className="flex h-64 items-center justify-center text-sm text-gray-400">Belum ada data pada periode ini.</div>
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-              <XAxis dataKey="toko" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
-              <Tooltip formatter={(v: number) => formatRupiah(v)} />
-              <Legend />
-              <Bar dataKey="Omzet" fill="#ee4d2d" />
-              <Bar dataKey="Profit HPP" fill="#16a34a" />
+          <ResponsiveContainer width="100%" height={300} debounce={150}>
+            <BarChart data={chartData} barGap={4} barCategoryGap={18}>
+              <CartesianGrid strokeDasharray="4 4" stroke="#f1f1f4" vertical={false} />
+              <XAxis dataKey="toko" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+              />
+              <Tooltip
+                formatter={(v: number) => formatRupiah(v)}
+                contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 12 }}
+                cursor={{ fill: "#fce7f3" }}
+              />
+              <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+              <Bar isAnimationActive={false} dataKey="Omzet" fill="#ec4899" radius={[6, 6, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#a855f7" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

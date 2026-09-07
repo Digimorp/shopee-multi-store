@@ -58,27 +58,27 @@ export default function SettingsProductsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Master Produk & HPP</h1>
+      <h1 className="text-xl font-bold text-gray-900">Master Produk & HPP</h1>
       <p className="text-sm text-gray-500">
         Master SKU <strong>global</strong> — 1 SKU = 1 HPP (Modal) + 1 Harga Katalog Agen (sebelum diskon 50%),
         berlaku untuk semua toko. Hanya Owner yang bisa mengubah.
       </p>
 
-      <form onSubmit={handleSubmit} className="grid gap-2 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-5">
-        <input required placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <input required placeholder="Nama Produk" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm sm:col-span-2" />
-        <input required type="number" placeholder="HPP" value={form.hpp} onChange={(e) => setForm({ ...form, hpp: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <input required type="number" placeholder="Harga Katalog" value={form.catalogPrice} onChange={(e) => setForm({ ...form, catalogPrice: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <button type="submit" className="sm:col-span-5 rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+      <form onSubmit={handleSubmit} className="grid gap-2 card p-5 sm:grid-cols-5">
+        <input required placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <input required placeholder="Nama Produk" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm sm:col-span-2" />
+        <input required type="number" placeholder="HPP" value={form.hpp} onChange={(e) => setForm({ ...form, hpp: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <input required type="number" placeholder="Harga Katalog" value={form.catalogPrice} onChange={(e) => setForm({ ...form, catalogPrice: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <button type="submit" className="sm:col-span-5 btn-primary">
           Simpan Produk
         </button>
         {err && <span className="sm:col-span-5 text-sm text-red-600">{err}</span>}
       </form>
 
-      <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white p-4">
+      <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 card p-5">
         <span className="text-sm text-gray-600">Import Master SKU via Excel (kolom: SKU, Nama Produk, HPP, Harga Katalog):</span>
         <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className="text-sm" />
-        <button type="submit" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
+        <button type="submit" className="btn-ghost">
           Import
         </button>
         {importMsg && <span className="text-sm text-green-700">{importMsg}</span>}

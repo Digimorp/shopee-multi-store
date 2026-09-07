@@ -34,13 +34,13 @@ export default function SettingsStoresPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Master Data Toko</h1>
+      <h1 className="text-xl font-bold text-gray-900">Master Data Toko</h1>
       <p className="text-sm text-gray-500">Kelola daftar 14 toko Shopee yang dikelola perusahaan.</p>
 
-      <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-4">
-        <input required placeholder="Kode (mis. TOKO15)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <input required placeholder="Nama Toko" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <button type="submit" className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+      <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 card p-5">
+        <input required placeholder="Kode (mis. TOKO15)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <input required placeholder="Nama Toko" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <button type="submit" className="btn-primary">
           Tambah Toko
         </button>
       </form>

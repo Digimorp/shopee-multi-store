@@ -47,7 +47,7 @@ export default function StatusMappingPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Mapping Status Pesanan</h1>
+      <h1 className="text-xl font-bold text-gray-900">Mapping Status Pesanan</h1>
       <p className="text-sm text-gray-500">
         Aturan penerjemahan teks <strong>&quot;Status Pesanan&quot;</strong> dari file Shopee ke 5 kategori internal.
         Pattern dicocokkan sebagai <em>potongan kata</em> (tidak case-sensitive). Kalau beberapa pattern cocok untuk
@@ -59,18 +59,18 @@ export default function StatusMappingPage() {
         ditentukan otomatis dari ada/tidaknya kolom &quot;Waktu Dana Dilepaskan&quot;.
       </p>
 
-      <form onSubmit={handleSubmit} className="grid gap-2 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-6">
+      <form onSubmit={handleSubmit} className="grid gap-2 card p-5 sm:grid-cols-6">
         <input
           required
           placeholder="Pattern (mis. dibatalkan)"
           value={form.pattern}
           onChange={(e) => setForm({ ...form, pattern: e.target.value })}
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm sm:col-span-2"
+          className="rounded-xl border border-gray-200 px-3 py-2 text-sm sm:col-span-2"
         />
         <select
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
         >
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -83,15 +83,15 @@ export default function StatusMappingPage() {
           placeholder="Priority"
           value={form.priority}
           onChange={(e) => setForm({ ...form, priority: e.target.value })}
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
         />
         <input
           placeholder="Catatan (opsional)"
           value={form.note}
           onChange={(e) => setForm({ ...form, note: e.target.value })}
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
         />
-        <button type="submit" className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+        <button type="submit" className="btn-primary">
           Simpan
         </button>
         {err && <span className="sm:col-span-6 text-sm text-red-600">{err}</span>}

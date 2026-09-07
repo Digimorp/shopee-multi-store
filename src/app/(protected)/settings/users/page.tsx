@@ -40,14 +40,14 @@ export default function SettingsUsersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">User Management</h1>
+      <h1 className="text-xl font-bold text-gray-900">User Management</h1>
       <p className="text-sm text-gray-500">Tambah Admin Toko dan mapping toko yang dikuasakan (total 4 Admin Toko untuk 14 toko).</p>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2">
-        <input required placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <input required type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <input required type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-        <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+      <form onSubmit={handleSubmit} className="grid gap-3 card p-5 sm:grid-cols-2">
+        <input required placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <input required type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <input required type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm">
           <option value="ADMIN_TOKO">Admin Toko</option>
           <option value="OWNER">Owner / Super Admin</option>
         </select>
@@ -73,7 +73,7 @@ export default function SettingsUsersPage() {
           </div>
         )}
 
-        <button type="submit" disabled={saving} className="sm:col-span-2 rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="sm:col-span-2 btn-primary disabled:opacity-50">
           {saving ? "Menyimpan..." : "Tambah User"}
         </button>
       </form>

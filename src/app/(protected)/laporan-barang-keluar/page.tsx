@@ -23,7 +23,7 @@ export default function LaporanBarangKeluarPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold text-gray-900">Analisis Barang Keluar</h1>
+        <h1 className="text-xl font-bold text-gray-900">Analisis Barang Keluar</h1>
         <ExportButtons report="barang-keluar" />
       </div>
       <p className="text-sm text-gray-500">

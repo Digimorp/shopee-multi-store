@@ -25,16 +25,10 @@ export default function ExportButtons({
 
   return (
     <div className="flex gap-2">
-      <button
-        onClick={() => open("xlsx")}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-      >
+      <button onClick={() => open("xlsx")} className="btn-ghost">
         Export Excel
       </button>
-      <button
-        onClick={() => open("pdf")}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-      >
+      <button onClick={() => open("pdf")} className="btn-ghost">
         Export PDF
       </button>
     </div>

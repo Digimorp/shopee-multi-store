@@ -20,7 +20,7 @@ export default function LaporanRekapPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-gray-900">Laporan Rekapan & Cut-Off Period</h1>
+      <h1 className="text-xl font-bold text-gray-900">Laporan Rekapan & Cut-Off Period</h1>
       <p className="text-sm text-gray-500">
         Rekap bulanan mengikuti siklus cut-off (tgl 26 s/d tgl 25). Komparasi menunjukkan selisih omzet vs periode
         sebelumnya.
@@ -30,13 +30,13 @@ export default function LaporanRekapPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setType("monthly")}
-            className={`rounded-md px-3 py-1.5 text-sm ${type === "monthly" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+            className={`tab-pill ${type === "monthly" ? "tab-pill-active" : "tab-pill-idle"}`}
           >
             Bulanan (Cut-Off & Komparasi)
           </button>
           <button
             onClick={() => setType("yearly")}
-            className={`rounded-md px-3 py-1.5 text-sm ${type === "yearly" ? "bg-brand-500 text-white" : "bg-gray-100 text-gray-600"}`}
+            className={`tab-pill ${type === "yearly" ? "tab-pill-active" : "tab-pill-idle"}`}
           >
             Tahunan (Multi-Toko)
           </button>

@@ -16,29 +16,32 @@ export default function DataTable<T>({
   rowKey: (row: T, idx: number) => string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-      <table className="min-w-full divide-y divide-gray-200 text-sm">
-        <thead className="bg-gray-50">
-          <tr>
+    <div className="overflow-x-auto rounded-2xl bg-white shadow-card">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-100 bg-gray-50/60">
             {columns.map((c, i) => (
-              <th key={i} className="px-3 py-2 text-left font-medium text-gray-600 whitespace-nowrap">
+              <th
+                key={i}
+                className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
                 {c.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-50">
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-3 py-6 text-center text-gray-400">
+              <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-gray-400">
                 {emptyText}
               </td>
             </tr>
           ) : (
             rows.map((row, idx) => (
-              <tr key={rowKey(row, idx)} className="hover:bg-gray-50">
+              <tr key={rowKey(row, idx)} className="transition hover:bg-brand-50/40">
                 {columns.map((c, i) => (
-                  <td key={i} className={`px-3 py-2 whitespace-nowrap ${c.className ?? ""}`}>
+                  <td key={i} className={`whitespace-nowrap px-4 py-3 text-gray-700 ${c.className ?? ""}`}>
                     {c.render(row)}
                   </td>
                 ))}
