@@ -27,8 +27,10 @@ const SETTINGS_MENU: { href: string; label: string; icon: IconName; ownerOnly: b
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const role = (session?.user as any)?.role;
+  // Jangan render menu Pengaturan (owner-only) sebelum sesi diketahui — cegah flash.
+  const sessionReady = status !== "loading";
 
   const qs = searchParams.toString();
   const withQs = (href: string) => (qs ? `${href}?${qs}` : href);
@@ -62,15 +64,27 @@ export default function Sidebar() {
           </Link>
         ))}
 
-        <div className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-wider text-gray-300">
-          Pengaturan
-        </div>
-        {SETTINGS_MENU.filter((m) => !m.ownerOnly || role === "OWNER").map((m) => (
-          <Link key={m.href} href={withQs(m.href)} className={itemClass(m.href)}>
-            <Icon name={m.icon} size={18} />
-            <span className="truncate">{m.label}</span>
-          </Link>
-        ))}
+        {!sessionReady ? (
+          <div className="space-y-2 px-3 pt-6">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-8 animate-pulse rounded-xl bg-gray-100" />
+            ))}
+          </div>
+        ) : (
+          role === "OWNER" && (
+            <>
+              <div className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-wider text-gray-300">
+                Pengaturan
+              </div>
+              {SETTINGS_MENU.map((m) => (
+                <Link key={m.href} href={withQs(m.href)} className={itemClass(m.href)}>
+                  <Icon name={m.icon} size={18} />
+                  <span className="truncate">{m.label}</span>
+                </Link>
+              ))}
+            </>
+          )
+        )}
       </nav>
     </aside>
   );

@@ -11,13 +11,18 @@ function toInputDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+  return <span className={`inline-block animate-pulse rounded-md bg-gray-100 ${className}`} />;
+}
+
 export default function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const [stores, setStores] = useState<StoreOption[]>([]);
+  const [storesLoaded, setStoresLoaded] = useState(false);
   const def = getDefaultPeriod();
 
   const storeId = searchParams.get("storeId") ?? "all";
@@ -27,7 +32,8 @@ export default function TopBar() {
   useEffect(() => {
     fetch("/api/stores")
       .then((r) => r.json())
-      .then((d) => setStores(d.stores ?? []));
+      .then((d) => setStores(d.stores ?? []))
+      .finally(() => setStoresLoaded(true));
   }, []);
 
   function updateParam(key: string, value: string) {
@@ -39,7 +45,8 @@ export default function TopBar() {
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  const role = (session?.user as any)?.role;
+  const sessionLoading = status === "loading";
+  const role = (session?.user as any)?.role as string | undefined;
   const name = session?.user?.name ?? "";
   const initials = name
     .split(" ")
@@ -51,17 +58,25 @@ export default function TopBar() {
   const fieldClass =
     "rounded-xl border border-gray-200 bg-canvas px-3 py-2 text-sm text-gray-700 outline-none focus:border-brand-400";
 
+  // Filter toko baru boleh dirender setelah sesi + daftar toko siap
+  // (opsi "Semua Toko" tergantung role) — sebelum itu tampilkan skeleton, bukan tebakan.
+  const filterReady = !sessionLoading && storesLoaded;
+
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-white px-6 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <select value={storeId} onChange={(e) => updateParam("storeId", e.target.value)} className={fieldClass}>
-          {role === "OWNER" && <option value="all">Semua Toko (14)</option>}
-          {stores.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.code} - {s.name}
-            </option>
-          ))}
-        </select>
+        {filterReady ? (
+          <select value={storeId} onChange={(e) => updateParam("storeId", e.target.value)} className={fieldClass}>
+            {role === "OWNER" && <option value="all">Semua Toko ({stores.length})</option>}
+            {stores.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.code} - {s.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <Skeleton className="h-9 w-40 rounded-xl" />
+        )}
         <input type="date" value={from} onChange={(e) => updateParam("from", e.target.value)} className={fieldClass} />
         <span className="text-sm text-gray-300">s/d</span>
         <input type="date" value={to} onChange={(e) => updateParam("to", e.target.value)} className={fieldClass} />
@@ -78,22 +93,33 @@ export default function TopBar() {
 
         <div className="mx-1 h-6 w-px bg-gray-200" />
 
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient text-xs font-bold text-white">
-            {initials || "U"}
-          </span>
-          <div className="hidden leading-tight sm:block">
-            <div className="text-sm font-semibold text-gray-800">{name}</div>
-            <div className="text-[11px] text-gray-400">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
+        {sessionLoading ? (
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-9 w-9 rounded-full" />
+            <div className="hidden flex-col gap-1 sm:flex">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-2.5 w-14" />
+            </div>
+            <Skeleton className="h-9 w-9 rounded-xl" />
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            title="Keluar"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-400 hover:border-brand-300 hover:text-brand-500"
-          >
-            <Icon name="logout" size={18} />
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient text-xs font-bold text-white">
+              {initials || "U"}
+            </span>
+            <div className="hidden leading-tight sm:block">
+              <div className="text-sm font-semibold text-gray-800">{name}</div>
+              <div className="text-[11px] text-gray-400">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              title="Keluar"
+              className="grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-400 hover:border-brand-300 hover:text-brand-500"
+            >
+              <Icon name="logout" size={18} />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
