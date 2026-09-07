@@ -1,0 +1,57 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import DataTable from "@/components/DataTable";
+import SummaryCard from "@/components/SummaryCard";
+import { formatRupiah, formatNumber } from "@/lib/format";
+
+export default function LaporanBarangKeluarPage() {
+  const searchParams = useSearchParams();
+  const qs = searchParams.toString();
+  const [data, setData] = useState<any>({ all: [], totalQty: 0, skuCount: 0 });
+
+  useEffect(() => {
+    fetch(`/api/dashboard/top-products?${qs}`)
+      .then((r) => r.json())
+      .then((d) => setData(d));
+  }, [qs]);
+
+  const rows: any[] = data.all ?? [];
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-lg font-semibold text-gray-900">Analisis Barang Keluar</h1>
+      <p className="text-sm text-gray-500">
+        Total unit terjual per SKU, <strong>hanya pesanan berstatus Selesai (uang cair)</strong>, diurutkan dari yang
+        paling laku. Dipakai untuk ranking produk & keputusan restок.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <SummaryCard label="Total Unit Keluar" value={formatNumber(data.totalQty ?? 0)} accent="green" />
+        <SummaryCard label="Jumlah SKU Terjual" value={formatNumber(data.skuCount ?? 0)} accent="blue" />
+        <SummaryCard
+          label="Total Uang Cair"
+          value={formatRupiah(rows.reduce((s, r) => s + (r.uangCair ?? 0), 0))}
+          accent="green"
+        />
+      </div>
+
+      <DataTable
+        rowKey={(r: any) => r.sku}
+        rows={rows}
+        emptyText="Belum ada pesanan Selesai pada periode & toko ini."
+        columns={[
+          { header: "#", render: (r) => r.rank },
+          { header: "SKU", render: (r) => r.sku },
+          { header: "Produk", render: (r) => r.name },
+          { header: "Unit Keluar", render: (r) => formatNumber(r.qty) },
+          { header: "Kontribusi", render: (r) => `${((r.share ?? 0) * 100).toFixed(1)}%` },
+          { header: "Omzet Bruto", render: (r) => formatRupiah(r.omzet) },
+          { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
+          { header: "Profit HPP", render: (r) => formatRupiah(r.profitHpp) },
+        ]}
+      />
+    </div>
+  );
+}

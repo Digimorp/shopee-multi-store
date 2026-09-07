@@ -1,5 +1,6 @@
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { DEFAULT_STATUS_RULES } from "../src/lib/classification";
 
 const prisma = new PrismaClient();
 
@@ -95,7 +96,16 @@ async function main() {
     if (!existing) await prisma.periodSetting.create({ data: { cutoffDay: 25 } });
   });
 
-  console.log("Seed selesai.");
+  // Aturan mapping status default (bisa diedit lewat /settings/status-mapping)
+  for (const rule of DEFAULT_STATUS_RULES) {
+    await prisma.statusMapping.upsert({
+      where: { pattern: rule.pattern },
+      update: {},
+      create: { pattern: rule.pattern, category: rule.category, priority: rule.priority },
+    });
+  }
+
+  console.log(`Seed selesai. ${DEFAULT_STATUS_RULES.length} aturan status mapping ditanam.`);
   console.log("Login Owner   : owner@company.com / password123");
   console.log("Login Admin 1 : admin1@company.com / password123 (dst. admin2-4)");
 }

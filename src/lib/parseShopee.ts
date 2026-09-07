@@ -1,5 +1,4 @@
 import * as XLSX from "xlsx";
-import { OrderStatus } from "@prisma/client";
 
 export type ParsedRow = {
   orderSn: string;
@@ -7,11 +6,11 @@ export type ParsedRow = {
   productName: string;
   qty: number;
   unitPrice: number;
-  grossOmzet: number;
-  netSettlement: number;
+  totalPayment: number; // omzet bruto dari file (sebelum penyesuaian status)
+  netSettlementRaw: number; // penghasilan dari file (sebelum penyesuaian status)
   adminFee: number;
-  status: OrderStatus;
-  returCondition: "GOOD" | "DAMAGED" | null;
+  rawStatus: string; // teks "Status Pesanan" apa adanya — diklasifikasi di upload route
+  hasSettlementDate: boolean; // "Waktu Dana Dilepaskan" terisi? -> pembeda SELESAI vs PENDING
   orderCreatedAt: Date;
   raw: Record<string, any>;
 };
@@ -72,17 +71,6 @@ function toDate(v: any): Date {
   return new Date();
 }
 
-/** Mapping status mentah Shopee -> status internal aplikasi. */
-export function mapShopeeStatus(rawStatus: string): OrderStatus {
-  const s = normalizeHeader(rawStatus);
-  if (s.includes("batal")) return OrderStatus.CANCEL;
-  if (s.includes("kembali") || s.includes("retur")) return OrderStatus.RETUR;
-  if (s.includes("kirim") && !s.includes("perlu")) return OrderStatus.TRANSIT;
-  if (s.includes("perlu dikirim") || s.includes("diproses") || s.includes("dikemas")) return OrderStatus.TRANSIT;
-  if (s.includes("selesai")) return OrderStatus.SELESAI; // pending settlement diputuskan di caller pakai tgl dana cair
-  return OrderStatus.TRANSIT;
-}
-
 export function parseShopeeFile(buffer: Buffer): ParseResult {
   const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -110,21 +98,14 @@ export function parseShopeeFile(buffer: Buffer): ParseResult {
 
   json.forEach((row, idx) => {
     try {
-      const rawStatus = String(row[map.status] ?? "");
-      let status = mapShopeeStatus(rawStatus);
-
-      const settlementDate = map.settlementDate ? row[map.settlementDate] : "";
-      if (status === OrderStatus.SELESAI && (!settlementDate || String(settlementDate).trim() === "")) {
-        status = OrderStatus.PENDING_SETTLEMENT;
-      }
+      const settlementRaw = map.settlementDate ? row[map.settlementDate] : "";
+      const hasSettlementDate = !!settlementRaw && String(settlementRaw).trim() !== "";
 
       const qty = Math.max(1, Math.round(toNumber(row[map.qty])));
       const unitPrice = toNumber(row[map.unitPrice]);
       const totalPayment = map.totalPayment ? toNumber(row[map.totalPayment]) : unitPrice * qty;
-      const netSettlement = map.netSettlement ? toNumber(row[map.netSettlement]) : totalPayment;
-      const adminFee = map.adminFee ? toNumber(row[map.adminFee]) : Math.max(0, totalPayment - netSettlement);
-
-      const grossOmzet = status === OrderStatus.CANCEL ? 0 : totalPayment;
+      const netSettlementRaw = map.netSettlement ? toNumber(row[map.netSettlement]) : totalPayment;
+      const adminFee = map.adminFee ? toNumber(row[map.adminFee]) : Math.max(0, totalPayment - netSettlementRaw);
 
       rows.push({
         orderSn: String(row[map.orderSn] ?? "").trim(),
@@ -132,11 +113,11 @@ export function parseShopeeFile(buffer: Buffer): ParseResult {
         productName: String(row[map.productName] ?? "").trim(),
         qty,
         unitPrice,
-        grossOmzet,
-        netSettlement: status === OrderStatus.CANCEL ? 0 : netSettlement,
+        totalPayment,
+        netSettlementRaw,
         adminFee,
-        status,
-        returCondition: null,
+        rawStatus: String(row[map.status] ?? "").trim(),
+        hasSettlementDate,
         orderCreatedAt: toDate(row[map.orderCreatedAt]),
         raw: row,
       });

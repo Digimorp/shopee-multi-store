@@ -1,7 +1,13 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-const OWNER_ONLY_PREFIXES = ["/settings/users", "/settings/stores", "/settings/products", "/settings/periods"];
+const OWNER_ONLY_PREFIXES = [
+  "/settings/users",
+  "/settings/stores",
+  "/settings/products",
+  "/settings/status-mapping",
+  "/settings/periods",
+];
 
 export default withAuth(
   function middleware(req) {
@@ -27,6 +33,7 @@ export const config = {
     "/input/:path*",
     "/keuangan/:path*",
     "/laporan-profit/:path*",
+    "/laporan-barang-keluar/:path*",
     "/retur-cancel/:path*",
     "/laporan-rekap/:path*",
     "/settings/:path*",

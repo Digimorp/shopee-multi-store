@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, assertStoreAccess } from "@/lib/rbac";
 import { parseShopeeFile } from "@/lib/parseShopee";
+import { classifyStatus, DEFAULT_STATUS_RULES, type StatusRule } from "@/lib/classification";
 import { calcProfitHpp, calcProfitAgen } from "@/lib/profit";
 import { getPeriodForDate } from "@/lib/period";
 import { OrderStatus } from "@prisma/client";
@@ -18,8 +19,14 @@ export async function POST(req: NextRequest) {
   const storeIds = await assertStoreAccess(user, storeId);
   if (storeIds.length === 0) return NextResponse.json({ error: "Forbidden - toko tidak dikuasakan" }, { status: 403 });
 
-  const period = await prisma.periodSetting.findFirst();
-  const cutoffDay = period?.cutoffDay ?? 25;
+  const periodSetting = await prisma.periodSetting.findFirst();
+  const cutoffDay = periodSetting?.cutoffDay ?? 25;
+
+  // Aturan klasifikasi status: dari DB kalau ada, kalau kosong pakai default bawaan
+  const dbRules = await prisma.statusMapping.findMany({ where: { isActive: true } });
+  const rules: StatusRule[] = dbRules.length
+    ? dbRules.map((r) => ({ pattern: r.pattern, category: r.category, priority: r.priority }))
+    : DEFAULT_STATUS_RULES;
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const { rows, errors, totalRows } = parseShopeeFile(buffer);
@@ -45,24 +52,42 @@ export async function POST(req: NextRequest) {
   });
 
   let success = 0;
+  let skippedLocked = 0;
+
   for (const row of rows) {
-    // Cek periode terkunci
+    // Klasifikasi status
+    let status = classifyStatus(row.rawStatus, rules);
+    // "Sudah sampai, belum cair": ditandai SELESAI oleh Shopee tapi dana belum dilepaskan
+    if (status === OrderStatus.SELESAI && !row.hasSettlementDate) {
+      status = OrderStatus.PENDING_SETTLEMENT;
+    }
+
+    // Skip baris di periode yang sudah dikunci
     const periodInfo = getPeriodForDate(row.orderCreatedAt, cutoffDay);
     const lock = await prisma.periodLock.findUnique({ where: { periodKey: periodInfo.key } });
-    if (lock?.locked) continue; // skip baris di periode yang sudah dikunci
+    if (lock?.locked) {
+      skippedLocked++;
+      continue;
+    }
+
+    // Penyesuaian nilai berdasarkan status
+    const isCancel = status === OrderStatus.CANCEL;
+    const grossOmzet = isCancel ? 0 : row.totalPayment;
+    const netSettlement = isCancel ? 0 : row.netSettlementRaw;
 
     const product = productMap.get(row.sku);
     const hpp = product?.hpp ?? 0;
     const catalogPrice = product?.catalogPrice ?? 0;
 
+    // Profit HPP (Nett): butuh uang benar-benar cair -> SELESAI saja.
+    // Profit Agen: benchmark harga agen, dianggap terealisasi saat barang sampai ke pembeli
+    // -> SELESAI atau PENDING_SETTLEMENT. TRANSIT/RETUR/CANCEL = 0.
     const profitHpp =
-      row.status === OrderStatus.SELESAI
-        ? calcProfitHpp({ netSettlement: row.netSettlement, hpp, qty: row.qty })
-        : 0;
+      status === OrderStatus.SELESAI ? calcProfitHpp({ netSettlement, hpp, qty: row.qty }) : 0;
     const profitAgen =
-      row.status === OrderStatus.CANCEL
-        ? 0
-        : calcProfitAgen({ catalogPrice, hpp, qty: row.qty });
+      status === OrderStatus.SELESAI || status === OrderStatus.PENDING_SETTLEMENT
+        ? calcProfitAgen({ catalogPrice, hpp, qty: row.qty })
+        : 0;
 
     await prisma.order.create({
       data: {
@@ -74,9 +99,9 @@ export async function POST(req: NextRequest) {
         productName: row.productName,
         qty: row.qty,
         orderCreatedAt: row.orderCreatedAt,
-        status: row.status,
-        grossOmzet: row.grossOmzet,
-        netSettlement: row.netSettlement,
+        status,
+        grossOmzet,
+        netSettlement,
         adminFee: row.adminFee,
         hppSnapshot: hpp,
         catalogPriceSnapshot: catalogPrice,
@@ -98,6 +123,7 @@ export async function POST(req: NextRequest) {
     uploadLogId: uploadLog.id,
     totalRows,
     success,
+    skippedLocked,
     skippedOrFailed: totalRows - success,
     parseErrors: errors.slice(0, 20),
   });

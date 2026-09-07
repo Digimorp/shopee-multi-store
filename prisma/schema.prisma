@@ -144,6 +144,23 @@ model PeriodSetting {
   @@map("period_settings")
 }
 
+// Aturan klasifikasi: teks "Status Pesanan" dari file Shopee -> kategori internal.
+// Dicocokkan sebagai substring (case-insensitive). Bila beberapa pattern cocok,
+// yang priority paling kecil menang. Bisa diedit lewat /settings/status-mapping
+// tanpa perlu deploy ulang. Fallback default ada di src/lib/classification.ts.
+model StatusMapping {
+  id        String      @id @default(cuid())
+  pattern   String      @unique
+  category  OrderStatus
+  priority  Int         @default(100)
+  note      String?
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("status_mappings")
+}
+
 model PeriodLock {
   id        String   @id @default(cuid())
   periodKey String   @unique

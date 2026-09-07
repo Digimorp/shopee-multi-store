@@ -9,6 +9,7 @@ const MENU = [
   { href: "/input", label: "Input & Import Data" },
   { href: "/keuangan", label: "Keuangan & Cashflow" },
   { href: "/laporan-profit", label: "Laporan Profit" },
+  { href: "/laporan-barang-keluar", label: "Analisis Barang Keluar" },
   { href: "/retur-cancel", label: "Pembatalan & Retur" },
   { href: "/laporan-rekap", label: "Laporan Rekapan" },
 ];
@@ -17,6 +18,7 @@ const SETTINGS_MENU = [
   { href: "/settings/users", label: "User Management", ownerOnly: true },
   { href: "/settings/stores", label: "Master Data Toko", ownerOnly: true },
   { href: "/settings/products", label: "Master Produk & HPP", ownerOnly: true },
+  { href: "/settings/status-mapping", label: "Mapping Status Pesanan", ownerOnly: true },
   { href: "/settings/periods", label: "Period & Cut-Off", ownerOnly: true },
 ];
 
