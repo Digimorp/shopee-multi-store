@@ -2,6 +2,10 @@ import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 
+// Semua halaman di area ini butuh sesi login & baca query param (?storeId, ?from, ?to),
+// jadi selalu render dinamis — jangan di-prerender statis saat build.
+export const dynamic = "force-dynamic";
+
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">

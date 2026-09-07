@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   const buffer = await buildSimplePdf("Laporan Rekapan Penjualan Shopee", lines);
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="laporan-rekap-${Date.now()}.pdf"`,

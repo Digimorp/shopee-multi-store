@@ -3,64 +3,66 @@
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
 import { formatRupiah } from "@/lib/format";
-import type { StoreOption } from "@/types";
 
 export default function SettingsProductsPage() {
-  const [stores, setStores] = useState<StoreOption[]>([]);
-  const [storeId, setStoreId] = useState("");
   const [products, setProducts] = useState<any[]>([]);
   const [form, setForm] = useState({ sku: "", name: "", hpp: "", catalogPrice: "" });
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importMsg, setImportMsg] = useState("");
+  const [err, setErr] = useState("");
 
-  useEffect(() => {
-    fetch("/api/stores").then((r) => r.json()).then((d) => {
-      setStores(d.stores ?? []);
-      if (d.stores?.[0]) setStoreId(d.stores[0].id);
-    });
-  }, []);
-
-  function loadProducts(sid: string) {
-    if (!sid) return;
-    fetch(`/api/products?storeId=${sid}`).then((r) => r.json()).then((d) => setProducts(d.products ?? []));
+  function loadProducts() {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((d) => setProducts(d.products ?? []));
   }
-  useEffect(() => loadProducts(storeId), [storeId]);
+  useEffect(loadProducts, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await fetch("/api/products", {
+    setErr("");
+    const res = await fetch("/api/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storeId, sku: form.sku, name: form.name, hpp: parseFloat(form.hpp), catalogPrice: parseFloat(form.catalogPrice) }),
+      body: JSON.stringify({
+        sku: form.sku,
+        name: form.name,
+        hpp: parseFloat(form.hpp),
+        catalogPrice: parseFloat(form.catalogPrice),
+      }),
     });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setErr(d.error ?? "Gagal menyimpan produk.");
+      return;
+    }
     setForm({ sku: "", name: "", hpp: "", catalogPrice: "" });
-    loadProducts(storeId);
+    loadProducts();
   }
 
   async function handleImport(e: React.FormEvent) {
     e.preventDefault();
-    if (!importFile || !storeId) return;
+    if (!importFile) return;
+    setImportMsg("");
     const fd = new FormData();
     fd.append("file", importFile);
-    fd.append("storeId", storeId);
     const res = await fetch("/api/products/import", { method: "POST", body: fd });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setImportMsg(data.error ?? "Import gagal.");
+      return;
+    }
     setImportMsg(`Berhasil impor ${data.success} produk, ${data.failed} gagal.`);
-    loadProducts(storeId);
+    loadProducts();
   }
 
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold text-gray-900">Master Produk & HPP</h1>
-      <p className="text-sm text-gray-500">Input SKU, Nama Produk, HPP (Modal), dan Harga Katalog Agen (sebelum diskon 50%) per toko.</p>
-
-      <select value={storeId} onChange={(e) => setStoreId(e.target.value)} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm">
-        {stores.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.code} - {s.name}
-          </option>
-        ))}
-      </select>
+      <p className="text-sm text-gray-500">
+        Master SKU <strong>global</strong> — 1 SKU = 1 HPP (Modal) + 1 Harga Katalog Agen (sebelum diskon 50%),
+        berlaku untuk semua toko. Hanya Owner yang bisa mengubah.
+      </p>
 
       <form onSubmit={handleSubmit} className="grid gap-2 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-5">
         <input required placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
@@ -70,6 +72,7 @@ export default function SettingsProductsPage() {
         <button type="submit" className="sm:col-span-5 rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
           Simpan Produk
         </button>
+        {err && <span className="sm:col-span-5 text-sm text-red-600">{err}</span>}
       </form>
 
       <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white p-4">

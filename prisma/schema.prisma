@@ -1,13 +1,13 @@
 // Prisma schema — Sistem Management Input & Laporan Penjualan Shopee Multi-Toko
-// Default: SQLite untuk lokal. Untuk produksi (Vercel) ganti provider ke "postgresql"
-// dan DATABASE_URL ke Supabase/Vercel Postgres (lihat README).
+// Database: PostgreSQL (lokal via service Windows / Docker, produksi via Supabase/Neon/Vercel Postgres).
+// DATABASE_URL diisi di .env — lihat README.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -52,7 +52,6 @@ model Store {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   admins    UserStore[]
-  products  Product[]
   orders    Order[]
   uploads   UploadLog[]
 
@@ -70,20 +69,19 @@ model UserStore {
   @@map("user_stores")
 }
 
+// Master produk GLOBAL — 1 SKU = 1 HPP + 1 harga katalog, berlaku untuk semua toko.
+// Hanya OWNER yang boleh mengubah master ini (lihat api/products).
 model Product {
   id           String   @id @default(cuid())
-  storeId      String
-  sku          String
+  sku          String   @unique
   name         String
   hpp          Float // HPP / Modal per unit
   catalogPrice Float // Harga katalog agen (sebelum diskon 50%)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orders       Order[]
 
-  @@unique([storeId, sku])
   @@map("products")
 }
 

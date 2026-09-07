@@ -1,7 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-const OWNER_ONLY_PREFIXES = ["/settings/users", "/settings/stores"];
+const OWNER_ONLY_PREFIXES = ["/settings/users", "/settings/stores", "/settings/products", "/settings/periods"];
 
 export default withAuth(
   function middleware(req) {

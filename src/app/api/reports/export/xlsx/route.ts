@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     { header: "Profit Agen", key: "profitAgen", width: 16 },
   ], rows);
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="laporan-penjualan-${Date.now()}.xlsx"`,

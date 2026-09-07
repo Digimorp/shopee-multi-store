@@ -16,7 +16,7 @@ const MENU = [
 const SETTINGS_MENU = [
   { href: "/settings/users", label: "User Management", ownerOnly: true },
   { href: "/settings/stores", label: "Master Data Toko", ownerOnly: true },
-  { href: "/settings/products", label: "Master Produk & HPP", ownerOnly: false },
+  { href: "/settings/products", label: "Master Produk & HPP", ownerOnly: true },
   { href: "/settings/periods", label: "Period & Cut-Off", ownerOnly: true },
 ];
 

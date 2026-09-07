@@ -1,4 +1,4 @@
-import { PrismaClient, Role, OrderStatus } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -72,8 +72,7 @@ async function main() {
     }
   }
 
-  // Master produk contoh untuk Toko A
-  const tokoA = stores[0];
+  // Master produk contoh — GLOBAL (berlaku semua toko)
   const sampleProducts = [
     { sku: "SKU-001", name: "Kabel Data Type-C 1m", hpp: 8000, catalogPrice: 25000 },
     { sku: "SKU-002", name: "Powerbank 10000mAh", hpp: 65000, catalogPrice: 150000 },
@@ -81,9 +80,9 @@ async function main() {
   ];
   for (const p of sampleProducts) {
     await prisma.product.upsert({
-      where: { storeId_sku: { storeId: tokoA.id, sku: p.sku } },
+      where: { sku: p.sku },
       update: {},
-      create: { storeId: tokoA.id, ...p },
+      create: p,
     });
   }
 

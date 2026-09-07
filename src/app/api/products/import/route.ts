@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser, assertStoreAccess } from "@/lib/rbac";
+import { getSessionUser } from "@/lib/rbac";
 
-// Import master SKU dari Excel. Format kolom: SKU, Nama Produk, HPP, Harga Katalog
+// Import master SKU GLOBAL dari Excel. Format kolom: SKU, Nama Produk, HPP, Harga Katalog.
+// Hanya OWNER yang boleh import.
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (user.role !== "OWNER") {
+    return NextResponse.json({ error: "Hanya Owner yang boleh import master produk" }, { status: 403 });
+  }
 
   const form = await req.formData();
   const file = form.get("file") as File | null;
-  const storeId = form.get("storeId") as string | null;
-  if (!file || !storeId) return NextResponse.json({ error: "file dan storeId wajib" }, { status: 400 });
-
-  const storeIds = await assertStoreAccess(user, storeId);
-  if (storeIds.length === 0) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!file) return NextResponse.json({ error: "file wajib" }, { status: 400 });
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const wb = XLSX.read(buffer, { type: "buffer" });
@@ -38,9 +38,9 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.product.upsert({
-      where: { storeId_sku: { storeId, sku } },
+      where: { sku },
       update: { name, hpp, catalogPrice, isActive: true },
-      create: { storeId, sku, name, hpp, catalogPrice },
+      create: { sku, name, hpp, catalogPrice },
     });
     success++;
   }

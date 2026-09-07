@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Gagal parsing file", details: errors }, { status: 400 });
   }
 
-  const products = await prisma.product.findMany({ where: { storeId } });
+  // Master produk global — cocokkan berdasarkan SKU saja
+  const products = await prisma.product.findMany();
   const productMap = new Map(products.map((p) => [p.sku, p]));
 
   const uploadLog = await prisma.uploadLog.create({
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
     const profitAgen =
       row.status === OrderStatus.CANCEL
         ? 0
-        : calcProfitAgen({ catalogPrice, hpp, qty: row.qty, netSettlement: row.netSettlement });
+        : calcProfitAgen({ catalogPrice, hpp, qty: row.qty });
 
     await prisma.order.create({
       data: {
