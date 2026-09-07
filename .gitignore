@@ -1,8 +1,9 @@
 node_modules
 .next
 out
-.env
-.env.local
+# semua .env kecuali template
+.env*
+!.env.example
 *.db
 *.db-journal
 dist

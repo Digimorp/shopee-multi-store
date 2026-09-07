@@ -90,46 +90,54 @@ gh repo create <nama-repo> --private --source=. --remote=origin --push
 
 ---
 
-## 3. Deploy ke Vercel
+## 3. Deploy ke Vercel + Neon
 
-Skema sudah PostgreSQL, jadi tinggal siapkan database produksi (Supabase / Neon / Vercel Postgres) —
 `.localpg/` hanya untuk dev dan tidak ikut ter-deploy.
 
-### 3.1 Siapkan database produksi (contoh Supabase)
+### 3.1 Buat database di Neon
 
-1. Buat project baru di https://supabase.com.
-2. Ambil connection string di Project Settings > Database > Connection string (pilih mode "Transaction" / pooler untuk serverless).
-3. Simpan sebagai `DATABASE_URL` (dipakai di langkah 3.2 & 3.3).
+1. Buat project di https://neon.tech (region terdekat, mis. Singapore `ap-southeast-1`).
+2. Di **Connection Details** ambil DUA string:
+   - **Pooled** (host mengandung `-pooler`) -> ini `DATABASE_URL`. Tambahkan `&pgbouncer=true` di ujungnya.
+   - **Direct** (matikan toggle "Pooled connection") -> ini `DIRECT_URL`.
+   Contoh:
+   ```
+   DATABASE_URL=postgresql://neondb_owner:xxx@ep-abc-123-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true
+   DIRECT_URL=postgresql://neondb_owner:xxx@ep-abc-123.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+   ```
 
-### 3.2 Import project ke Vercel
-
-1. Buka https://vercel.com/new, pilih "Import Git Repository", pilih repo yang barusan di-push.
-2. Framework Preset: Next.js (otomatis terdeteksi).
-3. Di bagian **Environment Variables**, tambahkan:
-   - `DATABASE_URL` = connection string Postgres dari Supabase.
-   - `NEXTAUTH_SECRET` = random string (jangan sama dengan lokal, generate baru).
-   - `NEXTAUTH_URL` = `https://<nama-project>.vercel.app` (isi setelah tahu domain, atau update belakangan di Settings > Environment Variables lalu redeploy).
-4. Klik **Deploy**.
-
-### 3.3 Migrasi & seed database produksi
-
-Setelah deploy pertama selesai (build akan otomatis jalankan `prisma generate`), jalankan migrasi ke database produksi dari lokal:
+### 3.2 Jalankan migrasi + seed ke Neon (dari lokal, sekali di awal)
 
 ```bash
-# di lokal, pakai DATABASE_URL produksi sementara
-DATABASE_URL="<connection-string-supabase>" npx prisma migrate deploy
-DATABASE_URL="<connection-string-supabase>" npm run prisma:seed
+# pakai string Neon sementara
+$env:DATABASE_URL="<pooled>"; $env:DIRECT_URL="<direct>"    # PowerShell
+npx prisma migrate deploy
+npx prisma db seed
 ```
 
-Atau tambahkan `prisma migrate deploy` sebagai Vercel Build Command kalau mau otomatis setiap deploy:
-`Settings > General > Build & Development Settings > Build Command`:
-```
-prisma generate && prisma migrate deploy && next build
-```
+### 3.3 Import ke Vercel
 
-### 3.4 Selesai
+1. https://vercel.com/new -> Import Git Repository -> pilih `shopee-multi-store`.
+2. Framework Preset: Next.js (auto). Build Command biarkan default (`npm run build` = `prisma generate && next build`).
+3. **Environment Variables** (semua environment):
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | string **pooled** Neon (`...-pooler...&pgbouncer=true`) |
+   | `DIRECT_URL` | string **direct** Neon |
+   | `NEXTAUTH_SECRET` | random baru: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
+   | `NEXTAUTH_URL` | `https://<nama-project>.vercel.app` (isi/update setelah tahu domain, lalu redeploy) |
+4. **Deploy**.
 
-Buka `https://<nama-project>.vercel.app`, login pakai akun yang sudah di-seed. Setiap push ke branch `main` akan otomatis trigger deploy baru di Vercel.
+### 3.4 Migrasi berikutnya
+
+Setiap ada perubahan `schema.prisma`: buat migration lokal (`npx prisma migrate dev --name xxx`), commit,
+lalu sebelum/sesudah push jalankan `npx prisma migrate deploy` dengan env Neon (langkah 3.2).
+Atau ubah Build Command Vercel jadi `prisma generate && prisma migrate deploy && next build` supaya otomatis.
+
+### 3.5 Selesai
+
+Buka `https://<nama-project>.vercel.app`, login akun hasil seed (ganti password default lewat Settings > User Management).
+Tiap push ke `main` auto-deploy.
 
 ---
 
