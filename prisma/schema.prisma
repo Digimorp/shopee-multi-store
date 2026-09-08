@@ -32,6 +32,11 @@ enum ReturCondition {
   DAMAGED
 }
 
+enum IncomeEntryType {
+  ORDER // baris pesanan biasa di Income Report
+  ADJUSTMENT // kompensasi / sengketa / promo reimbursement / dsb (tanpa No. Pesanan)
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String
@@ -44,6 +49,7 @@ model User {
   storeAccess   UserStore[]
   uploadLogs    UploadLog[]
   priceChanges  ProductPriceLog[]
+  incomeImports IncomeImport[]
 
   @@map("users")
 }
@@ -52,12 +58,13 @@ model Store {
   id        String      @id @default(cuid())
   code      String      @unique
   name      String
-  isActive  Boolean     @default(true)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  admins    UserStore[]
-  orders    Order[]
-  uploads   UploadLog[]
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  admins        UserStore[]
+  orders        Order[]
+  uploads       UploadLog[]
+  incomeImports IncomeImport[]
 
   @@map("stores")
 }
@@ -137,6 +144,8 @@ model Order {
   productName        String
   qty                Int
   orderCreatedAt      DateTime // Tanggal Pesanan Dibuat (dari file Shopee)
+  completedAt        DateTime?       // "Waktu Pesanan Selesai" (opsional, dari file Shopee)
+  settlementDate     DateTime?       // "Waktu Dana Dilepaskan" versi estimasi Shopee (opsional)
   status             OrderStatus
   returCondition     ReturCondition?
   grossOmzet         Float           @default(0) // Omzet bruto (0 kalau cancel)
@@ -194,4 +203,53 @@ model PeriodLock {
   lockedBy  String?
 
   @@map("period_locks")
+}
+
+// ---------------------------------------------------------------------------
+// REKONSILIASI UANG CAIR — sumber kebenaran = Income Report / Laporan Pendapatan
+// Shopee (per toko). Model terpisah dari Order; data mentah disimpan apa adanya.
+// Re-import periode yang sama TIDAK menimpa: import lama ditandai isSuperseded,
+// versi baru dibuat. Reconciliation hanya membaca import non-superseded.
+// ---------------------------------------------------------------------------
+model IncomeImport {
+  id             String    @id @default(cuid())
+  storeId        String
+  uploadedById   String
+  fileName       String
+  periodStart    DateTime?
+  periodEnd      DateTime?
+  totalRows      Int       @default(0)
+  orderRows      Int       @default(0)
+  adjustmentRows Int       @default(0)
+  version        Int       @default(1)
+  isSuperseded   Boolean   @default(false)
+  supersededAt   DateTime?
+  createdAt      DateTime  @default(now())
+
+  store      Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  uploadedBy User          @relation(fields: [uploadedById], references: [id])
+  entries    IncomeEntry[]
+
+  @@index([storeId, isSuperseded])
+  @@map("income_imports")
+}
+
+model IncomeEntry {
+  id             String          @id @default(cuid())
+  importId       String
+  storeId        String
+  type           IncomeEntryType
+  orderSn        String? // null untuk ADJUSTMENT
+  adjustmentKind String? // untuk ADJUSTMENT: "Kompensasi" | "Sengketa" | "Promo Reimbursement" | ...
+  description    String?
+  releasedAt     DateTime? // Tanggal Dana Dilepaskan
+  amount         Float           @default(0) // nilai cair aktual baris ini (Total Penghasilan / Jumlah)
+  raw            Json // seluruh baris file apa adanya (audit / re-parse)
+  createdAt      DateTime        @default(now())
+
+  import IncomeImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, orderSn])
+  @@index([importId])
+  @@map("income_entries")
 }
