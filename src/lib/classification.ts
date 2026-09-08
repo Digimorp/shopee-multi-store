@@ -11,6 +11,7 @@ export const DEFAULT_STATUS_RULES: StatusRule[] = [
   { pattern: "batal", category: OrderStatus.CANCEL, priority: 10 },
   { pattern: "dibatalkan", category: OrderStatus.CANCEL, priority: 10 },
   { pattern: "pembatalan", category: OrderStatus.CANCEL, priority: 10 },
+  { pattern: "cancel", category: OrderStatus.CANCEL, priority: 10 },
   { pattern: "pengembalian", category: OrderStatus.RETUR, priority: 10 },
   { pattern: "dikembalikan", category: OrderStatus.RETUR, priority: 10 },
   { pattern: "retur", category: OrderStatus.RETUR, priority: 10 },
@@ -25,6 +26,8 @@ export const DEFAULT_STATUS_RULES: StatusRule[] = [
   { pattern: "dikemas", category: OrderStatus.TRANSIT, priority: 40 },
   { pattern: "dikirim", category: OrderStatus.TRANSIT, priority: 40 },
   { pattern: "diproses", category: OrderStatus.TRANSIT, priority: 40 },
+  { pattern: "proses", category: OrderStatus.TRANSIT, priority: 45 }, // "Onproses", "Sedang diproses"
+  { pattern: "belum bayar", category: OrderStatus.TRANSIT, priority: 45 },
 ];
 
 export function normalizeStatus(s: string): string {

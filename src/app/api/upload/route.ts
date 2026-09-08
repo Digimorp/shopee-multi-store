@@ -32,12 +32,25 @@ export async function POST(req: NextRequest) {
   const { rows, errors, totalRows } = parseShopeeFile(buffer);
 
   if (rows.length === 0) {
-    return NextResponse.json({ error: "Gagal parsing file", details: errors }, { status: 400 });
+    return NextResponse.json(
+      {
+        error:
+          errors[0]?.message ??
+          "File Pesanan tidak bisa diparsing (tidak ada baris valid). Cek header & sheet file export Shopee.",
+        details: errors,
+      },
+      { status: 400 }
+    );
   }
 
-  // Master produk global — cocokkan berdasarkan SKU saja
+  // Master produk global — cocokkan via Nomor Referensi SKU, lalu SKU Induk, lalu nama produk.
   const products = await prisma.product.findMany();
   const productMap = new Map(products.map((p) => [p.sku, p]));
+  const productByName = new Map(products.map((p) => [p.name.trim().toLowerCase(), p]));
+  const matchProduct = (row: (typeof rows)[number]) =>
+    productMap.get(row.sku) ||
+    (row.skuInduk ? productMap.get(row.skuInduk) : undefined) ||
+    productByName.get(row.productName.trim().toLowerCase());
 
   const uploadLog = await prisma.uploadLog.create({
     data: {
@@ -57,8 +70,11 @@ export async function POST(req: NextRequest) {
   for (const row of rows) {
     // Klasifikasi status
     let status = classifyStatus(row.rawStatus, rules);
-    // "Sudah sampai, belum cair": ditandai SELESAI oleh Shopee tapi dana belum dilepaskan
-    if (status === OrderStatus.SELESAI && !row.hasSettlementDate) {
+    // "Sudah sampai, belum cair": ditandai SELESAI oleh Shopee tapi dana belum dilepaskan.
+    // Hanya berlaku untuk file yang PUNYA kolom "Waktu Dana Dilepaskan" (format lama).
+    // Skema resmi baru tidak punya kolom itu -> status "cair" ditentukan lewat Rekonsiliasi
+    // (Income Report) sebagai layer di atas, bukan di-downgrade di sini.
+    if (status === OrderStatus.SELESAI && row.settlementColumnPresent && !row.hasSettlementDate) {
       status = OrderStatus.PENDING_SETTLEMENT;
     }
 
@@ -75,7 +91,7 @@ export async function POST(req: NextRequest) {
     const grossOmzet = isCancel ? 0 : row.totalPayment;
     const netSettlement = isCancel ? 0 : row.netSettlementRaw;
 
-    const product = productMap.get(row.sku);
+    const product = matchProduct(row);
     const hpp = product?.hpp ?? 0;
     const catalogPrice = product?.catalogPrice ?? 0;
 
