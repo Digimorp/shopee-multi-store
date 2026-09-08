@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import DataTable from "@/components/DataTable";
 import ExportButtons from "@/components/ExportButtons";
+import LeaderboardToko from "@/components/LeaderboardToko";
 import { formatRupiah, formatNumber } from "@/lib/format";
 
 export default function PerformaTokoPage() {
@@ -34,6 +35,8 @@ export default function PerformaTokoPage() {
         Perbandingan omzet, uang cair, dan profit per toko pada periode terpilih. Untuk melihat tren harian satu toko,
         pilih toko itu di filter atas lalu buka Dashboard.
       </p>
+
+      <LeaderboardToko rows={rows} />
 
       <div className="card p-5">
         <p className="mb-3 text-sm font-semibold text-gray-800">Omzet &amp; Profit per Toko</p>
