@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
+import { logPriceChangeIfNeeded } from "@/lib/priceLog";
 
 // Master produk GLOBAL (tidak per toko). Semua user login bisa melihat daftar,
 // hanya OWNER yang boleh menambah / mengubah / menonaktifkan.
@@ -27,12 +28,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "sku, name, hpp, catalogPrice wajib diisi" }, { status: 400 });
   }
 
+  const newHpp = Number(body.hpp);
+  const newCatalog = Number(body.catalogPrice);
+  const existing = await prisma.product.findUnique({ where: { sku } });
+
   const product = await prisma.product.upsert({
     where: { sku },
-    update: { name, hpp: Number(body.hpp), catalogPrice: Number(body.catalogPrice), isActive: true },
-    create: { sku, name, hpp: Number(body.hpp), catalogPrice: Number(body.catalogPrice) },
+    update: { name, hpp: newHpp, catalogPrice: newCatalog, isActive: true },
+    create: { sku, name, hpp: newHpp, catalogPrice: newCatalog },
   });
-  return NextResponse.json({ product });
+
+  const logged = await logPriceChangeIfNeeded({ existing, newHpp, newCatalog, changedById: user.id, source: "manual" });
+  return NextResponse.json({ product, priceChangeLogged: logged });
 }
 
 export async function DELETE(req: NextRequest) {

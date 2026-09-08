@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, formatDate } from "@/lib/format";
 
 export default function SettingsProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [form, setForm] = useState({ sku: "", name: "", hpp: "", catalogPrice: "" });
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importMsg, setImportMsg] = useState("");
@@ -15,6 +16,9 @@ export default function SettingsProductsPage() {
     fetch("/api/products")
       .then((r) => r.json())
       .then((d) => setProducts(d.products ?? []));
+    fetch("/api/products/history")
+      .then((r) => r.json())
+      .then((d) => setHistory(d.logs ?? []));
   }
   useEffect(loadProducts, []);
 
@@ -95,6 +99,56 @@ export default function SettingsProductsPage() {
           { header: "Harga Agen (50%)", render: (r) => formatRupiah(r.catalogPrice * 0.5) },
         ]}
       />
+
+      <div>
+        <h2 className="mb-1 mt-2 text-sm font-semibold text-gray-800">Riwayat Perubahan HPP / Harga Katalog</h2>
+        <p className="mb-2 text-xs text-gray-400">
+          Dicatat otomatis tiap HPP atau Harga Katalog sebuah SKU berubah (manual maupun import).
+        </p>
+        <DataTable
+          rowKey={(r: any) => r.id}
+          rows={history}
+          emptyText="Belum ada perubahan HPP tercatat."
+          columns={[
+            { header: "Waktu", render: (r) => formatDate(r.createdAt) },
+            { header: "SKU", render: (r) => r.sku },
+            { header: "Produk", render: (r) => r.name },
+            {
+              header: "HPP",
+              render: (r) =>
+                r.oldHpp === r.newHpp ? (
+                  <span className="text-gray-400">{formatRupiah(r.newHpp)}</span>
+                ) : (
+                  <span>
+                    <span className="text-gray-400 line-through">{formatRupiah(r.oldHpp)}</span>{" "}
+                    <span className="font-semibold text-brand-600">→ {formatRupiah(r.newHpp)}</span>
+                  </span>
+                ),
+            },
+            {
+              header: "Harga Katalog",
+              render: (r) =>
+                r.oldCatalog === r.newCatalog ? (
+                  <span className="text-gray-400">{formatRupiah(r.newCatalog)}</span>
+                ) : (
+                  <span>
+                    <span className="text-gray-400 line-through">{formatRupiah(r.oldCatalog)}</span>{" "}
+                    <span className="font-semibold text-brand-600">→ {formatRupiah(r.newCatalog)}</span>
+                  </span>
+                ),
+            },
+            {
+              header: "Sumber",
+              render: (r) => (
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
+                  {r.source === "import" ? "Import Excel" : "Manual"}
+                </span>
+              ),
+            },
+            { header: "Oleh", render: (r) => r.changedBy },
+          ]}
+        />
+      </div>
     </div>
   );
 }

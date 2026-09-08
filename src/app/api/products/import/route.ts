@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
+import { logPriceChangeIfNeeded } from "@/lib/priceLog";
 
 // Import master SKU GLOBAL dari Excel. Format kolom: SKU, Nama Produk, HPP, Harga Katalog.
 // Hanya OWNER yang boleh import.
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
   const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
   let success = 0;
+  let priceChanges = 0;
   const errors: string[] = [];
 
   for (const [idx, row] of rows.entries()) {
@@ -37,13 +39,17 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    const existing = await prisma.product.findUnique({ where: { sku } });
     await prisma.product.upsert({
       where: { sku },
       update: { name, hpp, catalogPrice, isActive: true },
       create: { sku, name, hpp, catalogPrice },
     });
+    if (await logPriceChangeIfNeeded({ existing, newHpp: hpp, newCatalog: catalogPrice, changedById: user.id, source: "import" })) {
+      priceChanges++;
+    }
     success++;
   }
 
-  return NextResponse.json({ success, failed: errors.length, errors, total: rows.length });
+  return NextResponse.json({ success, failed: errors.length, priceChanges, errors, total: rows.length });
 }

@@ -33,16 +33,17 @@ enum ReturCondition {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  name         String
-  email        String       @unique
-  passwordHash String
-  role         Role
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  storeAccess  UserStore[]
-  uploadLogs   UploadLog[]
+  id            String            @id @default(cuid())
+  name          String
+  email         String            @unique
+  passwordHash  String
+  role          Role
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  storeAccess   UserStore[]
+  uploadLogs    UploadLog[]
+  priceChanges  ProductPriceLog[]
 
   @@map("users")
 }
@@ -75,17 +76,38 @@ model UserStore {
 // Master produk GLOBAL — 1 SKU = 1 HPP + 1 harga katalog, berlaku untuk semua toko.
 // Hanya OWNER yang boleh mengubah master ini (lihat api/products).
 model Product {
-  id           String   @id @default(cuid())
-  sku          String   @unique
+  id           String            @id @default(cuid())
+  sku          String            @unique
   name         String
   hpp          Float // HPP / Modal per unit
   catalogPrice Float // Harga katalog agen (sebelum diskon 50%)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   orders       Order[]
+  priceLogs    ProductPriceLog[]
 
   @@map("products")
+}
+
+// Audit log: dicatat tiap kali HPP dan/atau Harga Katalog sebuah produk berubah.
+model ProductPriceLog {
+  id           String   @id @default(cuid())
+  productId    String
+  sku          String
+  name         String
+  oldHpp       Float
+  newHpp       Float
+  oldCatalog   Float
+  newCatalog   Float
+  source       String   @default("manual") // "manual" | "import"
+  changedById  String
+  changedBy    User     @relation(fields: [changedById], references: [id])
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([productId, createdAt])
+  @@map("product_price_logs")
 }
 
 model UploadLog {
