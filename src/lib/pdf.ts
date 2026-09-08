@@ -11,7 +11,7 @@ export type PdfTableInput = {
   summary?: { label: string; value: string }[];
 };
 
-const BRAND = "#ee4d2d";
+const BRAND = "#ec4899";
 const GREY = "#6b7280";
 const LINE = "#e5e7eb";
 const ZEBRA = "#f9fafb";

@@ -14,7 +14,7 @@ export async function buildXlsx(
 
   ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width ?? 18 }));
   ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEE4D2D" } };
+  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEC4899" } };
 
   for (const r of rows) ws.addRow(r);
 
