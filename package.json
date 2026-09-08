@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "node scripts/test/verify-upload-shopee.mjs",
+    "test:recon": "node scripts/test/verify-reconciliation.mjs",
     "setup": "node scripts/db-setup.mjs && prisma migrate deploy && prisma db seed",
     "db:setup": "node scripts/db-setup.mjs",
     "db:start": "node scripts/db.mjs start",
