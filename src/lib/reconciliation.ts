@@ -5,7 +5,7 @@ export const MATCH_TOLERANCE = 5; // Rp — selisih <= ini dianggap MATCH (pembu
 export const FINAL_LOCK_DAYS = 14; // "Cair Final" hanya setelah H+14 dari Selesai
 export const STUCK_DAYS = 7; // "Sampai" > 7 hari belum Selesai -> flag retur pending
 
-export type ReconCategory = "MATCH" | "SELISIH" | "BELUM_KETEMU";
+export type ReconCategory = "MATCH" | "SELISIH" | "BELUM_KETEMU" | "N/A";
 export type SettlementStage = "SAMPAI" | "MENUNGGU_CAIR" | "CAIR" | "CAIR_FINAL";
 
 export type ReconItem = {
@@ -107,14 +107,20 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
     let aktual: number | null = null;
     let selisih: number | null = null;
 
+    const incomeExpected =
+      o.status === OrderStatus.SELESAI || o.status === OrderStatus.PENDING_SETTLEMENT;
+
     if (inc) {
       matchedIncomeOrderSns.add(o.orderSn);
       aktual = inc.amount;
       selisih = aktual - estimasi;
       category = Math.abs(selisih) <= MATCH_TOLERANCE ? "MATCH" : "SELISIH";
       side = "both";
+    } else if (incomeExpected) {
+      category = "BELUM_KETEMU"; // SELESAI/PENDING tapi belum ada di Income Report
+      side = "order";
     } else {
-      category = "BELUM_KETEMU";
+      category = "N/A"; // TRANSIT / RETUR — belum jatuh tempo cair, tidak dihitung di rate
       side = "order";
     }
 
@@ -186,9 +192,10 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
     match: items.filter((i) => i.category === "MATCH").length,
     selisih: items.filter((i) => i.category === "SELISIH").length,
     belumKetemu: items.filter((i) => i.category === "BELUM_KETEMU").length,
-    total: items.length,
+    total: 0,
     matchPct: 0,
   };
+  rate.total = rate.match + rate.selisih + rate.belumKetemu; // N/A (TRANSIT/RETUR) tidak dihitung
   rate.matchPct = rate.total ? rate.match / rate.total : 0;
 
   const reconciled = items.filter((i) => i.aktual != null);
