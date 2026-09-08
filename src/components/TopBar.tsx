@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { getDefaultPeriod } from "@/lib/period";
 import { Icon } from "@/components/icons";
+import AlertBell from "@/components/AlertBell";
 import type { StoreOption } from "@/types";
 
 function toInputDate(d: Date) {
@@ -86,10 +87,7 @@ export default function TopBar() {
         <button className="grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-brand-500">
           <Icon name="search" size={18} />
         </button>
-        <button className="relative grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-brand-500">
-          <Icon name="bell" size={18} />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand-500" />
-        </button>
+        <AlertBell />
 
         <div className="mx-1 h-6 w-px bg-gray-200" />
 
