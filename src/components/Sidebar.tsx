@@ -25,6 +25,17 @@ const SETTINGS_MENU: { href: string; label: string; icon: IconName; ownerOnly: b
   { href: "/settings/periods", label: "Period & Cut-Off", icon: "calendar", ownerOnly: true },
 ];
 
+// Label pemisah antar-grup menu di sidebar. Dibedakan jelas dari menu item:
+// warna tint pink dari tema gradient + bold, huruf lebih kecil, tracking lebar,
+// dan jarak atas ekstra (pt, bukan mt — <nav> pakai space-y yang meng-override margin-top).
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-3 pb-1.5 pt-7 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-400">
+      {children}
+    </p>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -74,9 +85,7 @@ export default function Sidebar() {
         ) : (
           role === "OWNER" && (
             <>
-              <div className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-wider text-gray-300">
-                Pengaturan
-              </div>
+              <SectionLabel>Pengaturan</SectionLabel>
               {SETTINGS_MENU.map((m) => (
                 <Link key={m.href} href={withQs(m.href)} className={itemClass(m.href)}>
                   <Icon name={m.icon} size={18} />
