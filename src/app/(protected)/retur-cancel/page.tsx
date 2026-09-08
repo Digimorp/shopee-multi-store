@@ -48,11 +48,11 @@ export default function ReturCancelPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <SummaryCard label="Unit Batal" value={formatNumber(summary?.batal?.unit ?? 0)} accent="red" />
-        <SummaryCard label="Unit Retur" value={formatNumber(summary?.retur?.unit ?? 0)} accent="red" />
-        <SummaryCard label="Retur Layak Restok (unit)" value={formatNumber(summary?.layakRestok?.unit ?? 0)} accent="green" />
-        <SummaryCard label="Retur Rusak (unit)" value={formatNumber(summary?.rusak?.unit ?? 0)} accent="red" />
-        <SummaryCard label="Beban Kerugian HPP" value={formatRupiah(summary?.rusak?.kerugianHpp ?? 0)} accent="red" />
+        <SummaryCard icon="undo" accent="orange" label="Unit Batal" value={formatNumber(summary?.batal?.unit ?? 0)} />
+        <SummaryCard icon="box" accent="purple" label="Unit Retur" value={formatNumber(summary?.retur?.unit ?? 0)} />
+        <SummaryCard icon="check" accent="green" label="Retur Layak Restok (unit)" value={formatNumber(summary?.layakRestok?.unit ?? 0)} />
+        <SummaryCard icon="tag" accent="red" label="Retur Rusak (unit)" value={formatNumber(summary?.rusak?.unit ?? 0)} />
+        <SummaryCard icon="cash" accent="red" label="Beban Kerugian HPP" value={formatRupiah(summary?.rusak?.kerugianHpp ?? 0)} />
       </div>
       {summary?.belumDiklasifikasi?.unit > 0 && (
         <p className="text-xs text-amber-700">
@@ -101,16 +101,16 @@ export default function ReturCancelPage() {
                         {r.returCondition === "GOOD" ? "Bagus - Restok" : "Rusak/Cacat"}
                       </span>
                     ) : (
-                      <div className="flex gap-1">
+                      <div className="flex gap-1.5">
                         <button
                           onClick={() => handleAction(r.id, "GOOD")}
-                          className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 hover:bg-green-200"
+                          className="btn-chip btn-chip-success"
                         >
                           Restok Gudang
                         </button>
                         <button
                           onClick={() => handleAction(r.id, "DAMAGED")}
-                          className="rounded bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200"
+                          className="btn-chip btn-chip-danger"
                         >
                           Barang Rusak/Cacat
                         </button>

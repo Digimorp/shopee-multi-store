@@ -28,16 +28,17 @@ export default function LaporanBarangKeluarPage() {
       </div>
       <p className="text-sm text-gray-500">
         Total unit terjual per SKU, <strong>hanya pesanan berstatus Selesai (uang cair)</strong>, diurutkan dari yang
-        paling laku. Dipakai untuk ranking produk & keputusan restок.
+        paling laku. Dipakai untuk ranking produk & keputusan restok.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard label="Total Unit Keluar" value={formatNumber(data.totalQty ?? 0)} accent="green" />
-        <SummaryCard label="Jumlah SKU Terjual" value={formatNumber(data.skuCount ?? 0)} accent="blue" />
+        <SummaryCard icon="box" accent="green" label="Total Unit Keluar" value={formatNumber(data.totalQty ?? 0)} />
+        <SummaryCard icon="tag" accent="blue" label="Jumlah SKU Terjual" value={formatNumber(data.skuCount ?? 0)} />
         <SummaryCard
+          icon="coins"
+          accent="orange"
           label="Total Uang Cair"
           value={formatRupiah(rows.reduce((s, r) => s + (r.uangCair ?? 0), 0))}
-          accent="green"
         />
       </div>
 

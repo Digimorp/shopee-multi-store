@@ -24,9 +24,10 @@ export default function LaporanProfitPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard label="Total Profit HPP (Nett)" value={formatRupiah(data.summary?.totalProfitHpp ?? 0)} accent="green" />
-        <SummaryCard label="Total Profit Agen" value={formatRupiah(data.summary?.totalProfitAgen ?? 0)} accent="blue" />
+        <SummaryCard icon="trendingUp" accent="green" label="Total Profit HPP (Nett)" value={formatRupiah(data.summary?.totalProfitHpp ?? 0)} />
+        <SummaryCard icon="wallet" accent="blue" label="Total Profit Agen" value={formatRupiah(data.summary?.totalProfitAgen ?? 0)} />
         <SummaryCard
+          icon="scale"
           label="Selisih Agen vs Riil"
           value={formatRupiah(data.summary?.selisih ?? 0)}
           accent={(data.summary?.selisih ?? 0) >= 0 ? "green" : "red"}

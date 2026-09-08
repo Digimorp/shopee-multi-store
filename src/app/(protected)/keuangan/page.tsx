@@ -68,13 +68,14 @@ export default function KeuanganPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <SummaryCard label="Jumlah Transaksi" value={String(data.summary?.count ?? 0)} />
-        <SummaryCard label="Total Omzet Bruto" value={formatRupiah(data.summary?.totalGross ?? 0)} />
-        <SummaryCard label="Total Nilai — ESTIMASI" value={formatRupiah(data.summary?.totalNet ?? 0)} accent="brand" />
+        <SummaryCard icon="clipboard" accent="blue" label="Jumlah Transaksi" value={String(data.summary?.count ?? 0)} />
+        <SummaryCard icon="cash" accent="brand" label="Total Omzet Bruto" value={formatRupiah(data.summary?.totalGross ?? 0)} />
+        <SummaryCard icon="hourglass" accent="purple" label="Total Nilai — ESTIMASI" value={formatRupiah(data.summary?.totalNet ?? 0)} />
         <SummaryCard
+          icon="coins"
+          accent="green"
           label={`Total Nilai — AKTUAL (${nMatched} matched)`}
           value={formatRupiah(aktualTotal)}
-          accent="green"
         />
       </div>
       {tab === "cair" && (
