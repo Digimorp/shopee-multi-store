@@ -12,9 +12,12 @@ const ck = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
 
 let r = await fetch(`${BASE}/api/auth/csrf`); setC(r);
 const { csrfToken } = await r.json();
-r = await fetch(`${BASE}/api/auth/callback/credentials`, { method: "POST", redirect: "manual", headers: { "content-type": "application/x-www-form-urlencoded", cookie: ck() }, body: new URLSearchParams({ csrfToken, email: "owner@company.com", password: process.env.OWNER_PW, json: "true", callbackUrl: BASE }) });
+const OWNER_EMAIL = process.env.OWNER_EMAIL || "Ownergayabebas@login";
+const OWNER_PW = process.env.OWNER_PW || "@Ika12345";
+r = await fetch(`${BASE}/api/auth/callback/credentials`, { method: "POST", redirect: "manual", headers: { "content-type": "application/x-www-form-urlencoded", cookie: ck() }, body: new URLSearchParams({ csrfToken, email: OWNER_EMAIL, password: OWNER_PW, json: "true", callbackUrl: BASE }) });
 setC(r);
-if (!jar.has("next-auth.session-token")) { console.error("login gagal"); process.exit(1); }
+const _s = await (await fetch(`${BASE}/api/auth/session`, { headers: { cookie: ck() } })).json();
+if (!_s?.user) { console.error("login gagal:", JSON.stringify(_s)); process.exit(1); }
 
 const stores = (await (await fetch(`${BASE}/api/stores`, { headers: { cookie: ck() } })).json()).stores;
 const toko = stores.find((s) => s.code === "TOKO01");
