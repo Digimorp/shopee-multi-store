@@ -26,7 +26,8 @@ export default function RekonsiliasiPage() {
   const totals = data?.totals ?? { estimasi: 0, aktual: 0, selisih: 0, adjustment: 0 };
   const items: any[] = data?.items ?? [];
   const adjustments: any[] = data?.adjustments ?? [];
-  const cfg = data?.config ?? { toleransiRp: 5, finalLockDays: 14, stuckDays: 7 };
+  const cfg = data?.config ?? { toleransiRp: 5, finalLockDays: 14, stuckDays: 7, payoutRatio: 1 };
+  const payoutRatio = cfg.payoutRatio ?? 1;
 
   const problem = useMemo(() => {
     if (tab === "ALL") return items;
@@ -40,8 +41,16 @@ export default function RekonsiliasiPage() {
       <div>
         <h1 className="text-xl font-bold text-gray-900">Rekonsiliasi Uang Cair</h1>
         <p className="text-sm text-gray-400">
-          Bandingkan <strong>estimasi</strong> (data Pesanan) vs <strong>aktual</strong> (Income Report Shopee), key = No.
-          Pesanan. Toleransi pembulatan Rp {cfg.toleransiRp}. Status &quot;Cair Final&quot; terkunci setelah H+{cfg.finalLockDays}.
+          Bandingkan <strong>estimasi</strong> (nilai kotor pesanan) vs <strong>aktual</strong> (Income Report Shopee),
+          key = No. Pesanan. Status &quot;Cair Final&quot; terkunci setelah H+{cfg.finalLockDays}.
+          {payoutRatio < 0.98 && (
+            <>
+              {" "}
+              Rasio pencairan khas toko ini <strong>{Math.round(payoutRatio * 100)}%</strong> dari nilai kotor (sisanya
+              potongan biaya Shopee) — <strong>MATCH</strong> = cair dalam rentang wajar rasio itu, <strong>SELISIH</strong>{" "}
+              = meleset jauh (perlu dicek).
+            </>
+          )}
         </p>
       </div>
 

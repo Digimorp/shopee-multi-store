@@ -14,6 +14,11 @@ export async function GET(req: NextRequest) {
   const result = await reconcile({ storeIds, from, to });
   return NextResponse.json({
     ...result,
-    config: { toleransiRp: MATCH_TOLERANCE, finalLockDays: FINAL_LOCK_DAYS, stuckDays: STUCK_DAYS },
+    config: {
+      toleransiRp: MATCH_TOLERANCE,
+      finalLockDays: FINAL_LOCK_DAYS,
+      stuckDays: STUCK_DAYS,
+      payoutRatio: result.payoutRatio,
+    },
   });
 }
