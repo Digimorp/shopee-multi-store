@@ -16,6 +16,12 @@ function fmtShort(d: Date) {
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 }
 
+async function getJson(url: string): Promise<any> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${url} -> ${r.status}`);
+  return r.json();
+}
+
 export default function DashboardPage() {
   const searchParams = useSearchParams();
   const qs = searchParams.toString();
@@ -26,23 +32,40 @@ export default function DashboardPage() {
   const [storePerf, setStorePerf] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
+    let alive = true;
     setLoading(true);
-    Promise.all([
-      fetch(`/api/dashboard/summary?${qs}`).then((r) => r.json()),
-      fetch(`/api/dashboard/trend?${qs}`).then((r) => r.json()),
-      fetch(`/api/dashboard/top-products?${qs}`).then((r) => r.json()),
-      fetch(`/api/reports/store-performance?${qs}`).then((r) => r.json()),
-      fetch(`/api/uploads`).then((r) => r.json()),
+    setError(false);
+
+    // Safety net: apa pun yang terjadi, jangan stuck "Memuat" > 20 detik.
+    const killLoading = setTimeout(() => alive && setLoading(false), 20000);
+
+    Promise.allSettled([
+      getJson(`/api/dashboard/summary?${qs}`),
+      getJson(`/api/dashboard/trend?${qs}`),
+      getJson(`/api/dashboard/top-products?${qs}`),
+      getJson(`/api/reports/store-performance?${qs}`),
+      getJson(`/api/uploads`),
     ]).then(([s, t, p, sp, u]) => {
-      setSummary(s);
-      setTrend(t.trend ?? []);
-      setTopProducts({ byOmzet: p.byOmzet ?? [], byQty: p.byQty ?? [] });
-      setStorePerf(sp.rows ?? []);
-      setLogs(u.logs ?? []);
+      if (!alive) return;
+      const val = (r: PromiseSettledResult<any>) => (r.status === "fulfilled" ? r.value : null);
+      const anyFailed = [s, t, p, sp, u].some((r) => r.status === "rejected");
+
+      setSummary(val(s));
+      setTrend(val(t)?.trend ?? []);
+      setTopProducts({ byOmzet: val(p)?.byOmzet ?? [], byQty: val(p)?.byQty ?? [] });
+      setStorePerf(val(sp)?.rows ?? []);
+      setLogs(val(u)?.logs ?? []);
+      setError(anyFailed);
       setLoading(false);
     });
+
+    return () => {
+      alive = false;
+      clearTimeout(killLoading);
+    };
   }, [qs]);
 
   const periodLabel = useMemo(() => {
@@ -59,11 +82,20 @@ export default function DashboardPage() {
         <p className="text-sm text-gray-400">Ringkasan performa penjualan multi-toko Shopee</p>
       </div>
 
+      {error && !loading && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>Sebagian data gagal dimuat. Angka di bawah mungkin tidak lengkap.</span>
+          <button onClick={() => location.reload()} className="btn-ghost px-3 py-1.5 text-xs">
+            Muat ulang
+          </button>
+        </div>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <AreaTrendCard trend={trend} summary={summary} loading={loading} periodLabel={periodLabel} />
+          <AreaTrendCard trend={trend} summary={summary} loading={loading} error={error} periodLabel={periodLabel} />
         </div>
-        <DonutCard rows={storePerf} loading={loading} />
+        <DonutCard rows={storePerf} loading={loading} error={error} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -74,7 +106,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <ActivityCard logs={logs} loading={loading} />
+        <ActivityCard logs={logs} loading={loading} error={error} />
         <div className="lg:col-span-2">
           <RecentOrdersCard />
         </div>

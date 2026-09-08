@@ -6,7 +6,15 @@ import { formatRupiah } from "@/lib/format";
 
 const COLORS = ["#ec4899", "#a855f7", "#3b82f6", "#f97316", "#10b981", "#f59e0b", "#94a3b8"];
 
-export default function DonutCard({ rows, loading }: { rows: any[]; loading: boolean }) {
+export default function DonutCard({
+  rows,
+  loading,
+  error = false,
+}: {
+  rows: any[];
+  loading: boolean;
+  error?: boolean;
+}) {
   const { slices, total } = useMemo(() => {
     const sorted = [...(rows ?? [])]
       .filter((r) => (r.omzet ?? 0) > 0)
@@ -26,6 +34,8 @@ export default function DonutCard({ rows, loading }: { rows: any[]; loading: boo
 
       {loading ? (
         <div className="grid h-[220px] place-items-center text-sm text-gray-400">Memuat…</div>
+      ) : error && slices.length === 0 ? (
+        <div className="grid h-[220px] place-items-center text-sm text-amber-600">Gagal memuat data.</div>
       ) : slices.length === 0 ? (
         <div className="grid h-[220px] place-items-center text-sm text-gray-400">Belum ada omzet pada periode ini.</div>
       ) : (

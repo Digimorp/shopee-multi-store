@@ -41,11 +41,13 @@ export default function AreaTrendCard({
   trend,
   summary,
   loading,
+  error = false,
   periodLabel,
 }: {
   trend: TrendPoint[];
   summary: any;
   loading: boolean;
+  error?: boolean;
   periodLabel: string;
 }) {
   const [bucket, setBucket] = useState<Bucket>("daily");
@@ -96,6 +98,8 @@ export default function AreaTrendCard({
       <div className="mt-4 h-[240px]">
         {loading ? (
           <div className="grid h-full place-items-center text-sm text-gray-400">Memuat…</div>
+        ) : error && data.length === 0 ? (
+          <div className="grid h-full place-items-center text-sm text-amber-600">Gagal memuat data grafik.</div>
         ) : data.length === 0 ? (
           <div className="grid h-full place-items-center text-sm text-gray-400">Belum ada data pada periode ini.</div>
         ) : (

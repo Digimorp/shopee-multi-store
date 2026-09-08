@@ -4,7 +4,15 @@ import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { Icon } from "@/components/icons";
 
-export default function ActivityCard({ logs, loading }: { logs: any[]; loading: boolean }) {
+export default function ActivityCard({
+  logs,
+  loading,
+  error = false,
+}: {
+  logs: any[];
+  loading: boolean;
+  error?: boolean;
+}) {
   return (
     <div className="card p-5">
       <p className="text-sm font-semibold text-gray-800">Aktivitas Terbaru</p>
@@ -13,6 +21,8 @@ export default function ActivityCard({ logs, loading }: { logs: any[]; loading: 
       <div className="mt-4">
         {loading ? (
           <p className="py-6 text-center text-sm text-gray-400">Memuat…</p>
+        ) : error && logs.length === 0 ? (
+          <p className="py-6 text-center text-sm text-amber-600">Gagal memuat aktivitas.</p>
         ) : logs.length === 0 ? (
           <p className="py-6 text-center text-sm text-gray-400">Belum ada aktivitas impor.</p>
         ) : (
