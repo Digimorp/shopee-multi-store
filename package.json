@@ -7,6 +7,9 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "node scripts/test/verify-upload-shopee.mjs",
     "setup": "node scripts/db-setup.mjs && prisma migrate deploy && prisma db seed",
     "db:setup": "node scripts/db-setup.mjs",
     "db:start": "node scripts/db.mjs start",
@@ -46,6 +49,7 @@
     "prisma": "^5.20.0",
     "tailwindcss": "^3.4.10",
     "tsx": "^4.19.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.9"
   }
 }
