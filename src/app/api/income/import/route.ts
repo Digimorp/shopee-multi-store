@@ -24,7 +24,12 @@ export async function POST(req: NextRequest) {
 
   if (parsed.entries.length === 0) {
     return NextResponse.json(
-      { error: "Tidak ada baris terbaca dari Income Report.", details: parsed.errors },
+      {
+        error:
+          parsed.errors[0]?.message ??
+          "Tidak ada baris transaksi terbaca dari Income Report. Cek apakah file benar 'Laporan Saldo / Transaction Report' Shopee.",
+        details: parsed.errors,
+      },
       { status: 400 }
     );
   }
