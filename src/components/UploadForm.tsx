@@ -4,7 +4,25 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { StoreOption } from "@/types";
 
-export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; onDone?: () => void }) {
+export default function UploadForm({
+  stores,
+  onDone,
+  endpoint = "/api/upload",
+  title = "Upload Laporan Pesanan Shopee",
+  fileLabel = "File Laporan Pesanan Shopee (.xlsx / .csv)",
+  submitLabel = "Upload & Proses",
+  hint,
+  formatResult,
+}: {
+  stores: StoreOption[];
+  onDone?: () => void;
+  endpoint?: string;
+  title?: string;
+  fileLabel?: string;
+  submitLabel?: string;
+  hint?: string;
+  formatResult?: (data: any) => string;
+}) {
   const searchParams = useSearchParams();
   const currentStoreId = searchParams.get("storeId");
 
@@ -29,7 +47,7 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
     fd.append("storeId", storeId);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const res = await fetch(endpoint, { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Upload gagal.");
@@ -44,8 +62,14 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
     }
   }
 
+  const defaultResultText = (d: any) =>
+    `Berhasil: ${d.success ?? d.orderRows ?? 0} dari ${d.totalRows ?? 0} baris diproses.` +
+    (d.skippedOrFailed > 0 ? ` ${d.skippedOrFailed} baris dilewati/gagal.` : "");
+
   return (
     <form onSubmit={handleSubmit} className="card p-5">
+      <p className="mb-1 text-sm font-semibold text-gray-800">{title}</p>
+      {hint && <p className="mb-3 text-xs text-gray-400">{hint}</p>}
       <div className="mb-3 grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium text-gray-600">Toko</label>
@@ -63,7 +87,7 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">File Laporan Shopee (.xlsx / .csv)</label>
+          <label className="mb-1 block text-xs font-medium text-gray-600">{fileLabel}</label>
           <input
             type="file"
             accept=".xlsx,.xls,.csv"
@@ -73,19 +97,14 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="btn-primary disabled:opacity-50"
-      >
-        {loading ? "Memproses..." : "Upload & Proses"}
+      <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50">
+        {loading ? "Memproses..." : submitLabel}
       </button>
 
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       {result && (
         <div className="mt-3 rounded-md bg-green-50 p-3 text-sm text-green-800">
-          Berhasil: {result.success} dari {result.totalRows} baris diproses.
-          {result.skippedOrFailed > 0 && ` ${result.skippedOrFailed} baris dilewati/gagal (cek log).`}
+          {(formatResult ?? defaultResultText)(result)}
         </div>
       )}
     </form>

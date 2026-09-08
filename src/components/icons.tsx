@@ -26,6 +26,7 @@ const PATHS: Record<string, string> = {
   check: "m5 13 4 4L19 7",
   chevronDown: "m6 9 6 6 6-6",
   arrowRight: "M5 12h14m-6-6 6 6-6 6",
+  scale: "M12 3v18M7 21h10M5 7h14M5 7l-2.5 6a3.5 3.5 0 0 0 5 0L5 7Zm14 0-2.5 6a3.5 3.5 0 0 0 5 0L19 7ZM12 3 5 7m7-4 7 4",
   dot: "M12 12h.01",
 };
 

@@ -9,6 +9,7 @@ const MENU: { href: string; label: string; icon: IconName }[] = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
   { href: "/input", label: "Input & Import Data", icon: "upload" },
   { href: "/keuangan", label: "Keuangan & Cashflow", icon: "wallet" },
+  { href: "/rekonsiliasi", label: "Rekonsiliasi Uang Cair", icon: "scale" },
   { href: "/laporan-profit", label: "Laporan Profit", icon: "coins" },
   { href: "/laporan-barang-keluar", label: "Analisis Barang Keluar", icon: "box" },
   { href: "/performa-toko", label: "Performa Toko", icon: "trendingUp" },

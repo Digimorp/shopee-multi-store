@@ -32,6 +32,7 @@ export const config = {
     "/dashboard/:path*",
     "/input/:path*",
     "/keuangan/:path*",
+    "/rekonsiliasi/:path*",
     "/laporan-profit/:path*",
     "/laporan-barang-keluar/:path*",
     "/performa-toko/:path*",
