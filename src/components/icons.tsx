@@ -27,6 +27,10 @@ const PATHS: Record<string, string> = {
   chevronDown: "m6 9 6 6 6-6",
   arrowRight: "M5 12h14m-6-6 6 6-6 6",
   scale: "M12 3v18M7 21h10M5 7h14M5 7l-2.5 6a3.5 3.5 0 0 0 5 0L5 7Zm14 0-2.5 6a3.5 3.5 0 0 0 5 0L19 7ZM12 3 5 7m7-4 7 4",
+  download: "M12 3v12m0 0-4-4m4 4 4-4M5 19h14",
+  fileText: "M14 3v5h5M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm-5 9h6m-6 4h6",
+  receipt: "M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 5h6M9 12h6",
+  refresh: "M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16m0 5v-5h5",
   dot: "M12 12h.01",
 };
 

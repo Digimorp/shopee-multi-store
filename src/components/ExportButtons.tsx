@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { Icon } from "@/components/icons";
 
 /**
  * Tombol Export Excel / PDF untuk sebuah laporan.
@@ -25,10 +26,12 @@ export default function ExportButtons({
 
   return (
     <div className="flex gap-2">
-      <button onClick={() => open("xlsx")} className="btn-ghost">
+      <button onClick={() => open("xlsx")} className="btn-primary">
+        <Icon name="download" size={16} strokeWidth={2} />
         Export Excel
       </button>
-      <button onClick={() => open("pdf")} className="btn-ghost">
+      <button onClick={() => open("pdf")} className="btn-primary">
+        <Icon name="fileText" size={16} strokeWidth={2} />
         Export PDF
       </button>
     </div>
