@@ -55,7 +55,7 @@ export default function InputPage() {
       />
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Riwayat Import Pesanan</h2>
+        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Import Pesanan</h2>
         <DataTable
           rowKey={(r: any) => r.id}
           rows={logs}
@@ -72,7 +72,7 @@ export default function InputPage() {
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Riwayat Import Income Report</h2>
+        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Import Income Report</h2>
         <DataTable
           rowKey={(r: any) => r.id}
           rows={incomeImports}

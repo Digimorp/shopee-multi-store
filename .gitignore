@@ -17,3 +17,7 @@ npm-debug.log*
 
 # Next.js generated
 next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Editor / tooling lokal
+.claude/

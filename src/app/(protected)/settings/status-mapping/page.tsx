@@ -110,10 +110,7 @@ export default function StatusMappingPage() {
           {
             header: "Aksi",
             render: (r) => (
-              <button
-                onClick={() => remove(r.id)}
-                className="rounded border border-gray-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-              >
+              <button onClick={() => remove(r.id)} className="btn-chip btn-chip-danger">
                 Hapus
               </button>
             ),

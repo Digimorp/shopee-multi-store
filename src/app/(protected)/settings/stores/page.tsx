@@ -55,7 +55,7 @@ export default function SettingsStoresPage() {
           {
             header: "Aksi",
             render: (r) => (
-              <button onClick={() => toggleActive(r)} className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50">
+              <button onClick={() => toggleActive(r)} className="btn-chip">
                 {r.isActive ? "Nonaktifkan" : "Aktifkan"}
               </button>
             ),

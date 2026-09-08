@@ -145,11 +145,11 @@ export default function SettingsUsersPage() {
           {
             header: "Aksi",
             render: (r) => (
-              <div className="flex gap-1">
-                <button onClick={() => openEdit(r)} className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50">
+              <div className="flex gap-1.5">
+                <button onClick={() => openEdit(r)} className="btn-chip">
                   Edit
                 </button>
-                <button onClick={() => toggleActive(r)} className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50">
+                <button onClick={() => toggleActive(r)} className="btn-chip">
                   {r.isActive ? "Nonaktifkan" : "Aktifkan"}
                 </button>
               </div>

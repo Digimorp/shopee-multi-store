@@ -76,7 +76,7 @@ export default function SettingsProductsPage() {
         <button type="submit" className="sm:col-span-5 btn-primary">
           Simpan Produk
         </button>
-        {err && <span className="sm:col-span-5 text-sm text-red-600">{err}</span>}
+        {err && <span className="sm:col-span-5 text-sm text-rose-600">{err}</span>}
       </form>
 
       <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 card p-5">
@@ -85,7 +85,7 @@ export default function SettingsProductsPage() {
         <button type="submit" className="btn-ghost">
           Import
         </button>
-        {importMsg && <span className="text-sm text-green-700">{importMsg}</span>}
+        {importMsg && <span className="text-sm text-emerald-700">{importMsg}</span>}
       </form>
 
       <DataTable

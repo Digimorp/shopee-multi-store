@@ -59,7 +59,7 @@ export default function SettingsPeriodsPage() {
       </form>
 
       <div className="card p-5">
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Lock Periode</h2>
+        <h2 className="mb-2 text-sm font-semibold text-gray-800">Lock Periode</h2>
         <p className="mb-2 text-xs text-gray-500">
           Periode yang dikunci tidak bisa menerima input data baru dari upload — dipakai setelah rekap bulanan final.
           Format key: YYYY-MM-DD_YYYY-MM-DD (dari-sampai).
@@ -88,10 +88,7 @@ export default function SettingsPeriodsPage() {
             {
               header: "Aksi",
               render: (r) => (
-                <button
-                  onClick={() => toggleLock(r.periodKey, !r.locked)}
-                  className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50"
-                >
+                <button onClick={() => toggleLock(r.periodKey, !r.locked)} className="btn-chip">
                   {r.locked ? "Buka Kunci" : "Kunci"}
                 </button>
               ),
