@@ -12,6 +12,8 @@ export type ParsedRow = {
   rawStatus: string; // teks "Status Pesanan" apa adanya — diklasifikasi di upload route
   hasSettlementDate: boolean; // "Waktu Dana Dilepaskan" terisi? -> pembeda SELESAI vs PENDING
   orderCreatedAt: Date;
+  completedAt: Date | null; // "Waktu Pesanan Selesai" (opsional)
+  settlementDate: Date | null; // "Waktu Dana Dilepaskan" (opsional, versi estimasi Shopee)
   raw: Record<string, any>;
 };
 
@@ -35,7 +37,14 @@ const HEADER_ALIASES: Record<string, string[]> = {
   adminFee: ["biaya administrasi", "biaya layanan", "biaya admin"],
   orderCreatedAt: ["waktu pesanan dibuat", "tanggal pesanan", "waktu pembuatan pesanan"],
   settlementDate: ["waktu dana dilepaskan", "tanggal dana dilepaskan"],
+  completedAt: ["waktu pesanan selesai", "tanggal pesanan selesai", "waktu selesai"],
 };
+
+function toDateOrNull(v: any): Date | null {
+  if (v === null || v === undefined || String(v).trim() === "") return null;
+  const d = toDate(v);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 function normalizeHeader(h: string) {
   return String(h).trim().toLowerCase();
@@ -119,6 +128,8 @@ export function parseShopeeFile(buffer: Buffer): ParseResult {
         rawStatus: String(row[map.status] ?? "").trim(),
         hasSettlementDate,
         orderCreatedAt: toDate(row[map.orderCreatedAt]),
+        completedAt: map.completedAt ? toDateOrNull(row[map.completedAt]) : null,
+        settlementDate: map.settlementDate ? toDateOrNull(row[map.settlementDate]) : null,
         raw: row,
       });
     } catch (e: any) {

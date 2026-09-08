@@ -99,6 +99,8 @@ export async function POST(req: NextRequest) {
         productName: row.productName,
         qty: row.qty,
         orderCreatedAt: row.orderCreatedAt,
+        completedAt: row.completedAt,
+        settlementDate: row.settlementDate,
         status,
         grossOmzet,
         netSettlement,
