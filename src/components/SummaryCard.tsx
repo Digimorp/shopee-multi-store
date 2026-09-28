@@ -48,6 +48,7 @@ export default function SummaryCard({
             <p className="truncate text-xs font-medium text-white/85">{label}</p>
           </div>
         </div>
+        {sub && <p className="relative mt-2 text-[11px] text-white/80">{sub}</p>}
       </div>
     );
   }

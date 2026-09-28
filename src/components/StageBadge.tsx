@@ -21,7 +21,7 @@ const RECON: Record<string, string> = {
 };
 
 export function ReconBadge({ category }: { category: string }) {
-  const label = category === "BELUM_KETEMU" ? "Belum Ketemu" : category === "SELISIH" ? "Selisih" : "Match";
+  const label = category === "BELUM_KETEMU" ? "Belum Ketemu" : category === "SELISIH" ? "Selisih" : "Cair";
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white ${

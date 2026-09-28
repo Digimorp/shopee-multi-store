@@ -219,6 +219,11 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
     ) {
       flags.push("SAMPAI_7H_BELUM_CAIR");
     }
+    // BELUM_KETEMU di bawah H+14 itu NORMAL (masih dalam jendela pencairan Shopee).
+    // Lewat H+14 dan masih belum muncul di Income Report -> layak dicek manual.
+    if (!inc && incomeExpected && daysBetween(ref, now) >= FINAL_LOCK_DAYS) {
+      flags.push("BELUM_CAIR_LEWAT_H14");
+    }
     if (g.status === OrderStatus.RETUR) flags.push("RETUR");
 
     items.push({

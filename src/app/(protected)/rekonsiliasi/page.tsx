@@ -47,7 +47,7 @@ export default function RekonsiliasiPage() {
             <>
               {" "}
               Rasio pencairan khas toko ini <strong>{Math.round(payoutRatio * 100)}%</strong> dari nilai kotor (sisanya
-              potongan biaya Shopee) — <strong>MATCH</strong> = cair dalam rentang wajar rasio itu, <strong>SELISIH</strong>{" "}
+              potongan biaya Shopee) — <strong>CAIR</strong> = cair dalam rentang wajar rasio itu, <strong>SELISIH</strong>{" "}
               = meleset jauh (perlu dicek).
             </>
           )}
@@ -59,7 +59,7 @@ export default function RekonsiliasiPage() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold text-gray-800">Reconciliation Rate</p>
           <p className="text-sm text-gray-500">
-            {loading ? "…" : `${(rate.matchPct * 100).toFixed(1)}% match`} dari {formatNumber(rate.total)} order
+            {loading ? "…" : `${(rate.matchPct * 100).toFixed(1)}% cair`} dari {formatNumber(rate.total)} order
           </p>
         </div>
         <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
@@ -70,7 +70,7 @@ export default function RekonsiliasiPage() {
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-lg font-bold text-emerald-600">{formatNumber(rate.match)}</p>
-            <p className="text-[11px] text-gray-400">MATCH ({pct(rate.match)}%)</p>
+            <p className="text-[11px] text-gray-400">CAIR ({pct(rate.match)}%)</p>
           </div>
           <div>
             <p className="text-lg font-bold text-amber-600">{formatNumber(rate.selisih)}</p>

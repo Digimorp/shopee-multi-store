@@ -98,11 +98,31 @@ export default function DashboardPage() {
         <DonutCard rows={storePerf} loading={loading} error={error} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryCard gradient="pink" icon="cash" label="Total Omzet Bruto" value={formatRupiah(summary?.totalOmzetBruto ?? 0)} />
-        <SummaryCard gradient="purple" icon="coins" label="Uang Cair" value={formatRupiah(summary?.uangCair ?? 0)} />
+        <SummaryCard
+          gradient="purple"
+          icon="coins"
+          label="Cair (Aktual Income Report)"
+          value={formatRupiah(summary?.cair ?? 0)}
+          sub={`${summary?.cairCount ?? 0} pesanan cocok`}
+        />
+        <SummaryCard
+          gradient="orange"
+          icon="hourglass"
+          label="Belum Cair"
+          value={formatRupiah(summary?.belumCair ?? 0)}
+          sub={`${summary?.belumCairCount ?? 0} pesanan menunggu pencairan`}
+        />
+        <SummaryCard
+          accent="red"
+          icon="scale"
+          label="Selisih (perlu dicek)"
+          value={formatRupiah(summary?.selisih ?? 0)}
+          sub={`${summary?.selisihCount ?? 0} pesanan beda nominal`}
+        />
         <SummaryCard gradient="blue" icon="trendingUp" label="Profit HPP (Nett)" value={formatRupiah(summary?.profitHpp ?? 0)} />
-        <SummaryCard gradient="orange" icon="sparkles" label="Profit Agen" value={formatRupiah(summary?.profitAgen ?? 0)} />
+        <SummaryCard accent="orange" icon="sparkles" label="Profit Agen" value={formatRupiah(summary?.profitAgen ?? 0)} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
