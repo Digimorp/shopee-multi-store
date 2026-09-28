@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
       storeId: { in: storeIds },
       orderCreatedAt: { gte: from, lte: to },
       status: { not: OrderStatus.CANCEL },
+      deletedAt: null,
     },
     select: { orderCreatedAt: true, grossOmzet: true, profitHpp: true, status: true },
   });

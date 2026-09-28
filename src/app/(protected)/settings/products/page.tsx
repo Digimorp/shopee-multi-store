@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { formatRupiah, formatDate } from "@/lib/format";
 
 export default function SettingsProductsPage() {
@@ -11,6 +12,12 @@ export default function SettingsProductsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importMsg, setImportMsg] = useState("");
   const [err, setErr] = useState("");
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", hpp: "", catalogPrice: "" });
+  const [editErr, setEditErr] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleting, setDeleting] = useState<any | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   function loadProducts() {
     fetch("/api/products")
@@ -41,6 +48,45 @@ export default function SettingsProductsPage() {
       return;
     }
     setForm({ sku: "", name: "", hpp: "", catalogPrice: "" });
+    loadProducts();
+  }
+
+  function openEdit(p: any) {
+    setEditing(p);
+    setEditForm({ name: p.name, hpp: String(p.hpp), catalogPrice: String(p.catalogPrice) });
+    setEditErr("");
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    setEditSaving(true);
+    setEditErr("");
+    const res = await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sku: editing.sku,
+        name: editForm.name,
+        hpp: parseFloat(editForm.hpp),
+        catalogPrice: parseFloat(editForm.catalogPrice),
+      }),
+    });
+    setEditSaving(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setEditErr(d.error ?? "Gagal menyimpan perubahan.");
+      return;
+    }
+    setEditing(null);
+    loadProducts();
+  }
+
+  async function confirmDeleteProduct() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    await fetch(`/api/products?id=${deleting.id}`, { method: "DELETE" });
+    setDeleteBusy(false);
+    setDeleting(null);
     loadProducts();
   }
 
@@ -97,8 +143,73 @@ export default function SettingsProductsPage() {
           { header: "HPP", render: (r) => formatRupiah(r.hpp) },
           { header: "Harga Katalog", render: (r) => formatRupiah(r.catalogPrice) },
           { header: "Harga Agen (50%)", render: (r) => formatRupiah(r.catalogPrice * 0.5) },
+          { header: "Status", render: (r) => (r.isActive ? "Aktif" : "Nonaktif") },
+          {
+            header: "Aksi",
+            render: (r) => (
+              <div className="flex gap-1.5">
+                <button onClick={() => openEdit(r)} className="btn-chip">
+                  Edit
+                </button>
+                {r.isActive && (
+                  <button onClick={() => setDeleting(r)} className="btn-chip btn-chip-danger">
+                    Hapus
+                  </button>
+                )}
+              </div>
+            ),
+          },
         ]}
       />
+
+      {editing && (
+        <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-4" onMouseDown={() => setEditing(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card-lg" onMouseDown={(e) => e.stopPropagation()}>
+            <p className="text-sm font-semibold text-gray-800">Edit Produk — {editing.sku}</p>
+            {editErr && <p className="mt-2 text-sm text-rose-600">{editErr}</p>}
+            <div className="mt-3 grid gap-3">
+              <input
+                placeholder="Nama Produk"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                placeholder="HPP"
+                value={editForm.hpp}
+                onChange={(e) => setEditForm({ ...editForm, hpp: e.target.value })}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                placeholder="Harga Katalog"
+                value={editForm.catalogPrice}
+                onChange={(e) => setEditForm({ ...editForm, catalogPrice: e.target.value })}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setEditing(null)} className="btn-ghost" disabled={editSaving}>
+                Batal
+              </button>
+              <button onClick={saveEdit} disabled={editSaving} className="btn-primary disabled:opacity-50">
+                {editSaving ? "Menyimpan…" : "Simpan Perubahan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Hapus produk ${deleting.sku}?`}
+          message={`Yakin hapus produk "${deleting.name}"? Aksi ini bisa dibatalkan lewat log admin (produk disembunyikan dari master, bukan dihapus permanen).`}
+          busy={deleteBusy}
+          onConfirm={confirmDeleteProduct}
+          onCancel={() => setDeleting(null)}
+        />
+      )}
 
       <div>
         <h2 className="mb-1 mt-2 text-sm font-semibold text-gray-800">Riwayat Perubahan HPP / Harga Katalog</h2>

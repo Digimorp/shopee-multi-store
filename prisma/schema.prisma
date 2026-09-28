@@ -37,6 +37,11 @@ enum IncomeEntryType {
   ADJUSTMENT // kompensasi / sengketa / promo reimbursement / dsb (tanpa No. Pesanan)
 }
 
+enum AuditAction {
+  EDIT
+  DELETE
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String
@@ -50,8 +55,36 @@ model User {
   uploadLogs    UploadLog[]
   priceChanges  ProductPriceLog[]
   incomeImports IncomeImport[]
+  auditLogs     AuditLog[]
 
   @@map("users")
+}
+
+// Audit trail seragam untuk semua aksi Edit/Delete data (Order, IncomeImport, Product,
+// User, Store, StatusMapping). Satu tabel dipakai bersama supaya riwayat "siapa mengubah
+// apa kapan" bisa dilihat di satu tempat, bukan tersebar per-model.
+model AuditLog {
+  id          String      @id @default(cuid())
+  actorId     String
+  actorName   String // snapshot nama saat aksi terjadi (jaga-jaga user dihapus/berubah nama)
+  actorEmail  String
+  actorRole   Role
+  action      AuditAction
+  entityType  String // "Order" | "IncomeImport" | "Product" | "User" | "Store" | "StatusMapping"
+  entityId    String
+  entityLabel String // label ringkas untuk ditampilkan (mis. No. Pesanan, SKU, email)
+  storeId     String? // toko terkait (kalau ada) — buat filter/scoping ADMIN_TOKO
+  reason      String? // wajib diisi untuk Edit data yang sudah CAIR/CAIR FINAL
+  before      Json? // snapshot field yang berubah sebelum
+  after       Json? // snapshot field yang berubah sesudah
+  createdAt   DateTime    @default(now())
+
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([storeId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model Store {
@@ -159,6 +192,9 @@ model Order {
   rawRow             String? // JSON string baris asli untuk audit/debug
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
+  updatedById        String? // user terakhir yang mengedit (lihat AuditLog untuk detail perubahan)
+  deletedAt          DateTime? // soft delete — null = aktif/tampil. Baris tetap ada di DB untuk audit/rollback.
+  deletedById        String?
 
   store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   product   Product?  @relation(fields: [productId], references: [id])
@@ -167,6 +203,7 @@ model Order {
   @@index([storeId, status])
   @@index([storeId, periodKey])
   @@index([orderSn])
+  @@index([deletedAt])
   @@map("orders")
 }
 
@@ -225,12 +262,15 @@ model IncomeImport {
   isSuperseded   Boolean   @default(false)
   supersededAt   DateTime?
   createdAt      DateTime  @default(now())
+  deletedAt      DateTime? // soft delete — import & entries-nya tidak lagi dipakai reconcile()
+  deletedById    String?
 
   store      Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   uploadedBy User          @relation(fields: [uploadedById], references: [id])
   entries    IncomeEntry[]
 
   @@index([storeId, isSuperseded])
+  @@index([deletedAt])
   @@map("income_imports")
 }
 

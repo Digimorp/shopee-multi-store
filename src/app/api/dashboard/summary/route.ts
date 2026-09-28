@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const { storeIds, from, to } = await resolveFilters(req, user);
   if (storeIds.length === 0) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const baseWhere = { storeId: { in: storeIds }, orderCreatedAt: { gte: from, lte: to } };
+  const baseWhere = { storeId: { in: storeIds }, orderCreatedAt: { gte: from, lte: to }, deletedAt: null };
 
   const [omzetBruto, uangMengambang, transit, profitHpp, profitAgen, recon] = await Promise.all([
     prisma.order.aggregate({

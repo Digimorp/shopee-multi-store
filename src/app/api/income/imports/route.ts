@@ -31,10 +31,12 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     imports: imports.map((i) => ({
       id: i.id,
+      storeId: i.storeId,
       store: i.store.code,
       fileName: i.fileName,
       version: i.version,
       isSuperseded: i.isSuperseded,
+      isDeleted: i.deletedAt != null,
       periodStart: i.periodStart,
       periodEnd: i.periodEnd,
       orderRows: i.orderRows,

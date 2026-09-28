@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const CATEGORIES = ["CANCEL", "RETUR", "TRANSIT", "PENDING_SETTLEMENT", "SELESAI"] as const;
 
@@ -10,6 +11,11 @@ export default function StatusMappingPage() {
   const [mappings, setMappings] = useState<any[]>([]);
   const [form, setForm] = useState({ pattern: "", category: "SELESAI", priority: "50", note: "" });
   const [err, setErr] = useState("");
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ category: "SELESAI", priority: "50", note: "" });
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleting, setDeleting] = useState<any | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   function load() {
     fetch("/api/status-mappings")
@@ -40,8 +46,35 @@ export default function StatusMappingPage() {
     load();
   }
 
-  async function remove(id: string) {
-    await fetch(`/api/status-mappings?id=${id}`, { method: "DELETE" });
+  function openEdit(m: any) {
+    setEditing(m);
+    setEditForm({ category: m.category, priority: String(m.priority), note: m.note ?? "" });
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    setEditSaving(true);
+    await fetch("/api/status-mappings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editing.id,
+        category: editForm.category,
+        priority: parseInt(editForm.priority) || 100,
+        note: editForm.note || null,
+      }),
+    });
+    setEditSaving(false);
+    setEditing(null);
+    load();
+  }
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    await fetch(`/api/status-mappings?id=${deleting.id}`, { method: "DELETE" });
+    setDeleteBusy(false);
+    setDeleting(null);
     load();
   }
 
@@ -109,14 +142,76 @@ export default function StatusMappingPage() {
           { header: "Aktif", render: (r) => (r.isActive ? "Ya" : "Tidak") },
           {
             header: "Aksi",
-            render: (r) => (
-              <button onClick={() => remove(r.id)} className="btn-chip btn-chip-danger">
-                Hapus
-              </button>
-            ),
+            render: (r) =>
+              r.isActive ? (
+                <div className="flex gap-1.5">
+                  <button onClick={() => openEdit(r)} className="btn-chip">
+                    Edit
+                  </button>
+                  <button onClick={() => setDeleting(r)} className="btn-chip btn-chip-danger">
+                    Hapus
+                  </button>
+                </div>
+              ) : (
+                <span className="text-gray-300">—</span>
+              ),
           },
         ]}
       />
+
+      {editing && (
+        <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-4" onMouseDown={() => setEditing(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card-lg" onMouseDown={(e) => e.stopPropagation()}>
+            <p className="text-sm font-semibold text-gray-800">
+              Edit Mapping — <code className="text-xs">{editing.pattern}</code>
+            </p>
+            <div className="mt-3 grid gap-3">
+              <select
+                value={editForm.category}
+                onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                placeholder="Priority"
+                value={editForm.priority}
+                onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              />
+              <input
+                placeholder="Catatan (opsional)"
+                value={editForm.note}
+                onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setEditing(null)} className="btn-ghost" disabled={editSaving}>
+                Batal
+              </button>
+              <button onClick={saveEdit} disabled={editSaving} className="btn-primary disabled:opacity-50">
+                {editSaving ? "Menyimpan…" : "Simpan Perubahan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Hapus mapping "${deleting.pattern}"?`}
+          message="Aksi ini bisa dibatalkan lewat log admin (mapping disembunyikan, bukan dihapus permanen dari database)."
+          busy={deleteBusy}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
+        />
+      )}
     </div>
   );
 }

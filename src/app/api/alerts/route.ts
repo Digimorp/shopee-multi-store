@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const { storeIds, from, to } = await resolveFilters(req, user);
   if (storeIds.length === 0) return NextResponse.json({ items: [], count: 0 });
 
-  const where = { storeId: { in: storeIds }, orderCreatedAt: { gte: from, lte: to } };
+  const where = { storeId: { in: storeIds }, orderCreatedAt: { gte: from, lte: to }, deletedAt: null };
 
   const [returBelum, returTotal, mengambang] = await Promise.all([
     prisma.order.count({ where: { ...where, status: OrderStatus.RETUR, returCondition: null } }),

@@ -23,6 +23,7 @@ const SETTINGS_MENU: { href: string; label: string; icon: IconName; ownerOnly: b
   { href: "/settings/products", label: "Master Produk & HPP", icon: "tag", ownerOnly: true },
   { href: "/settings/status-mapping", label: "Mapping Status Pesanan", icon: "sliders", ownerOnly: true },
   { href: "/settings/periods", label: "Period & Cut-Off", icon: "calendar", ownerOnly: true },
+  { href: "/settings/audit-log", label: "Log Aktivitas Admin", icon: "fileText", ownerOnly: true },
 ];
 
 // Label pemisah antar-grup menu di sidebar. Dibedakan jelas dari menu item:

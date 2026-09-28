@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const status = TAB_STATUS[tab] ?? OrderStatus.SELESAI;
 
   const orders = await prisma.order.findMany({
-    where: { storeId: { in: storeIds }, orderCreatedAt: { gte: from, lte: to }, status },
+    where: { storeId: { in: storeIds }, orderCreatedAt: { gte: from, lte: to }, status, deletedAt: null },
     include: { store: { select: { code: true, name: true } } },
     orderBy: { orderCreatedAt: "desc" },
   });

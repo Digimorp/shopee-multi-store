@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { logPriceChangeIfNeeded } from "@/lib/priceLog";
+import { logAudit } from "@/lib/audit";
 
 // Master produk GLOBAL (tidak per toko). Semua user login bisa melihat daftar,
 // hanya OWNER yang boleh menambah / mengubah / menonaktifkan.
@@ -39,6 +40,19 @@ export async function POST(req: NextRequest) {
   });
 
   const logged = await logPriceChangeIfNeeded({ existing, newHpp, newCatalog, changedById: user.id, source: "manual" });
+
+  if (existing && (existing.name !== name || existing.hpp !== newHpp || existing.catalogPrice !== newCatalog)) {
+    await logAudit({
+      actor: user,
+      action: "EDIT",
+      entityType: "Product",
+      entityId: product.id,
+      entityLabel: `${sku} - ${name}`,
+      before: { name: existing.name, hpp: existing.hpp, catalogPrice: existing.catalogPrice },
+      after: { name, hpp: newHpp, catalogPrice: newCatalog },
+    });
+  }
+
   return NextResponse.json({ product, priceChangeLogged: logged });
 }
 
@@ -54,8 +68,18 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id wajib" }, { status: 400 });
 
   const product = await prisma.product.findUnique({ where: { id } });
-  if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!product || !product.isActive) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.product.update({ where: { id }, data: { isActive: false } });
+
+  await logAudit({
+    actor: user,
+    action: "DELETE",
+    entityType: "Product",
+    entityId: product.id,
+    entityLabel: `${product.sku} - ${product.name}`,
+    before: product,
+  });
+
   return NextResponse.json({ ok: true });
 }

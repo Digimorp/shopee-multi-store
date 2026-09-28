@@ -34,6 +34,7 @@ export function datasetToPdfRows(ds: ReportDataset): (string | number)[][] {
 const baseWhere = (f: ReportFilter): Prisma.OrderWhereInput => ({
   storeId: { in: f.storeIds },
   orderCreatedAt: { gte: f.from, lte: f.to },
+  deletedAt: null,
 });
 
 // ---------------------------------------------------------------------------
@@ -310,7 +311,7 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
   const setting = await prisma.periodSetting.findFirst();
   const cutoffDay = setting?.cutoffDay ?? 25;
   const orders = await prisma.order.findMany({
-    where: { storeId: { in: f.storeIds }, status: { not: OrderStatus.CANCEL } },
+    where: { storeId: { in: f.storeIds }, status: { not: OrderStatus.CANCEL }, deletedAt: null },
     select: { orderCreatedAt: true, grossOmzet: true, profitHpp: true, status: true, periodKey: true },
   });
 

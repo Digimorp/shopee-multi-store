@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const order = await prisma.order.findUnique({ where: { id: params.id } });
-  if (!order) return NextResponse.json({ error: "Order tidak ditemukan" }, { status: 404 });
+  if (!order || order.deletedAt) return NextResponse.json({ error: "Order tidak ditemukan" }, { status: 404 });
   if (order.status !== OrderStatus.RETUR) {
     return NextResponse.json({ error: "Order ini bukan status Retur" }, { status: 400 });
   }

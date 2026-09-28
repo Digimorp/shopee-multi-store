@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const cutoffDay = period?.cutoffDay ?? 25;
 
   const orders = await prisma.order.findMany({
-    where: { storeId: { in: storeIds }, status: { not: OrderStatus.CANCEL } },
+    where: { storeId: { in: storeIds }, status: { not: OrderStatus.CANCEL }, deletedAt: null },
     select: { orderCreatedAt: true, grossOmzet: true, profitHpp: true, status: true, periodKey: true },
   });
 

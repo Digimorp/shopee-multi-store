@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
@@ -52,6 +53,9 @@ export async function PUT(req: NextRequest) {
   const body = await req.json();
   if (!body.id) return NextResponse.json({ error: "id wajib" }, { status: 400 });
 
+  const existing = await prisma.user.findUnique({ where: { id: body.id } });
+  if (!existing) return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+
   const data: any = { name: body.name, role: body.role, isActive: body.isActive };
   if (body.password) data.passwordHash = await bcrypt.hash(body.password, 10);
 
@@ -64,6 +68,16 @@ export async function PUT(req: NextRequest) {
     }
   }
 
+  await logAudit({
+    actor: user,
+    action: "EDIT",
+    entityType: "User",
+    entityId: existing.id,
+    entityLabel: existing.email,
+    before: { name: existing.name, role: existing.role, isActive: existing.isActive },
+    after: { name: body.name, role: body.role, isActive: body.isActive },
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -75,6 +89,22 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id wajib" }, { status: 400 });
 
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing || !existing.isActive) return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+  if (existing.id === user.id) {
+    return NextResponse.json({ error: "Tidak bisa menonaktifkan akun sendiri" }, { status: 400 });
+  }
+
   await prisma.user.update({ where: { id }, data: { isActive: false } });
+
+  await logAudit({
+    actor: user,
+    action: "DELETE",
+    entityType: "User",
+    entityId: existing.id,
+    entityLabel: existing.email,
+    before: { name: existing.name, role: existing.role, isActive: existing.isActive },
+  });
+
   return NextResponse.json({ ok: true });
 }

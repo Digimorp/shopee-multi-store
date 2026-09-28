@@ -6,6 +6,8 @@ import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
 import StatusBadge from "@/components/StatusBadge";
 import ExportButtons from "@/components/ExportButtons";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import OrderEditModal, { type OrderEditRow } from "@/components/OrderEditModal";
 import { formatDate, formatRupiah, formatNumber } from "@/lib/format";
 
 export default function ReturCancelPage() {
@@ -15,6 +17,10 @@ export default function ReturCancelPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<any>(null);
+  const [editing, setEditing] = useState<OrderEditRow | null>(null);
+  const [deleting, setDeleting] = useState<any | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const load = useCallback(() => {
     const status = tab === "cancel" ? "CANCEL" : "RETUR";
@@ -37,6 +43,21 @@ export default function ReturCancelPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ condition }),
     });
+    load();
+  }
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    const res = await fetch(`/api/orders/${deleting.id}`, { method: "DELETE" });
+    setDeleteBusy(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setDeleteError(d.error ?? "Gagal menghapus pesanan.");
+      return;
+    }
+    setDeleting(null);
     load();
   }
 
@@ -123,8 +144,49 @@ export default function ReturCancelPage() {
                 },
               ]
             : []),
+          {
+            header: "Aksi",
+            render: (r: any) => (
+              <div className="flex gap-1.5">
+                <button onClick={() => setEditing(r)} className="btn-chip">
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    setDeleting(r);
+                    setDeleteError("");
+                  }}
+                  className="btn-chip btn-chip-danger"
+                >
+                  Hapus
+                </button>
+              </div>
+            ),
+          },
         ]}
       />
+
+      {editing && (
+        <OrderEditModal
+          order={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            load();
+          }}
+        />
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Hapus pesanan ${deleting.orderSn}?`}
+          message="Aksi ini bisa dibatalkan lewat log admin (data tidak dihapus permanen dari database, hanya disembunyikan dari laporan)."
+          strongWarning={deleteError || undefined}
+          busy={deleteBusy}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
+        />
+      )}
     </div>
   );
 }

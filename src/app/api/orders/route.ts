@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   const where = {
     storeId: { in: storeIds },
     orderCreatedAt: { gte: from, lte: to },
+    deletedAt: null,
     ...(status ? { status } : {}),
   };
 

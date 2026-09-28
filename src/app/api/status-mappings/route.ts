@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit";
 import { OrderStatus } from "@prisma/client";
 import { normalizeStatus, DEFAULT_STATUS_RULES } from "@/lib/classification";
 
@@ -47,6 +48,9 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "category tidak valid" }, { status: 400 });
   }
 
+  const existing = await prisma.statusMapping.findUnique({ where: { id: body.id } });
+  if (!existing) return NextResponse.json({ error: "Mapping tidak ditemukan" }, { status: 404 });
+
   const mapping = await prisma.statusMapping.update({
     where: { id: body.id },
     data: {
@@ -56,9 +60,22 @@ export async function PUT(req: NextRequest) {
       isActive: body.isActive ?? undefined,
     },
   });
+
+  await logAudit({
+    actor: user,
+    action: "EDIT",
+    entityType: "StatusMapping",
+    entityId: mapping.id,
+    entityLabel: mapping.pattern,
+    before: { category: existing.category, priority: existing.priority, note: existing.note, isActive: existing.isActive },
+    after: { category: mapping.category, priority: mapping.priority, note: mapping.note, isActive: mapping.isActive },
+  });
+
   return NextResponse.json({ mapping });
 }
 
+// Soft delete — pattern lama disembunyikan dari klasifikasi (upload/route.ts sudah filter
+// isActive:true) tapi tetap ada di DB untuk audit/rollback, sesuai aturan soft-delete umum.
 export async function DELETE(req: NextRequest) {
   const user = await getSessionUser();
   if (!user || user.role !== "OWNER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -66,6 +83,20 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id wajib" }, { status: 400 });
-  await prisma.statusMapping.delete({ where: { id } });
+
+  const existing = await prisma.statusMapping.findUnique({ where: { id } });
+  if (!existing || !existing.isActive) return NextResponse.json({ error: "Mapping tidak ditemukan" }, { status: 404 });
+
+  await prisma.statusMapping.update({ where: { id }, data: { isActive: false } });
+
+  await logAudit({
+    actor: user,
+    action: "DELETE",
+    entityType: "StatusMapping",
+    entityId: existing.id,
+    entityLabel: existing.pattern,
+    before: { category: existing.category, priority: existing.priority, note: existing.note },
+  });
+
   return NextResponse.json({ ok: true });
 }

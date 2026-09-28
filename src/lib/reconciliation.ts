@@ -88,6 +88,41 @@ export function deriveStage(
 
 type IncomeAgg = { amount: number; releasedAt: Date | null; importAt: Date };
 
+export type OrderLockInfo = { stage: SettlementStage; locked: boolean };
+
+/**
+ * Status kunci rekonsiliasi untuk 1 No. Pesanan — dipakai gate Edit/Delete Order.
+ * `locked` = true kalau stage CAIR atau CAIR_FINAL (sudah ada Income Report yang match):
+ * Delete wajib diblokir, Edit boleh tapi wajib isi alasan (lihat aturan di route handler).
+ */
+export async function getOrderLockInfo(orderSn: string, storeId: string): Promise<OrderLockInfo> {
+  const rows = await prisma.order.findMany({
+    where: { orderSn, storeId, deletedAt: null },
+    select: { status: true, orderCreatedAt: true, completedAt: true, settlementDate: true },
+  });
+  if (rows.length === 0) return { stage: "MENUNGGU_CAIR", locked: false };
+
+  let status = rows[0].status;
+  let orderCreatedAt = rows[0].orderCreatedAt;
+  let completedAt = rows[0].completedAt;
+  let settlementDate = rows[0].settlementDate;
+  for (const r of rows.slice(1)) {
+    if (STATUS_RANK[r.status] > STATUS_RANK[status]) status = r.status;
+    if (r.orderCreatedAt < orderCreatedAt) orderCreatedAt = r.orderCreatedAt;
+    if (r.completedAt && (!completedAt || r.completedAt > completedAt)) completedAt = r.completedAt;
+    if (r.settlementDate && (!settlementDate || r.settlementDate > settlementDate)) settlementDate = r.settlementDate;
+  }
+
+  const entries = await prisma.incomeEntry.findMany({
+    where: { orderSn, storeId, type: "ORDER", import: { isSuperseded: false, deletedAt: null } },
+    select: { releasedAt: true },
+  });
+  const income = entries.length > 0 ? { releasedAt: entries[0].releasedAt } : null;
+
+  const stage = deriveStage({ status, orderCreatedAt, completedAt, settlementDate }, income);
+  return { stage, locked: stage === "CAIR" || stage === "CAIR_FINAL" };
+}
+
 export async function reconcile(f: ReconFilter): Promise<ReconResult> {
   const now = new Date();
 
@@ -96,6 +131,7 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
       storeId: { in: f.storeIds },
       orderCreatedAt: { gte: f.from, lte: f.to },
       status: { not: OrderStatus.CANCEL },
+      deletedAt: null,
     },
     include: { store: { select: { code: true } } },
     orderBy: { orderCreatedAt: "desc" },
@@ -143,14 +179,17 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
   // Semua orderSn milik toko-toko ini (lintas periode) — untuk deteksi income yang
   // ordernya ada tapi di luar periode (jangan salah tandai "belum ketemu").
   const allOrderSns = new Set(
-    (await prisma.order.findMany({ where: { storeId: { in: f.storeIds } }, select: { orderSn: true } })).map(
-      (o) => o.orderSn
-    )
+    (
+      await prisma.order.findMany({
+        where: { storeId: { in: f.storeIds }, deletedAt: null },
+        select: { orderSn: true },
+      })
+    ).map((o) => o.orderSn)
   );
 
-  // Entri Income Report AKTIF (import non-superseded)
+  // Entri Income Report AKTIF (import non-superseded, non-deleted)
   const incomeEntries = await prisma.incomeEntry.findMany({
-    where: { storeId: { in: f.storeIds }, import: { isSuperseded: false } },
+    where: { storeId: { in: f.storeIds }, import: { isSuperseded: false, deletedAt: null } },
     include: { import: { select: { createdAt: true } } },
   });
 

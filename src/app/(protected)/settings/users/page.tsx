@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type { StoreOption } from "@/types";
 
 type EditState = {
@@ -21,6 +22,8 @@ export default function SettingsUsersPage() {
   const [saving, setSaving] = useState(false);
   const [edit, setEdit] = useState<EditState | null>(null);
   const [editSaving, setEditSaving] = useState(false);
+  const [deactivating, setDeactivating] = useState<any | null>(null);
+  const [deactivateBusy, setDeactivateBusy] = useState(false);
 
   function load() {
     fetch("/api/users").then((r) => r.json()).then((d) => setUsers(d.users ?? []));
@@ -48,6 +51,14 @@ export default function SettingsUsersPage() {
       body: JSON.stringify({ id: u.id, name: u.name, role: u.role, isActive: !u.isActive }),
     });
     load();
+  }
+
+  async function confirmDeactivate() {
+    if (!deactivating) return;
+    setDeactivateBusy(true);
+    await toggleActive(deactivating);
+    setDeactivateBusy(false);
+    setDeactivating(null);
   }
 
   function openEdit(u: any) {
@@ -149,7 +160,10 @@ export default function SettingsUsersPage() {
                 <button onClick={() => openEdit(r)} className="btn-chip">
                   Edit
                 </button>
-                <button onClick={() => toggleActive(r)} className="btn-chip">
+                <button
+                  onClick={() => (r.isActive ? setDeactivating(r) : toggleActive(r))}
+                  className={`btn-chip ${r.isActive ? "btn-chip-danger" : ""}`}
+                >
                   {r.isActive ? "Nonaktifkan" : "Aktifkan"}
                 </button>
               </div>
@@ -230,6 +244,17 @@ export default function SettingsUsersPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {deactivating && (
+        <ConfirmDialog
+          title={`Nonaktifkan user ${deactivating.email}?`}
+          message="Yakin nonaktifkan user ini? Aksi ini bisa dibatalkan lewat log admin (user disembunyikan dari akses, bukan dihapus permanen dari database) — user tidak akan bisa login lagi sampai diaktifkan kembali."
+          confirmLabel="Ya, Nonaktifkan"
+          busy={deactivateBusy}
+          onConfirm={confirmDeactivate}
+          onCancel={() => setDeactivating(null)}
+        />
       )}
     </div>
   );

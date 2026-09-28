@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import OrderEditModal, { type OrderEditRow } from "@/components/OrderEditModal";
 import { Icon } from "@/components/icons";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -15,10 +17,13 @@ export default function RecentOrdersCard() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<OrderEditRow | null>(null);
+  const [deleting, setDeleting] = useState<any | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
-  useEffect(() => {
+  function load() {
     setLoading(true);
-    setPage(1);
     fetch(`/api/orders?${qs}&page=1`)
       .then((r) => r.json())
       .then((d) => {
@@ -26,10 +31,31 @@ export default function RecentOrdersCard() {
         setTotal(d.total ?? 0);
       })
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    setPage(1);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qs]);
 
   const totalPages = Math.max(1, Math.ceil(all.length / PER));
   const rows = useMemo(() => all.slice((page - 1) * PER, page * PER), [all, page]);
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    const res = await fetch(`/api/orders/${deleting.id}`, { method: "DELETE" });
+    setDeleteBusy(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setDeleteError(d.error ?? "Gagal menghapus pesanan.");
+      return;
+    }
+    setDeleting(null);
+    load();
+  }
 
   return (
     <div className="card p-5">
@@ -49,19 +75,20 @@ export default function RecentOrdersCard() {
               <th className="py-2 pr-3">Toko</th>
               <th className="py-2 pr-3">Produk</th>
               <th className="py-2 pr-3 text-right">Qty</th>
-              <th className="py-2">Status</th>
+              <th className="py-2 pr-3">Status</th>
+              <th className="py-2">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {loading ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
+                <td colSpan={7} className="py-8 text-center text-sm text-gray-400">
                   Memuat…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
+                <td colSpan={7} className="py-8 text-center text-sm text-gray-400">
                   Belum ada pesanan.
                 </td>
               </tr>
@@ -73,8 +100,25 @@ export default function RecentOrdersCard() {
                   <td className="whitespace-nowrap py-2.5 pr-3 text-gray-500">{o.store?.code}</td>
                   <td className="max-w-[180px] truncate py-2.5 pr-3 text-gray-700">{o.productName}</td>
                   <td className="py-2.5 pr-3 text-right text-gray-700">{o.qty}</td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-3">
                     <StatusBadge status={o.status} />
+                  </td>
+                  <td className="py-2.5">
+                    <div className="flex gap-1">
+                      <button onClick={() => setEditing(o)} className="btn-chip" title="Edit">
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleting(o);
+                          setDeleteError("");
+                        }}
+                        className="btn-chip btn-chip-danger"
+                        title="Hapus"
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -104,6 +148,28 @@ export default function RecentOrdersCard() {
           </button>
         </div>
       </div>
+
+      {editing && (
+        <OrderEditModal
+          order={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            load();
+          }}
+        />
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Hapus pesanan ${deleting.orderSn}?`}
+          message="Aksi ini bisa dibatalkan lewat log admin (data tidak dihapus permanen dari database, hanya disembunyikan dari laporan)."
+          strongWarning={deleteError || undefined}
+          busy={deleteBusy}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
+        />
+      )}
     </div>
   );
 }

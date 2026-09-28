@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
       storeId: { in: storeIds },
       orderCreatedAt: { gte: from, lte: to },
       status: { in: [OrderStatus.SELESAI, OrderStatus.PENDING_SETTLEMENT] },
+      deletedAt: null,
     },
     select: {
       sku: true,
