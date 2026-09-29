@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, assertStoreAccess } from "@/lib/rbac";
 import { parseIncomeReportFile } from "@/lib/parseIncomeReport";
+import { analyzeUploadAnomalies, type AnomalyRow } from "@/lib/aiAnomalyCheck";
 import { Prisma } from "@prisma/client";
 
 // Import Income Report / Laporan Pendapatan Shopee — SATU FILE = SATU TOKO.
@@ -49,6 +50,29 @@ export async function POST(req: NextRequest) {
   }
 
   const nextVersion = superseded.length ? Math.max(...superseded.map((s) => s.version)) + 1 : 1;
+
+  // AI Anomaly Check — dijalankan SETELAH parsing berhasil, SEBELUM entries di-commit ke DB.
+  // Fail-open: kalau AI gagal/timeout, proses import di bawah tetap lanjut seperti biasa.
+  const store = await prisma.store.findUnique({ where: { id: storeId } });
+  const anomalyRows: AnomalyRow[] = parsed.entries.map((e) => ({
+    rowRef: e.orderSn ?? "(tanpa No. Pesanan)",
+    groupKey: e.type,
+    numericValues: { amount: e.amount },
+    statusLabel: `${e.type}:${e.direction}`,
+    date: e.releasedAt,
+  }));
+  const periodLabel =
+    parsed.periodStart && parsed.periodEnd
+      ? `${parsed.periodStart.toISOString().slice(0, 10)} – ${parsed.periodEnd.toISOString().slice(0, 10)}`
+      : undefined;
+  const aiResult = await analyzeUploadAnomalies(anomalyRows, {
+    kind: "income",
+    storeName: store ? `${store.code} - ${store.name}` : storeId,
+    fileName: file.name,
+    periodLabel,
+    periodStart: parsed.periodStart,
+    periodEnd: parsed.periodEnd,
+  });
 
   const result = await prisma.$transaction(async (tx) => {
     if (superseded.length) {
@@ -99,5 +123,8 @@ export async function POST(req: NextRequest) {
     periodStart: parsed.periodStart,
     periodEnd: parsed.periodEnd,
     parseErrors: parsed.errors.slice(0, 20),
+    aiAnomalies: aiResult.anomalies,
+    aiCheckSkipped: aiResult.aiCheckSkipped,
+    aiSummary: aiResult.summary,
   });
 }

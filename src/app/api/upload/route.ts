@@ -5,7 +5,8 @@ import { parseShopeeFile } from "@/lib/parseShopee";
 import { classifyStatus, DEFAULT_STATUS_RULES, type StatusRule } from "@/lib/classification";
 import { calcProfitHpp, calcProfitAgen } from "@/lib/profit";
 import { getPeriodForDate } from "@/lib/period";
-import { OrderStatus } from "@prisma/client";
+import { analyzeUploadAnomalies, type AnomalyRow, type KnownIssue } from "@/lib/aiAnomalyCheck";
+import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
@@ -52,6 +53,44 @@ export async function POST(req: NextRequest) {
     (row.skuInduk ? productMap.get(row.skuInduk) : undefined) ||
     productByName.get(row.productName.trim().toLowerCase());
 
+  // AI Anomaly Check — dijalankan SETELAH parsing berhasil, SEBELUM data di-commit ke DB.
+  // Fail-open: kalau AI gagal/timeout, proses upload di bawah tetap lanjut seperti biasa.
+  const store = await prisma.store.findUnique({ where: { id: storeId } });
+  const anomalyRows: AnomalyRow[] = rows.map((row) => {
+    const issues: KnownIssue[] = [];
+    if (!matchProduct(row)) {
+      issues.push({
+        field: "sku",
+        message: `SKU/produk "${row.sku || row.skuInduk || row.productName}" tidak ditemukan di Master Produk.`,
+        severity: "medium",
+      });
+    }
+    return {
+      rowRef: row.orderSn,
+      groupKey: row.sku || row.skuInduk || row.productName,
+      numericValues: {
+        qty: row.qty,
+        unitPrice: row.unitPrice,
+        subtotal: row.subtotal,
+        totalPayment: row.totalPayment,
+        netSettlementRaw: row.netSettlementRaw,
+      },
+      statusLabel: row.rawStatus,
+      date: row.orderCreatedAt,
+      issues,
+    };
+  });
+  const orderDates = rows.map((r) => r.orderCreatedAt.getTime());
+  const periodLabel = orderDates.length
+    ? `${new Date(Math.min(...orderDates)).toISOString().slice(0, 10)} – ${new Date(Math.max(...orderDates)).toISOString().slice(0, 10)}`
+    : undefined;
+  const aiResult = await analyzeUploadAnomalies(anomalyRows, {
+    kind: "order",
+    storeName: store ? `${store.code} - ${store.name}` : storeId,
+    fileName: file.name,
+    periodLabel,
+  });
+
   const uploadLog = await prisma.uploadLog.create({
     data: {
       storeId,
@@ -61,6 +100,7 @@ export async function POST(req: NextRequest) {
       successRows: 0,
       failedRows: errors.length,
       errorLog: errors.length ? JSON.stringify(errors.slice(0, 50)) : null,
+      aiCheckResult: aiResult as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -144,5 +184,8 @@ export async function POST(req: NextRequest) {
     skippedLocked,
     skippedOrFailed: totalRows - success,
     parseErrors: errors.slice(0, 20),
+    aiAnomalies: aiResult.anomalies,
+    aiCheckSkipped: aiResult.aiCheckSkipped,
+    aiSummary: aiResult.summary,
   });
 }

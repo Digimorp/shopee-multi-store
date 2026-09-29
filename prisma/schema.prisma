@@ -159,6 +159,7 @@ model UploadLog {
   successRows Int
   failedRows  Int
   errorLog    String? // JSON string ringkasan error per baris
+  aiCheckResult Json? // hasil AI Anomaly Check (anomalies[] + summary + aiCheckSkipped) — info only, tidak mempengaruhi commit
   createdAt   DateTime @default(now())
   store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   admin       User     @relation(fields: [adminUserId], references: [id])

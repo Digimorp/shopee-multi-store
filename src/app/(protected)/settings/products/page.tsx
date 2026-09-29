@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import AiAnomalyPanel from "@/components/AiAnomalyPanel";
 import { formatRupiah, formatDate } from "@/lib/format";
 
 export default function SettingsProductsPage() {
@@ -11,6 +12,7 @@ export default function SettingsProductsPage() {
   const [form, setForm] = useState({ sku: "", name: "", hpp: "", catalogPrice: "" });
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importMsg, setImportMsg] = useState("");
+  const [importResult, setImportResult] = useState<any>(null);
   const [err, setErr] = useState("");
   const [editing, setEditing] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({ name: "", hpp: "", catalogPrice: "" });
@@ -94,6 +96,7 @@ export default function SettingsProductsPage() {
     e.preventDefault();
     if (!importFile) return;
     setImportMsg("");
+    setImportResult(null);
     const fd = new FormData();
     fd.append("file", importFile);
     const res = await fetch("/api/products/import", { method: "POST", body: fd });
@@ -103,6 +106,7 @@ export default function SettingsProductsPage() {
       return;
     }
     setImportMsg(`Berhasil impor ${data.success} produk, ${data.failed} gagal.`);
+    setImportResult(data);
     loadProducts();
   }
 
@@ -133,6 +137,14 @@ export default function SettingsProductsPage() {
         </button>
         {importMsg && <span className="text-sm text-emerald-700">{importMsg}</span>}
       </form>
+
+      {importResult && (
+        <AiAnomalyPanel
+          anomalies={importResult.aiAnomalies ?? []}
+          summary={importResult.aiSummary}
+          aiCheckSkipped={importResult.aiCheckSkipped}
+        />
+      )}
 
       <DataTable
         rowKey={(r: any) => r.id}

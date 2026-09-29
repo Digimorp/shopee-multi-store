@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { StoreOption } from "@/types";
+import AiAnomalyPanel from "@/components/AiAnomalyPanel";
 
 export default function UploadForm({
   stores,
@@ -108,6 +109,13 @@ export default function UploadForm({
         <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
           {(formatResult ?? defaultResultText)(result)}
         </div>
+      )}
+      {result && (
+        <AiAnomalyPanel
+          anomalies={result.aiAnomalies ?? []}
+          summary={result.aiSummary}
+          aiCheckSkipped={result.aiCheckSkipped}
+        />
       )}
     </form>
   );
