@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
 import { productGroupKey } from "@/lib/profit";
+import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { OrderStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
@@ -20,23 +21,30 @@ export async function GET(req: NextRequest) {
       deletedAt: null,
     },
     select: {
+      orderSn: true,
       sku: true,
       productId: true,
       productName: true,
       qty: true,
       grossOmzet: true,
       netSettlement: true,
-      profitHpp: true,
+      hppSnapshot: true,
       profitAgen: true,
       status: true,
       store: { select: { code: true, name: true } },
     },
   });
 
-  // Unit Keluar/Omzet Bruto/Uang Cair = HANYA status Selesai (barang benar-benar laku & cair,
-  // sama seperti Analisis Barang Keluar dulu). Profit HPP/Profit Agen tetap dari SELESAI +
-  // PENDING_SETTLEMENT (profitHpp sudah 0 di DB utk baris non-Selesai, jadi totalnya sama saja;
-  // profitAgen memang direalisasi juga saat PENDING_SETTLEMENT — lihat src/app/api/upload/route.ts).
+  // Uang Cair/Profit HPP HARUS pakai nilai AKTUAL (Income Report yang sudah match lewat
+  // reconcile() -- sama seperti /rekonsiliasi), BUKAN Order.netSettlement yang cuma estimasi
+  // dari file Pesanan (lihat src/lib/parseShopee.ts: netSettlementRaw = estimasi, angka
+  // aktual baru datang dari Income Report). Order multi-item (1 No. Pesanan, banyak SKU)
+  // payout-nya digabung -> dialokasikan proporsional per baris SKU lewat allocateActual().
+  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile({ storeIds, from, to }));
+
+  // Unit Keluar/Omzet Bruto = HANYA status Selesai (barang benar-benar laku, sama seperti
+  // Analisis Barang Keluar dulu). Profit Agen tetap dari SELESAI + PENDING_SETTLEMENT dan
+  // independen dari uang cair (benchmark harga agen, bukan payout riil — lihat src/lib/profit.ts).
   // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —
   // order yang belum ter-link Master Produk (productId null & sku kosong) tetap terpisah
   // per nama produk, tidak collapse jadi satu baris gabungan.
@@ -51,9 +59,17 @@ export async function GET(req: NextRequest) {
     if (o.status === OrderStatus.SELESAI) {
       cur.qty += o.qty;
       cur.omzet += o.grossOmzet;
-      cur.uangCair += o.netSettlement;
+
+      const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
+      const groupAktual = aktualByOrderSn.get(o.orderSn);
+      const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
+      if (lineAktual != null) {
+        cur.uangCair += lineAktual;
+        cur.profitHpp += lineAktual - o.hppSnapshot * o.qty;
+      }
+      // lineAktual null = order ini belum match ke Income Report (belum cair) -> tidak
+      // dihitung ke Uang Cair/Profit HPP sama sekali (bukan ditandai 0, tapi excluded).
     }
-    cur.profitHpp += o.profitHpp;
     cur.profitAgen += o.profitAgen;
     bySku.set(key, cur);
   }

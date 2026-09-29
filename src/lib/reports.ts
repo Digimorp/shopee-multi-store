@@ -2,6 +2,7 @@ import { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getPeriodForDate, formatPeriodLabel, parsePeriodKey } from "@/lib/period";
 import { productGroupKey } from "@/lib/profit";
+import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 
 export type ColKind = "text" | "int" | "money" | "pct";
 export type ReportColumn = { key: string; header: string; width: number; align?: "left" | "right"; kind?: ColKind };
@@ -88,12 +89,17 @@ export async function datasetCashflow(f: ReportFilter, tab: string): Promise<Rep
 export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status: { in: [OrderStatus.SELESAI, OrderStatus.PENDING_SETTLEMENT] } },
-    select: { sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, profitHpp: true, profitAgen: true, status: true },
+    select: { orderSn: true, sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, profitAgen: true, status: true },
   });
   // Sama seperti route API-nya (src/app/api/reports/profit/route.ts): Unit Keluar/Omzet
-  // Bruto/Uang Cair hanya dari status Selesai; Profit HPP/Profit Agen dari Selesai + Pending.
+  // Bruto hanya dari status Selesai; Profit Agen dari Selesai + Pending (independen dari
+  // uang cair). Uang Cair/Profit HPP HARUS pakai nilai AKTUAL dari Income Report yang sudah
+  // match lewat reconcile() (sama seperti /rekonsiliasi), BUKAN Order.netSettlement yang
+  // cuma estimasi dari file Pesanan — order multi-item dialokasikan proporsional per baris
+  // SKU lewat allocateActual(); order yang belum match (belum cair) tidak dihitung.
   // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —
   // order yang belum ter-link Master Produk tetap terpisah per nama produk.
+  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile(f));
   const bySku = new Map<
     string,
     { sku: string; produk: string; qty: number; omzet: number; uangCair: number; profitHpp: number; profitAgen: number }
@@ -105,9 +111,15 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
     if (o.status === OrderStatus.SELESAI) {
       cur.qty += o.qty;
       cur.omzet += o.grossOmzet;
-      cur.uangCair += o.netSettlement;
+
+      const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
+      const groupAktual = aktualByOrderSn.get(o.orderSn);
+      const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
+      if (lineAktual != null) {
+        cur.uangCair += lineAktual;
+        cur.profitHpp += lineAktual - o.hppSnapshot * o.qty;
+      }
     }
-    cur.profitHpp += o.profitHpp;
     cur.profitAgen += o.profitAgen;
     bySku.set(key, cur);
   }
@@ -148,18 +160,27 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
 export async function datasetBarangKeluar(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status: OrderStatus.SELESAI },
-    select: { sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, profitHpp: true },
+    select: { orderSn: true, sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, hppSnapshot: true },
   });
+  // Uang Cair/Profit HPP HARUS pakai nilai AKTUAL dari Income Report yang sudah match lewat
+  // reconcile(), BUKAN Order.netSettlement yang cuma estimasi — lihat datasetProfit() di atas.
   // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —
   // order yang belum ter-link Master Produk tetap terpisah per nama produk.
+  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile(f));
   const bySku = new Map<string, any>();
   for (const o of orders) {
     const key = productGroupKey(o);
     const cur = bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, uangCair: 0, profitHpp: 0 };
     cur.qty += o.qty;
     cur.omzet += o.grossOmzet;
-    cur.uangCair += o.netSettlement;
-    cur.profitHpp += o.profitHpp;
+
+    const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
+    const groupAktual = aktualByOrderSn.get(o.orderSn);
+    const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
+    if (lineAktual != null) {
+      cur.uangCair += lineAktual;
+      cur.profitHpp += lineAktual - o.hppSnapshot * o.qty;
+    }
     bySku.set(key, cur);
   }
   const totalQty = Array.from(bySku.values()).reduce((s, r) => s + r.qty, 0);

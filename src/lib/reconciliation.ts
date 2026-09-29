@@ -337,3 +337,37 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
 
   return { rate, totals, payoutRatio, items, adjustments };
 }
+
+export type ActualLookup = {
+  /** No. Pesanan -> total estimasi (sum netSettlement semua baris SKU order itu). */
+  estimasiByOrderSn: Map<string, number>;
+  /** No. Pesanan -> nilai AKTUAL dari Income Report yang sudah match. Tidak ada entry = belum match/cair. */
+  aktualByOrderSn: Map<string, number>;
+};
+
+/**
+ * Bangun lookup No. Pesanan -> estimasi/aktual dari hasil reconcile() — dipakai laporan
+ * per-SKU (Laporan Profit, Analisis Barang Keluar, Top Produk) supaya "Uang Cair"/"Profit
+ * HPP" mereka pakai nilai AKTUAL yang sudah di-match ke Income Report, BUKAN estimasi
+ * mentah dari file Pesanan (lihat src/lib/parseShopee.ts: netSettlementRaw = estimasi).
+ */
+export function buildActualLookup(recon: ReconResult): ActualLookup {
+  const estimasiByOrderSn = new Map(recon.items.map((i) => [i.orderSn, i.estimasi]));
+  const aktualByOrderSn = new Map(
+    recon.items.filter((i): i is ReconItem & { aktual: number } => i.aktual != null).map((i) => [i.orderSn, i.aktual])
+  );
+  return { estimasiByOrderSn, aktualByOrderSn };
+}
+
+/**
+ * Alokasikan nilai aktual 1 No. Pesanan (payout Shopee, tidak dipecah per SKU) ke 1 baris
+ * SKU di dalamnya, proporsional terhadap porsi estimasi baris itu dari total estimasi
+ * order-nya (order multi-item = beberapa baris SKU, 1 payout gabungan). Return null kalau
+ * order itu belum match ke Income Report (belum cair) -- baris itu TIDAK dihitung sebagai
+ * Uang Cair/Profit HPP, sesuai definisi rekonsiliasi (lihat /rekonsiliasi, stage "Menunggu Cair").
+ */
+export function allocateActual(lineEstimasi: number, groupEstimasi: number, groupAktual: number | undefined): number | null {
+  if (groupAktual == null) return null;
+  if (groupEstimasi <= 0) return 0;
+  return groupAktual * (lineEstimasi / groupEstimasi);
+}
