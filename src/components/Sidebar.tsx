@@ -8,10 +8,8 @@ import { Icon, type IconName } from "@/components/icons";
 const MENU: { href: string; label: string; icon: IconName }[] = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
   { href: "/input", label: "Input & Import Data", icon: "upload" },
-  { href: "/keuangan", label: "Keuangan & Cashflow", icon: "wallet" },
-  { href: "/rekonsiliasi", label: "Rekonsiliasi Uang Cair", icon: "scale" },
-  { href: "/laporan-profit", label: "Laporan Profit", icon: "coins" },
-  { href: "/laporan-barang-keluar", label: "Analisis Barang Keluar", icon: "box" },
+  { href: "/rekonsiliasi", label: "Keuangan & Rekonsiliasi", icon: "scale" },
+  { href: "/laporan-profit", label: "Laporan Profit & Barang Keluar", icon: "coins" },
   { href: "/performa-toko", label: "Performa Toko", icon: "trendingUp" },
   { href: "/retur-cancel", label: "Retur & Pembatalan", icon: "undo" },
   { href: "/laporan-rekap", label: "Laporan Rekapan", icon: "clipboard" },

@@ -9,8 +9,8 @@ Stack: Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma + PostgreSQL
   Aturan mapping status bisa diedit lewat UI (`/settings/status-mapping`) tanpa deploy.
 - Perhitungan Profit HPP (Nett) & Profit Agen (harga katalog diskon 50%) per SKU, snapshot per transaksi.
 - Dashboard: summary cards, tren omzet/profit, Top 15 produk (omzet & unit).
-- Keuangan & Cashflow: tab Uang Cair / Mengambang / Transit.
-- Analisis Barang Keluar: ranking unit terjual per SKU (status Selesai) + kontribusi %.
+- Keuangan & Rekonsiliasi: satu halaman, tab Uang Cair / Mengambang / Transit / Selisih / Belum Ketemu / Semua Order + Reconciliation Rate + Adjustment Shopee.
+- Laporan Profit & Barang Keluar: satu tabel per-SKU (unit keluar, kontribusi omzet, omzet bruto, uang cair, profit HPP, profit agen, selisih), toggle urutkan Profit HPP / Unit Terjual.
 - Retur & Pembatalan: kartu ringkasan (unit batal/retur, layak restok, rusak, beban kerugian HPP) + action Restok Gudang / Barang Rusak.
 - Performa Toko: perbandingan omzet & profit per toko (tabel + grafik batang).
 - Laporan Rekapan: siklus cut-off 26–25, komparasi bulanan, rekap tahunan multi-toko.

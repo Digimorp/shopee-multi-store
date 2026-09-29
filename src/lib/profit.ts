@@ -24,3 +24,16 @@ export function calcProfitAgen({ catalogPrice, hpp, qty }: ProfitAgenInput): num
 export function calcSelisihProfit(profitAgen: number, profitHpp: number): number {
   return profitAgen - profitHpp;
 }
+
+export type ProductGroupKeyInput = { productId?: string | null; sku: string; productName: string };
+
+/**
+ * Kunci pengelompokan per-produk untuk laporan agregat (Laporan Profit, Analisis Barang
+ * Keluar, Top Produk). Utamakan productId (paling stabil kalau ada), lalu SKU, lalu nama
+ * produk sebagai fallback terakhir -- supaya order yang belum ter-link ke Master Produk
+ * (productId null DAN sku kosong, mis. file upload tanpa kolom SKU) tidak semua collapse
+ * jadi satu baris gabungan; tetap terpisah per nama produk.
+ */
+export function productGroupKey(o: ProductGroupKeyInput): string {
+  return o.productId ?? (o.sku || o.productName);
+}

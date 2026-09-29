@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
+import { productGroupKey } from "@/lib/profit";
 import { OrderStatus } from "@prisma/client";
 
 // Analisis barang keluar / Top Produk — HANYA status SELESAI (barang benar-benar laku & cair).
@@ -19,21 +20,25 @@ export async function GET(req: NextRequest) {
       status: OrderStatus.SELESAI,
       deletedAt: null,
     },
-    select: { sku: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, profitHpp: true },
+    select: { sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, profitHpp: true },
   });
 
+  // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —
+  // order yang belum ter-link Master Produk (productId null & sku kosong) tetap terpisah
+  // per nama produk, tidak collapse jadi satu baris gabungan.
   const bySku = new Map<
     string,
     { sku: string; name: string; omzet: number; uangCair: number; profitHpp: number; qty: number }
   >();
   for (const o of orders) {
+    const key = productGroupKey(o);
     const cur =
-      bySku.get(o.sku) ?? { sku: o.sku, name: o.productName, omzet: 0, uangCair: 0, profitHpp: 0, qty: 0 };
+      bySku.get(key) ?? { sku: o.sku, name: o.productName, omzet: 0, uangCair: 0, profitHpp: 0, qty: 0 };
     cur.omzet += o.grossOmzet;
     cur.uangCair += o.netSettlement;
     cur.profitHpp += o.profitHpp;
     cur.qty += o.qty;
-    bySku.set(o.sku, cur);
+    bySku.set(key, cur);
   }
 
   const all = Array.from(bySku.values());

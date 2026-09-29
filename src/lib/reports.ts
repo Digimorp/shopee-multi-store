@@ -1,6 +1,7 @@
 import { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getPeriodForDate, formatPeriodLabel, parsePeriodKey } from "@/lib/period";
+import { productGroupKey } from "@/lib/profit";
 
 export type ColKind = "text" | "int" | "money" | "pct";
 export type ReportColumn = { key: string; header: string; width: number; align?: "left" | "right"; kind?: ColKind };
@@ -87,34 +88,56 @@ export async function datasetCashflow(f: ReportFilter, tab: string): Promise<Rep
 export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status: { in: [OrderStatus.SELESAI, OrderStatus.PENDING_SETTLEMENT] } },
-    select: { sku: true, productName: true, qty: true, profitHpp: true, profitAgen: true },
+    select: { sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, profitHpp: true, profitAgen: true, status: true },
   });
-  const bySku = new Map<string, { sku: string; produk: string; qty: number; profitHpp: number; profitAgen: number }>();
+  // Sama seperti route API-nya (src/app/api/reports/profit/route.ts): Unit Keluar/Omzet
+  // Bruto/Uang Cair hanya dari status Selesai; Profit HPP/Profit Agen dari Selesai + Pending.
+  // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —
+  // order yang belum ter-link Master Produk tetap terpisah per nama produk.
+  const bySku = new Map<
+    string,
+    { sku: string; produk: string; qty: number; omzet: number; uangCair: number; profitHpp: number; profitAgen: number }
+  >();
   for (const o of orders) {
-    const cur = bySku.get(o.sku) ?? { sku: o.sku, produk: o.productName, qty: 0, profitHpp: 0, profitAgen: 0 };
-    cur.qty += o.qty;
+    const key = productGroupKey(o);
+    const cur =
+      bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, uangCair: 0, profitHpp: 0, profitAgen: 0 };
+    if (o.status === OrderStatus.SELESAI) {
+      cur.qty += o.qty;
+      cur.omzet += o.grossOmzet;
+      cur.uangCair += o.netSettlement;
+    }
     cur.profitHpp += o.profitHpp;
     cur.profitAgen += o.profitAgen;
-    bySku.set(o.sku, cur);
+    bySku.set(key, cur);
   }
+  const totalOmzet = Array.from(bySku.values()).reduce((s, r) => s + r.omzet, 0);
   const rows = Array.from(bySku.values())
-    .map((r) => ({ ...r, selisih: r.profitAgen - r.profitHpp }))
+    .map((r) => ({ ...r, selisih: r.profitAgen - r.profitHpp, share: totalOmzet ? r.omzet / totalOmzet : 0 }))
     .sort((a, b) => b.profitHpp - a.profitHpp);
+  const tQty = rows.reduce((s, r) => s + r.qty, 0);
+  const tUangCair = rows.reduce((s, r) => s + r.uangCair, 0);
   const tHpp = rows.reduce((s, r) => s + r.profitHpp, 0);
   const tAgen = rows.reduce((s, r) => s + r.profitAgen, 0);
 
   return {
-    title: "Laporan Profit per SKU",
+    title: "Laporan Profit & Barang Keluar per SKU",
     columns: [
       { key: "sku", header: "SKU", width: 12 },
-      { key: "produk", header: "Produk", width: 34 },
-      { key: "qty", header: "Qty Terjual", width: 8, align: "right", kind: "int" },
-      { key: "profitHpp", header: "Profit HPP (Nett)", width: 14, align: "right", kind: "money" },
-      { key: "profitAgen", header: "Profit Agen", width: 14, align: "right", kind: "money" },
-      { key: "selisih", header: "Selisih", width: 14, align: "right", kind: "money" },
+      { key: "produk", header: "Produk", width: 26 },
+      { key: "qty", header: "Unit Keluar", width: 9, align: "right", kind: "int" },
+      { key: "share", header: "Kontribusi Omzet", width: 9, align: "right", kind: "pct" },
+      { key: "omzet", header: "Omzet Bruto", width: 13, align: "right", kind: "money" },
+      { key: "uangCair", header: "Uang Cair", width: 13, align: "right", kind: "money" },
+      { key: "profitHpp", header: "Profit HPP (Nett)", width: 13, align: "right", kind: "money" },
+      { key: "profitAgen", header: "Profit Agen", width: 13, align: "right", kind: "money" },
+      { key: "selisih", header: "Selisih", width: 13, align: "right", kind: "money" },
     ],
     rows,
     summary: [
+      { label: "Total Unit Keluar", value: int(tQty) },
+      { label: "Jumlah SKU Terjual", value: int(rows.length) },
+      { label: "Total Uang Cair", value: rupiah(tUangCair) },
       { label: "Total Profit HPP (Nett)", value: rupiah(tHpp) },
       { label: "Total Profit Agen", value: rupiah(tAgen) },
       { label: "Selisih Agen vs Riil", value: rupiah(tAgen - tHpp) },
@@ -125,16 +148,19 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
 export async function datasetBarangKeluar(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status: OrderStatus.SELESAI },
-    select: { sku: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, profitHpp: true },
+    select: { sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, profitHpp: true },
   });
+  // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —
+  // order yang belum ter-link Master Produk tetap terpisah per nama produk.
   const bySku = new Map<string, any>();
   for (const o of orders) {
-    const cur = bySku.get(o.sku) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, uangCair: 0, profitHpp: 0 };
+    const key = productGroupKey(o);
+    const cur = bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, uangCair: 0, profitHpp: 0 };
     cur.qty += o.qty;
     cur.omzet += o.grossOmzet;
     cur.uangCair += o.netSettlement;
     cur.profitHpp += o.profitHpp;
-    bySku.set(o.sku, cur);
+    bySku.set(key, cur);
   }
   const totalQty = Array.from(bySku.values()).reduce((s, r) => s + r.qty, 0);
   const rows = Array.from(bySku.values())
