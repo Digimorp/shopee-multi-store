@@ -8,31 +8,37 @@ const config: Config = {
         sans: ["var(--font-poppins)", "Inter", "system-ui", "sans-serif"],
       },
       colors: {
-        // Aksen utama: pink -> purple (gaya "Lector")
+        // Aksen utama: hijau tua/forest green — dipakai tombol, link, focus ring, hover.
         brand: {
-          50: "#fdf2f8",
-          100: "#fce7f3",
-          200: "#fbcfe8",
-          300: "#f9a8d4",
-          400: "#f472b6",
-          500: "#ec4899",
-          600: "#db2777",
-          700: "#be185d",
+          50: "var(--color-brand-50)",
+          100: "var(--color-brand-100)",
+          200: "var(--color-brand-200)",
+          300: "var(--color-brand-300)",
+          400: "var(--color-brand-400)",
+          500: "var(--color-brand-500)",
+          600: "var(--color-brand-600)",
+          700: "var(--color-brand-700)",
         },
+        // Aksen kedua (muted plum) — dipakai seperlunya utk variasi kecil (icon badge, chart).
         grape: {
-          400: "#a78bfa",
-          500: "#a855f7",
-          600: "#9333ea",
+          400: "var(--color-grape-400)",
+          500: "var(--color-grape-500)",
+          600: "var(--color-grape-600)",
         },
-        canvas: "#f8f9fc",
-      },
-      backgroundImage: {
-        "brand-gradient": "linear-gradient(135deg, #ec4899 0%, #a855f7 100%)",
-        "brand-gradient-r": "linear-gradient(90deg, #ec4899 0%, #a855f7 100%)",
-        "stat-pink": "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)",
-        "stat-purple": "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)",
-        "stat-blue": "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
-        "stat-orange": "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
+        canvas: "var(--color-canvas)",
+        card: {
+          DEFAULT: "var(--color-card)",
+          border: "var(--color-card-border)",
+        },
+        sidebar: {
+          DEFAULT: "var(--color-sidebar-bg)",
+          hover: "var(--color-sidebar-hover)",
+          border: "var(--color-sidebar-border)",
+          text: "var(--color-sidebar-text)",
+          muted: "var(--color-sidebar-muted)",
+          active: "var(--color-sidebar-active)",
+          activeText: "var(--color-sidebar-active-text)",
+        },
       },
       boxShadow: {
         card: "0 1px 3px rgba(16,24,40,0.04), 0 8px 24px rgba(16,24,40,0.06)",

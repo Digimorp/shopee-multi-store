@@ -99,16 +99,16 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard gradient="pink" icon="cash" label="Total Omzet Bruto" value={formatRupiah(summary?.totalOmzetBruto ?? 0)} />
+        <SummaryCard accent="brand" icon="cash" label="Total Omzet Bruto" value={formatRupiah(summary?.totalOmzetBruto ?? 0)} />
         <SummaryCard
-          gradient="purple"
+          accent="green"
           icon="coins"
           label="Cair (Aktual Income Report)"
           value={formatRupiah(summary?.cair ?? 0)}
           sub={`${summary?.cairCount ?? 0} pesanan cocok`}
         />
         <SummaryCard
-          gradient="orange"
+          accent="orange"
           icon="hourglass"
           label="Belum Cair"
           value={formatRupiah(summary?.belumCair ?? 0)}
@@ -121,8 +121,8 @@ export default function DashboardPage() {
           value={formatRupiah(summary?.selisih ?? 0)}
           sub={`${summary?.selisihCount ?? 0} pesanan beda nominal`}
         />
-        <SummaryCard gradient="blue" icon="trendingUp" label="Profit HPP (Nett)" value={formatRupiah(summary?.profitHpp ?? 0)} />
-        <SummaryCard accent="orange" icon="sparkles" label="Profit Agen" value={formatRupiah(summary?.profitAgen ?? 0)} />
+        <SummaryCard accent="blue" icon="trendingUp" label="Profit HPP (Nett)" value={formatRupiah(summary?.profitHpp ?? 0)} />
+        <SummaryCard accent="purple" icon="sparkles" label="Profit Agen" value={formatRupiah(summary?.profitAgen ?? 0)} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">

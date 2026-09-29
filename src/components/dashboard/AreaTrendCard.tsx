@@ -108,12 +108,12 @@ export default function AreaTrendCard({
             <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gOmzet" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ec4899" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#ec4899" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#468a30" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#468a30" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gProfit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#96789c" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#96789c" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="4 4" stroke="#f1f1f4" vertical={false} />
@@ -137,8 +137,8 @@ export default function AreaTrendCard({
                 formatter={(v: number) => formatRupiah(v)}
                 contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 12 }}
               />
-              <Area isAnimationActive={false} type="monotone" dataKey="omzet" name="Omzet" stroke="#ec4899" strokeWidth={2.5} fill="url(#gOmzet)" />
-              <Area isAnimationActive={false} type="monotone" dataKey="profit" name="Profit HPP" stroke="#a855f7" strokeWidth={2.5} fill="url(#gProfit)" />
+              <Area isAnimationActive={false} type="monotone" dataKey="omzet" name="Omzet" stroke="#468a30" strokeWidth={2.5} fill="url(#gOmzet)" />
+              <Area isAnimationActive={false} type="monotone" dataKey="profit" name="Profit HPP" stroke="#96789c" strokeWidth={2.5} fill="url(#gProfit)" />
             </AreaChart>
           </ResponsiveContainer>
         )}

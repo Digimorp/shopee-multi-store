@@ -56,11 +56,11 @@ export default function PerformaTokoPage() {
               <Tooltip
                 formatter={(v: number) => formatRupiah(v)}
                 contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 12 }}
-                cursor={{ fill: "#fce7f3" }}
+                cursor={{ fill: "#dceed0" }}
               />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-              <Bar isAnimationActive={false} dataKey="Omzet" fill="#ec4899" radius={[6, 6, 0, 0]} />
-              <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#a855f7" radius={[6, 6, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Omzet" fill="#468a30" radius={[6, 6, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#96789c" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

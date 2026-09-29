@@ -12,7 +12,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <Suspense>
         <Sidebar />
       </Suspense>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col md:pl-[230px]">
         <Suspense>
           <TopBar />
         </Suspense>

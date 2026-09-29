@@ -81,6 +81,7 @@ export default function AuditLogPage() {
         rowKey={(r: any) => r.id}
         rows={logs}
         emptyText={loading ? "Memuat…" : "Belum ada log aktivitas."}
+        serverPagination={{ page, totalPages, onPageChange: setPage }}
         columns={[
           { header: "Waktu", render: (r) => formatDateTime(r.createdAt) },
           { header: "Aksi", render: (r) => (
@@ -127,28 +128,6 @@ export default function AuditLogPage() {
           })()}
         </div>
       )}
-
-      <div className="flex items-center justify-between text-xs text-gray-400">
-        <span>
-          Halaman {page} dari {totalPages}
-        </span>
-        <div className="flex gap-1">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40"
-          >
-            Sebelumnya
-          </button>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40"
-          >
-            Berikutnya
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

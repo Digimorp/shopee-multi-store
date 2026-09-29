@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-7 shadow-card-lg">
         <div className="mb-5 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-gradient text-white shadow-[0_8px_20px_rgba(236,72,153,0.4)]">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-600 text-white shadow-[0_6px_16px_rgba(23,48,31,0.3)]">
             <Icon name="store" size={20} strokeWidth={2} />
           </span>
           <div className="leading-tight">

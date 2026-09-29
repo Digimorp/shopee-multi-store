@@ -2,13 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design tokens — palet hijau sage/forest. Ubah di sini, bukan hardcode per komponen. */
+:root {
+  /* Background utama: hijau mint/sage pucat */
+  --color-canvas: #edf3e6;
+  --color-card: #ffffff;
+  --color-card-border: #dbe6d2;
+
+  /* Sidebar: hijau tua gelap */
+  --color-sidebar-bg: #16301f;
+  --color-sidebar-hover: #1e3d28;
+  --color-sidebar-border: #234a2e;
+  --color-sidebar-text: #c9dac0;
+  --color-sidebar-muted: #7fa173;
+  --color-sidebar-active: #c7eaa6;
+  --color-sidebar-active-text: #17301f;
+
+  /* Aksen utama (brand): hijau tua/forest green solid — tombol, link, focus, hover */
+  --color-brand-50: #eff7e9;
+  --color-brand-100: #dceed0;
+  --color-brand-200: #b9dfa7;
+  --color-brand-300: #93cb78;
+  --color-brand-400: #66ac49;
+  --color-brand-500: #468a30;
+  --color-brand-600: #337024;
+  --color-brand-700: #26591a;
+
+  /* Aksen kedua (muted plum) — variasi kecil di icon badge/chart */
+  --color-grape-400: #b49ab8;
+  --color-grape-500: #96789c;
+  --color-grape-600: #785f7d;
+}
+
 html,
 body {
   height: 100%;
 }
 
 body {
-  background-color: #f8f9fc;
+  background-color: var(--color-canvas);
   color: #1f2937;
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
@@ -29,17 +61,16 @@ body {
 }
 
 @layer components {
-  /* Kartu standar */
+  /* Kartu standar — putih, border tipis, rounded, shadow halus */
   .card {
-    @apply rounded-2xl bg-white shadow-card;
+    @apply rounded-2xl border border-card-border bg-card shadow-card;
   }
 
-  /* Tombol primer gradient pink -> purple */
+  /* Tombol primer — solid hijau tua (bukan gradient) */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white
-      shadow-[0_6px_16px_rgba(236,72,153,0.35)] transition
-      hover:brightness-105 active:brightness-95 disabled:opacity-60;
-    background-image: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white
+      shadow-[0_4px_12px_rgba(23,48,31,0.25)] transition
+      hover:bg-brand-700 active:brightness-95 disabled:opacity-60;
   }
 
   /* Tombol sekunder / outline */
@@ -65,8 +96,7 @@ body {
     @apply rounded-full px-4 py-1.5 text-sm font-medium transition;
   }
   .tab-pill-active {
-    @apply text-white;
-    background-image: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+    @apply bg-brand-600 text-white;
   }
   .tab-pill-idle {
     @apply bg-gray-100 text-gray-500 hover:bg-gray-200;

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { formatRupiah } from "@/lib/format";
 
-const COLORS = ["#ec4899", "#a855f7", "#3b82f6", "#f97316", "#10b981", "#f59e0b", "#94a3b8"];
+const COLORS = ["#468a30", "#96789c", "#3b82f6", "#f97316", "#10b981", "#f59e0b", "#94a3b8"];
 
 export default function DonutCard({
   rows,

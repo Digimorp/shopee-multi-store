@@ -27,11 +27,11 @@ const SETTINGS_MENU: { href: string; label: string; icon: IconName; ownerOnly: b
 ];
 
 // Label pemisah antar-grup menu di sidebar. Dibedakan jelas dari menu item:
-// warna tint pink dari tema gradient + bold, huruf lebih kecil, tracking lebar,
+// warna tint hijau muda pudar + bold, huruf lebih kecil, tracking lebar,
 // dan jarak atas ekstra (pt, bukan mt — <nav> pakai space-y yang meng-override margin-top).
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1.5 pt-7 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-400">
+    <p className="px-3 pb-1.5 pt-7 text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-muted">
       {children}
     </p>
   );
@@ -52,24 +52,24 @@ export default function Sidebar() {
   const itemClass = (href: string) =>
     `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
       isActive(href)
-        ? "bg-brand-gradient text-white shadow-[0_8px_20px_rgba(236,72,153,0.35)]"
-        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+        ? "bg-sidebar-active text-sidebar-activeText"
+        : "text-sidebar-text hover:bg-sidebar-hover hover:text-white"
     }`;
 
   return (
-    <aside className="hidden w-[230px] shrink-0 border-r border-gray-100 bg-white md:flex md:flex-col">
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient text-white shadow-[0_6px_16px_rgba(236,72,153,0.4)]">
+    <aside className="hidden w-[230px] shrink-0 flex-col bg-sidebar md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex">
+      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5">
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-600 text-white shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
           <Icon name="store" size={18} strokeWidth={2} />
         </span>
-        <span className="text-[15px] font-bold leading-tight text-gray-900">
+        <span className="text-[15px] font-bold leading-tight text-white">
           Shopee
           <br />
-          <span className="text-gray-400">Multi-Toko</span>
+          <span className="text-sidebar-muted">Multi-Toko</span>
         </span>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {MENU.map((m) => (
           <Link key={m.href} href={withQs(m.href)} className={itemClass(m.href)}>
             <Icon name={m.icon} size={18} />
@@ -80,7 +80,7 @@ export default function Sidebar() {
         {!sessionReady ? (
           <div className="space-y-2 px-3 pt-6">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-8 animate-pulse rounded-xl bg-gray-100" />
+              <div key={i} className="h-8 animate-pulse rounded-xl bg-sidebar-hover" />
             ))}
           </div>
         ) : (
