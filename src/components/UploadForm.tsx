@@ -67,6 +67,21 @@ export default function UploadForm({
     `Berhasil: ${d.success ?? d.orderRows ?? 0} dari ${d.totalRows ?? 0} baris diproses.` +
     (d.skippedOrFailed > 0 ? ` ${d.skippedOrFailed} baris dilewati/gagal.` : "");
 
+  if (stores.length === 0) {
+    return (
+      <div className="card p-5">
+        <p className="mb-1 text-sm font-semibold text-gray-800">{title}</p>
+        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          Belum ada toko,{" "}
+          <a href="/settings/stores" className="font-medium underline hover:no-underline">
+            tambahkan di Master Data Toko
+          </a>{" "}
+          dulu sebelum upload.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="card p-5">
       <p className="mb-1 text-sm font-semibold text-gray-800">{title}</p>

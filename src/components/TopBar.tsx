@@ -66,7 +66,16 @@ export default function TopBar() {
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-white px-6 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        {filterReady ? (
+        {!filterReady ? (
+          <Skeleton className="h-9 w-40 rounded-xl" />
+        ) : stores.length === 0 ? (
+          <a
+            href="/settings/stores"
+            className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 hover:bg-amber-100"
+          >
+            Belum ada toko, tambahkan di Master Data Toko
+          </a>
+        ) : (
           <select value={storeId} onChange={(e) => updateParam("storeId", e.target.value)} className={fieldClass}>
             {role === "OWNER" && <option value="all">Semua Toko ({stores.length})</option>}
             {stores.map((s) => (
@@ -75,8 +84,6 @@ export default function TopBar() {
               </option>
             ))}
           </select>
-        ) : (
-          <Skeleton className="h-9 w-40 rounded-xl" />
         )}
         <input type="date" value={from} onChange={(e) => updateParam("from", e.target.value)} className={fieldClass} />
         <span className="text-sm text-gray-300">s/d</span>

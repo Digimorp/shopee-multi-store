@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get("type") ?? "monthly";
   const storeIdParam = searchParams.get("storeId");
   const storeIds = await assertStoreAccess(user, storeIdParam);
-  if (storeIds.length === 0) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (storeIds.length === 0 && user.role !== "OWNER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const period = await prisma.periodSetting.findFirst();
   const cutoffDay = period?.cutoffDay ?? 25;

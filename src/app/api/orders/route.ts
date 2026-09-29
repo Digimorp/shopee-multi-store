@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { storeIds, from, to } = await resolveFilters(req, user);
-  if (storeIds.length === 0) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (storeIds.length === 0 && user.role !== "OWNER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") as OrderStatus | null;

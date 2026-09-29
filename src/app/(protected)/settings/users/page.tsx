@@ -116,18 +116,28 @@ export default function SettingsUsersPage() {
         {form.role === "ADMIN_TOKO" && (
           <div className="sm:col-span-2">
             <label className="mb-1 block text-xs font-medium text-gray-600">Mapping Toko</label>
-            <div className="flex flex-wrap gap-2">
-              {stores.map((s) => (
-                <label key={s.id} className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={form.storeIds.includes(s.id)}
-                    onChange={(e) => setForm({ ...form, storeIds: toggleStore(form.storeIds, s.id, e.target.checked) })}
-                  />
-                  {s.code}
-                </label>
-              ))}
-            </div>
+            {stores.length === 0 ? (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                Belum ada toko,{" "}
+                <a href="/settings/stores" className="font-medium underline hover:no-underline">
+                  tambahkan di Master Data Toko
+                </a>{" "}
+                dulu.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {stores.map((s) => (
+                  <label key={s.id} className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={form.storeIds.includes(s.id)}
+                      onChange={(e) => setForm({ ...form, storeIds: toggleStore(form.storeIds, s.id, e.target.checked) })}
+                    />
+                    {s.code}
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -219,18 +229,28 @@ export default function SettingsUsersPage() {
                     </button>
                   </div>
                 </div>
-                <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
-                  {stores.map((s) => (
-                    <label key={s.id} className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={edit.storeIds.includes(s.id)}
-                        onChange={(e) => setEdit({ ...edit, storeIds: toggleStore(edit.storeIds, s.id, e.target.checked) })}
-                      />
-                      {s.code}
-                    </label>
-                  ))}
-                </div>
+                {stores.length === 0 ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    Belum ada toko,{" "}
+                    <a href="/settings/stores" className="font-medium underline hover:no-underline">
+                      tambahkan di Master Data Toko
+                    </a>{" "}
+                    dulu.
+                  </p>
+                ) : (
+                  <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+                    {stores.map((s) => (
+                      <label key={s.id} className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={edit.storeIds.includes(s.id)}
+                          onChange={(e) => setEdit({ ...edit, storeIds: toggleStore(edit.storeIds, s.id, e.target.checked) })}
+                        />
+                        {s.code}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

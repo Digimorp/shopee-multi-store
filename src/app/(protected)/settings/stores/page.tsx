@@ -75,7 +75,7 @@ export default function SettingsStoresPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Master Data Toko</h1>
-      <p className="text-sm text-gray-500">Kelola daftar 14 toko Shopee yang dikelola perusahaan.</p>
+      <p className="text-sm text-gray-500">Kelola daftar toko Shopee yang dikelola perusahaan.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 card p-5">
         <input required placeholder="Kode (mis. TOKO15)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
@@ -88,6 +88,7 @@ export default function SettingsStoresPage() {
       <DataTable
         rowKey={(r: any) => r.id}
         rows={stores}
+        emptyText="Belum ada toko. Tambahkan toko pertama lewat form di atas."
         columns={[
           { header: "Kode", render: (r) => r.code },
           { header: "Nama Toko", render: (r) => r.name },
