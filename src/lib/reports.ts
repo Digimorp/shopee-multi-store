@@ -294,14 +294,22 @@ export async function storePerformanceRows(f: ReportFilter) {
     where: baseWhere(f),
     select: {
       storeId: true,
+      orderSn: true,
       status: true,
       qty: true,
       grossOmzet: true,
       netSettlement: true,
-      profitHpp: true,
+      hppSnapshot: true,
       profitAgen: true,
     },
   });
+  // Uang Cair/Profit HPP HARUS pakai nilai AKTUAL dari Income Report yang sudah match lewat
+  // reconcile() (sama seperti /rekonsiliasi & Laporan Profit), BUKAN Order.netSettlement/
+  // profitHpp yang cuma estimasi dari file Pesanan — order multi-item dialokasikan
+  // proporsional per baris lewat allocateActual(); order yang belum match (belum cair)
+  // tidak dihitung. uangMengambang (PENDING_SETTLEMENT) tetap estimasi -- memang belum cair.
+  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile(f));
+
   const byStore = new Map<string, any>();
   for (const st of stores) {
     byStore.set(st.id, {
@@ -322,8 +330,14 @@ export async function storePerformanceRows(f: ReportFilter) {
     if (o.status !== OrderStatus.CANCEL) row.omzet += o.grossOmzet;
     if (o.status === OrderStatus.SELESAI) {
       row.unitKeluar += o.qty;
-      row.uangCair += o.netSettlement;
-      row.profitHpp += o.profitHpp;
+
+      const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
+      const groupAktual = aktualByOrderSn.get(o.orderSn);
+      const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
+      if (lineAktual != null) {
+        row.uangCair += lineAktual;
+        row.profitHpp += lineAktual - o.hppSnapshot * o.qty;
+      }
     }
     if (o.status === OrderStatus.PENDING_SETTLEMENT) row.uangMengambang += o.netSettlement;
     if (o.status === OrderStatus.SELESAI || o.status === OrderStatus.PENDING_SETTLEMENT) row.profitAgen += o.profitAgen;
@@ -359,8 +373,23 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
   const cutoffDay = setting?.cutoffDay ?? 25;
   const orders = await prisma.order.findMany({
     where: { storeId: { in: f.storeIds }, status: { not: OrderStatus.CANCEL }, deletedAt: null },
-    select: { orderCreatedAt: true, grossOmzet: true, profitHpp: true, status: true, periodKey: true },
+    select: { orderSn: true, orderCreatedAt: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, qty: true, status: true, periodKey: true },
   });
+
+  // Rekap mencakup SEMUA periode order toko ini sekaligus (tanpa filter tanggal dari UI,
+  // sama seperti sebelumnya) -- reconcile() dipanggil dengan rentang tanggal seluas mungkin
+  // supaya semua order (lintas periode) ikut ter-cover pencarian match Income Report. Profit
+  // HPP HARUS pakai nilai AKTUAL, BUKAN Order.profitHpp yang cuma estimasi — lihat
+  // datasetProfit() di atas & src/app/api/reports/profit/route.ts.
+  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(
+    await reconcile({ storeIds: f.storeIds, from: new Date(0), to: new Date() })
+  );
+  const actualProfitHpp = (o: (typeof orders)[number]): number => {
+    const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
+    const groupAktual = aktualByOrderSn.get(o.orderSn);
+    const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
+    return lineAktual == null ? 0 : lineAktual - o.hppSnapshot * o.qty;
+  };
 
   if (type === "yearly") {
     const byYear = new Map<string, { tahun: string; omzet: number; profitHpp: number }>();
@@ -368,7 +397,7 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
       const yr = String(o.orderCreatedAt.getFullYear());
       const cur = byYear.get(yr) ?? { tahun: yr, omzet: 0, profitHpp: 0 };
       cur.omzet += o.grossOmzet;
-      if (o.status === OrderStatus.SELESAI) cur.profitHpp += o.profitHpp;
+      if (o.status === OrderStatus.SELESAI) cur.profitHpp += actualProfitHpp(o);
       byYear.set(yr, cur);
     }
     return {
@@ -388,7 +417,7 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
     const cur =
       byPeriod.get(key) ?? { periodKey: key, periode: formatPeriodLabel(parsePeriodKey(key)), omzet: 0, profitHpp: 0 };
     cur.omzet += o.grossOmzet;
-    if (o.status === OrderStatus.SELESAI) cur.profitHpp += o.profitHpp;
+    if (o.status === OrderStatus.SELESAI) cur.profitHpp += actualProfitHpp(o);
     byPeriod.set(key, cur);
   }
   const sorted = Array.from(byPeriod.values()).sort((a, b) => (a.periodKey < b.periodKey ? 1 : -1));
