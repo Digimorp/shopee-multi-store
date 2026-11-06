@@ -5,8 +5,9 @@ import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
 import ExportButtons from "@/components/ExportButtons";
-import StageBadge, { ReconBadge } from "@/components/StageBadge";
+import StageBadge, { ReconBadge, SettleBadge } from "@/components/StageBadge";
 import { formatRupiah, formatDate, formatNumber } from "@/lib/format";
+import { allocateLines } from "@/lib/settlement";
 
 type TabKey = "cair" | "pending" | "transit" | "SELISIH" | "BELUM_KETEMU" | "ALL";
 
@@ -68,15 +69,21 @@ export default function RekonsiliasiPage() {
     return m;
   }, [items]);
 
+  // Tab cashflow = 1 baris per SKU, tapi payout Shopee per No. Pesanan. Aktual per baris =
+  // alokasi proporsional payout order, supaya order multi-SKU tidak terhitung dobel.
   const cashflowRows: any[] = cashflow.orders ?? [];
-  const aktualTotal = useMemo(
-    () => cashflowRows.reduce((s, r) => s + (reconMap.get(r.orderSn)?.aktual ?? 0), 0),
-    [cashflowRows, reconMap]
+  const lineAlloc = useMemo(() => allocateLines(cashflowRows, reconMap), [cashflowRows, reconMap]);
+  const lineAktual = useMemo(
+    () => new Map(cashflowRows.map((r, i) => [r.id, lineAlloc.perLine[i]] as const)),
+    [cashflowRows, lineAlloc]
   );
-  const nMatched = useMemo(
-    () => cashflowRows.filter((r) => reconMap.get(r.orderSn)?.aktual != null).length,
-    [cashflowRows, reconMap]
-  );
+  const aktualTotal = lineAlloc.total;
+  const nMatched = lineAlloc.matchedOrders;
+  const multiLineOrders = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const r of cashflowRows) n.set(r.orderSn, (n.get(r.orderSn) ?? 0) + 1);
+    return n;
+  }, [cashflowRows]);
 
   const problemRows = useMemo(() => {
     if (tab === "ALL") return items;
@@ -204,8 +211,25 @@ export default function RekonsiliasiPage() {
                 {
                   header: "Aktual",
                   render: (r) => {
-                    const a = reconMap.get(r.orderSn)?.aktual;
-                    return a == null ? <span className="text-gray-300">— belum</span> : formatRupiah(a);
+                    const a = lineAktual.get(r.id);
+                    if (a == null) return <span className="text-gray-300">— belum</span>;
+                    const order = reconMap.get(r.orderSn);
+                    // Order multi-SKU: tampilkan porsi baris ini + payout order utuh sebagai konteks.
+                    return (multiLineOrders.get(r.orderSn) ?? 1) > 1 ? (
+                      <span title={`Alokasi proporsional dari payout order ${formatRupiah(order?.aktual ?? 0)}`}>
+                        {formatRupiah(a)}
+                        <span className="block text-[10px] text-gray-400">dari {formatRupiah(order?.aktual ?? 0)}</span>
+                      </span>
+                    ) : (
+                      formatRupiah(a)
+                    );
+                  },
+                },
+                {
+                  header: "Status Cair",
+                  render: (r) => {
+                    const rc = reconMap.get(r.orderSn);
+                    return rc ? <SettleBadge status={rc.settleStatus} /> : <span className="text-gray-300">—</span>;
                   },
                 },
                 {
@@ -241,6 +265,7 @@ export default function RekonsiliasiPage() {
                   ),
               },
               { header: "Kategori", render: (r) => <ReconBadge category={r.category} /> },
+              { header: "Status Cair", render: (r) => <SettleBadge status={r.settleStatus} /> },
               { header: "Tahap", render: (r) => <StageBadge stage={r.stage} /> },
               {
                 header: "Catatan",

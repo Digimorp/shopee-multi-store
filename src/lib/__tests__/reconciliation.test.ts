@@ -6,6 +6,9 @@ import {
   FINAL_LOCK_DAYS,
   buildActualLookup,
   allocateActual,
+  allocateLines,
+  deriveSettleStatus,
+  isRefundEntry,
   type ReconResult,
   type ReconItem,
 } from "@/lib/reconciliation";
@@ -69,6 +72,7 @@ function reconItem(over: Partial<ReconItem> = {}): ReconItem {
     category: "BELUM_KETEMU",
     side: "order",
     stage: "MENUNGGU_CAIR",
+    settleStatus: "BELUM",
     isEstimasi: true,
     flags: [],
     releasedAt: null,
@@ -128,5 +132,92 @@ describe("buildActualLookup + allocateActual", () => {
 
   it("groupEstimasi 0 -> tidak divide-by-zero, hasil 0 bukan NaN/Infinity", () => {
     expect(allocateActual(0, 0, 50000)).toBe(0);
+  });
+});
+
+// Status pencairan per No. Pesanan: diturunkan dari status tiap baris SKU + entri income,
+// tidak disimpan (jadi tidak bisa out-of-sync dengan baris-barisnya).
+describe("deriveSettleStatus", () => {
+  const penghasilan = { hasRefund: false };
+
+  it("belum ada payout -> BELUM (walau baris SELESAI)", () => {
+    expect(deriveSettleStatus([{ status: OrderStatus.SELESAI }, { status: OrderStatus.SELESAI }], null)).toBe("BELUM");
+  });
+
+  it("semua baris terjual + payout tanpa refund -> AKTUAL", () => {
+    expect(deriveSettleStatus([{ status: OrderStatus.SELESAI }, { status: OrderStatus.SELESAI }], penghasilan)).toBe(
+      "AKTUAL"
+    );
+  });
+
+  it("order 2 baris: 1 cair (SELESAI), 1 tidak (RETUR) + ada payout -> SEBAGIAN, bukan AKTUAL/BELUM", () => {
+    expect(deriveSettleStatus([{ status: OrderStatus.SELESAI }, { status: OrderStatus.RETUR }], penghasilan)).toBe(
+      "SEBAGIAN"
+    );
+  });
+
+  it("payout + entri pengembalian dana -> SEBAGIAN", () => {
+    expect(deriveSettleStatus([{ status: OrderStatus.SELESAI }], { hasRefund: true })).toBe("SEBAGIAN");
+  });
+});
+
+describe("isRefundEntry", () => {
+  it("'Penghasilan dari Pesanan' positif -> bukan refund", () => {
+    expect(isRefundEntry({ amount: 42805, raw: { "Tipe Transaksi": "Penghasilan dari Pesanan" } })).toBe(false);
+  });
+  it("nominal negatif / tipe pengembalian -> refund", () => {
+    expect(isRefundEntry({ amount: -15000, raw: {} })).toBe(true);
+    expect(isRefundEntry({ amount: 15000, raw: { "Tipe Transaksi": "Pengembalian Dana" } })).toBe(true);
+  });
+});
+
+// Regresi bug dedup di tab Uang Cair /rekonsiliasi: tabel 1 baris per SKU, tapi payout Shopee
+// 1 per No. Pesanan. Dulu payout order ditempel utuh ke TIAP baris -> order 2 baris dihitung 2x.
+describe("allocateLines — order multi-SKU tidak dihitung dobel", () => {
+  // Data nyata dari DB lokal: 260901VDU7KCHV = 2 baris (estimasi 21.250 + 59.000),
+  // Income Report 1 entri "Penghasilan dari Pesanan" Rp 42.805 untuk seluruh order.
+  const SN = "260901VDU7KCHV";
+  const lines = [
+    { id: "a", orderSn: SN, netSettlement: 21250, status: OrderStatus.SELESAI },
+    { id: "b", orderSn: SN, netSettlement: 59000, status: OrderStatus.SELESAI },
+  ];
+  const byOrderSn = new Map<string, { estimasi: number; aktual: number | null }>([
+    [SN, { estimasi: 80250, aktual: 42805 }],
+  ]);
+
+  it("260901VDU7KCHV: total aktual = 42.805 (sekali), BUKAN 85.610 (2x)", () => {
+    const { perLine, total, matchedOrders } = allocateLines(lines, byOrderSn);
+    expect(total).toBeCloseTo(42805);
+    expect(total).not.toBeCloseTo(85610);
+    expect(matchedOrders).toBe(1); // 1 order, bukan 2 baris
+    // Tiap baris dapat porsinya, tidak lagi "disamakan" 42.805 semua.
+    expect(perLine[0]).toBeCloseTo(42805 * (21250 / 80250));
+    expect(perLine[1]).toBeCloseTo(42805 * (59000 / 80250));
+    expect(perLine[0]).not.toBeCloseTo(perLine[1]!);
+  });
+
+  it("260901VDU7KCHV: kedua baris SELESAI + 1 payout tanpa refund -> AKTUAL (data tak menunjukkan cair sebagian)", () => {
+    expect(deriveSettleStatus(lines, { hasRefund: false })).toBe("AKTUAL");
+  });
+
+  it("order 2 baris, 1 SELESAI 1 RETUR: payout tidak dobel DAN status SEBAGIAN", () => {
+    const mixed = [
+      { id: "c", orderSn: "SN-MIX", netSettlement: 60000, status: OrderStatus.SELESAI },
+      { id: "d", orderSn: "SN-MIX", netSettlement: 40000, status: OrderStatus.RETUR },
+    ];
+    const map = new Map([["SN-MIX", { estimasi: 100000, aktual: 38000 }]]);
+    const { total, matchedOrders } = allocateLines(mixed, map);
+    expect(total).toBeCloseTo(38000);
+    expect(matchedOrders).toBe(1);
+    expect(deriveSettleStatus(mixed, { hasRefund: false })).toBe("SEBAGIAN");
+  });
+
+  it("campuran order cair + belum cair -> baris belum cair null, tidak ikut total", () => {
+    const rows = [...lines, { id: "e", orderSn: "SN-BELUM", netSettlement: 50000, status: OrderStatus.SELESAI }];
+    const map = new Map(byOrderSn).set("SN-BELUM", { estimasi: 50000, aktual: null });
+    const { perLine, total, matchedOrders } = allocateLines(rows, map);
+    expect(perLine[2]).toBeNull();
+    expect(total).toBeCloseTo(42805);
+    expect(matchedOrders).toBe(1);
   });
 });

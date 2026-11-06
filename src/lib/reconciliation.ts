@@ -1,5 +1,9 @@
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { deriveSettleStatus, isRefundEntry, type SettleStatus } from "@/lib/settlement";
+
+// Fungsi murni pencairan tinggal di settlement.ts (aman untuk client); re-export agar import lama tetap jalan.
+export { allocateActual, allocateLines, deriveSettleStatus, isRefundEntry, type SettleStatus } from "@/lib/settlement";
 
 export const MATCH_TOLERANCE = 5; // Rp — selisih persis <= ini = MATCH (kasus format lama: estimasi = payout riil)
 export const FINAL_LOCK_DAYS = 14; // "Cair Final" hanya setelah H+14 dari Selesai
@@ -35,6 +39,7 @@ export type ReconItem = {
   category: ReconCategory;
   side: "order" | "income" | "both";
   stage: SettlementStage;
+  settleStatus: SettleStatus;
   isEstimasi: boolean; // true = angka masih estimasi (belum ada Income Report matched)
   flags: string[];
   releasedAt: string | null;
@@ -86,7 +91,7 @@ export function deriveStage(
   return "MENUNGGU_CAIR"; // PENDING_SETTLEMENT / SELESAI belum ada Income Report / RETUR
 }
 
-type IncomeAgg = { amount: number; releasedAt: Date | null; importAt: Date };
+type IncomeAgg = { amount: number; releasedAt: Date | null; importAt: Date; hasRefund: boolean };
 
 export type OrderLockInfo = { stage: SettlementStage; locked: boolean };
 
@@ -148,6 +153,7 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
     orderCreatedAt: Date;
     completedAt: Date | null;
     settlementDate: Date | null;
+    lines: { status: OrderStatus }[]; // status per baris SKU — sumber deriveSettleStatus
   };
   const groups = new Map<string, OrderGroup>();
   for (const o of orderRows) {
@@ -163,8 +169,10 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
         orderCreatedAt: o.orderCreatedAt,
         completedAt: o.completedAt,
         settlementDate: o.settlementDate,
+        lines: [{ status: o.status }],
       });
     } else {
+      g.lines.push({ status: o.status });
       g.qty += o.qty;
       g.estimasi += o.netSettlement;
       if (STATUS_RANK[o.status] > STATUS_RANK[g.status]) g.status = o.status;
@@ -200,9 +208,15 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
     if (e.type !== "ORDER" || !e.orderSn) continue;
     const cur = incomeByOrderSn.get(e.orderSn);
     if (!cur || e.import.createdAt > cur.importAt) {
-      incomeByOrderSn.set(e.orderSn, { amount: e.amount, releasedAt: e.releasedAt, importAt: e.import.createdAt });
+      incomeByOrderSn.set(e.orderSn, {
+        amount: e.amount,
+        releasedAt: e.releasedAt,
+        importAt: e.import.createdAt,
+        hasRefund: isRefundEntry(e),
+      });
     } else if (e.import.createdAt.getTime() === cur.importAt.getTime()) {
       cur.amount += e.amount;
+      if (isRefundEntry(e)) cur.hasRefund = true;
       if (e.releasedAt && (!cur.releasedAt || e.releasedAt > cur.releasedAt)) cur.releasedAt = e.releasedAt;
     }
   }
@@ -277,6 +291,7 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
       category,
       side,
       stage,
+      settleStatus: deriveSettleStatus(g.lines, inc),
       isEstimasi: !inc,
       flags,
       releasedAt: inc?.releasedAt ? inc.releasedAt.toISOString() : null,
@@ -300,6 +315,7 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
       category: "BELUM_KETEMU",
       side: "income",
       stage: "CAIR",
+      settleStatus: agg.hasRefund ? "SEBAGIAN" : "AKTUAL",
       isEstimasi: false,
       flags: ["ORDER_TIDAK_ADA_DI_DB"],
       releasedAt: agg.releasedAt ? agg.releasedAt.toISOString() : null,
@@ -357,17 +373,4 @@ export function buildActualLookup(recon: ReconResult): ActualLookup {
     recon.items.filter((i): i is ReconItem & { aktual: number } => i.aktual != null).map((i) => [i.orderSn, i.aktual])
   );
   return { estimasiByOrderSn, aktualByOrderSn };
-}
-
-/**
- * Alokasikan nilai aktual 1 No. Pesanan (payout Shopee, tidak dipecah per SKU) ke 1 baris
- * SKU di dalamnya, proporsional terhadap porsi estimasi baris itu dari total estimasi
- * order-nya (order multi-item = beberapa baris SKU, 1 payout gabungan). Return null kalau
- * order itu belum match ke Income Report (belum cair) -- baris itu TIDAK dihitung sebagai
- * Uang Cair/Profit HPP, sesuai definisi rekonsiliasi (lihat /rekonsiliasi, stage "Menunggu Cair").
- */
-export function allocateActual(lineEstimasi: number, groupEstimasi: number, groupAktual: number | undefined): number | null {
-  if (groupAktual == null) return null;
-  if (groupEstimasi <= 0) return 0;
-  return groupAktual * (lineEstimasi / groupEstimasi);
 }
