@@ -15,6 +15,15 @@ export function StatIcon({ icon, alert = false }: { icon: IconName; alert?: bool
   );
 }
 
+// Badge peringkat bulat bernomor (1/2/3…) — gaya flat & warna aksen sama dengan StatIcon.
+export function RankBadge({ rank }: { rank: number }) {
+  return (
+    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-bold tabular-nums text-brand-600">
+      {rank}
+    </span>
+  );
+}
+
 // Stat card baku: card putih flat, border tipis 1px abu, shadow minimal. Angka besar tetap gelap.
 export default function SummaryCard({
   label,

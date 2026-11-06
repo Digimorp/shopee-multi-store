@@ -39,6 +39,40 @@ export function allocateActual(lineEstimasi: number, groupEstimasi: number, grou
   return groupAktual * (lineEstimasi / groupEstimasi);
 }
 
+type DiffableItem = {
+  orderSn: string;
+  side?: string;
+  category: string;
+  settleStatus: string;
+  stage: string;
+  aktual: number | null;
+};
+
+/**
+ * Bandingkan 2 hasil reconcile() (sebelum vs sesudah "Sync ulang") per No. Pesanan.
+ * `changed` = order yang kategori / status cair / tahap / nilai aktual-nya berubah.
+ */
+export function diffReconItems(
+  prev: DiffableItem[],
+  next: DiffableItem[]
+): { changed: number; added: number; removed: number; total: number } {
+  const key = (i: DiffableItem) => `${i.side ?? ""}|${i.orderSn}`;
+  const before = new Map(prev.map((i) => [key(i), i]));
+  let changed = 0;
+  let added = 0;
+  for (const n of next) {
+    const p = before.get(key(n));
+    if (!p) {
+      added++;
+      continue;
+    }
+    before.delete(key(n));
+    const aktualBeda = p.aktual == null ? n.aktual != null : n.aktual == null || Math.abs(n.aktual - p.aktual) > 0.5;
+    if (p.category !== n.category || p.settleStatus !== n.settleStatus || p.stage !== n.stage || aktualBeda) changed++;
+  }
+  return { changed, added, removed: before.size, total: next.length };
+}
+
 /**
  * Nilai aktual per BARIS SKU untuk tabel yang menampilkan 1 baris = 1 SKU. Payout order dibagi
  * proporsional ke barisnya (allocateActual), sehingga total = payout order, dihitung SEKALI —
@@ -55,4 +89,49 @@ export function allocateLines<L extends { orderSn: string; netSettlement: number
   const total = perLine.reduce<number>((s, v) => s + (v ?? 0), 0);
   const matchedOrders = new Set(lines.filter((_, i) => perLine[i] != null).map((l) => l.orderSn)).size;
   return { perLine, total, matchedOrders };
+}
+
+export type SettlementLine = {
+  id: string;
+  sku: string;
+  productName: string;
+  qty: number;
+  status: string;
+  grossOmzet: number;
+  netSettlement: number;
+  hppSnapshot: number; // HPP per unit
+  profitAgen: number;
+};
+
+export type SettlementRow = SettlementLine & { uangCair: number | null; profitHpp: number | null; selisih: number | null };
+
+/**
+ * Breakdown per baris SKU untuk 1 No. Pesanan (popup Settlement Details). Rumus SAMA dengan
+ * Laporan Profit (src/lib/reports.ts datasetProfit): Uang Cair = alokasi aktual proporsional,
+ * Profit HPP = Uang Cair − HPP×qty, Selisih = Profit Agen − Profit HPP. Baris CANCEL tidak ikut
+ * (sama seperti reconcile()). Order belum cair -> Uang Cair/Profit HPP/Selisih = null, BUKAN 0.
+ */
+export function settlementBreakdown(
+  lines: SettlementLine[],
+  order: { estimasi: number; aktual: number | null } | undefined
+): { rows: SettlementRow[]; totals: { grossOmzet: number; uangCair: number | null; profitHpp: number | null; profitAgen: number; selisih: number | null } } {
+  const active = lines.filter((l) => l.status !== "CANCEL");
+  const groupEstimasi = order?.estimasi ?? active.reduce((s, l) => s + l.netSettlement, 0);
+  const rows: SettlementRow[] = active.map((l) => {
+    const uangCair = allocateActual(l.netSettlement, groupEstimasi, order?.aktual ?? undefined);
+    const profitHpp = uangCair == null ? null : uangCair - l.hppSnapshot * l.qty;
+    return { ...l, uangCair, profitHpp, selisih: profitHpp == null ? null : l.profitAgen - profitHpp };
+  });
+  const sumOrNull = (k: "uangCair" | "profitHpp" | "selisih") =>
+    rows.some((r) => r[k] != null) ? rows.reduce((s, r) => s + (r[k] ?? 0), 0) : null;
+  return {
+    rows,
+    totals: {
+      grossOmzet: rows.reduce((s, r) => s + r.grossOmzet, 0),
+      uangCair: sumOrNull("uangCair"),
+      profitHpp: sumOrNull("profitHpp"),
+      profitAgen: rows.reduce((s, r) => s + r.profitAgen, 0),
+      selisih: sumOrNull("selisih"),
+    },
+  };
 }

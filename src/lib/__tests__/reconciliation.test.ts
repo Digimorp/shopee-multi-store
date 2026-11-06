@@ -12,6 +12,7 @@ import {
   type ReconResult,
   type ReconItem,
 } from "@/lib/reconciliation";
+import { diffReconItems, settlementBreakdown } from "@/lib/settlement";
 
 const now = new Date("2026-09-08T00:00:00Z");
 const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000);
@@ -219,5 +220,73 @@ describe("allocateLines — order multi-SKU tidak dihitung dobel", () => {
     expect(perLine[2]).toBeNull();
     expect(total).toBeCloseTo(42805);
     expect(matchedOrders).toBe(1);
+  });
+});
+
+// "Sync ulang" di /rekonsiliasi: hitung ulang reconcile() lalu bandingkan dengan hasil yang tampil.
+describe("diffReconItems", () => {
+  const base = { side: "both", category: "MATCH", settleStatus: "AKTUAL", stage: "CAIR", aktual: 1000 };
+
+  it("hasil identik -> 0 berubah", () => {
+    const items = [{ orderSn: "A", ...base }, { orderSn: "B", ...base }];
+    expect(diffReconItems(items, items.map((i) => ({ ...i })))).toEqual({ changed: 0, added: 0, removed: 0, total: 2 });
+  });
+
+  it("order baru ketemu Income Report (BELUM -> AKTUAL) dihitung berubah", () => {
+    const prev = [{ orderSn: "A", ...base, category: "BELUM_KETEMU", settleStatus: "BELUM", stage: "MENUNGGU_CAIR", aktual: null }];
+    const next = [{ orderSn: "A", ...base }];
+    expect(diffReconItems(prev, next).changed).toBe(1);
+  });
+
+  it("nilai aktual berubah (re-upload Income Report) dihitung berubah; selisih pembulatan < Rp 1 tidak", () => {
+    expect(diffReconItems([{ orderSn: "A", ...base }], [{ orderSn: "A", ...base, aktual: 900 }]).changed).toBe(1);
+    expect(diffReconItems([{ orderSn: "A", ...base }], [{ orderSn: "A", ...base, aktual: 1000.2 }]).changed).toBe(0);
+  });
+
+  it("order baru / hilang dihitung terpisah", () => {
+    const d = diffReconItems([{ orderSn: "A", ...base }], [{ orderSn: "B", ...base }]);
+    expect(d).toEqual({ changed: 0, added: 1, removed: 1, total: 1 });
+  });
+});
+
+// Popup Settlement Details: breakdown per SKU 1 order, rumus sama dengan Laporan Profit.
+describe("settlementBreakdown", () => {
+  const line = (o: Partial<Parameters<typeof settlementBreakdown>[0][number]>) => ({
+    id: "x", sku: "", productName: "P", qty: 1, status: "SELESAI", grossOmzet: 0, netSettlement: 0, hppSnapshot: 0, profitAgen: 0, ...o,
+  });
+  // 260901VDU7KCHV (data lokal): 2 baris, estimasi 21.250 + 59.000, payout 42.805. HPP & profit agen sintetis.
+  const lines = [
+    line({ id: "a", productName: "alma'tsurat", grossOmzet: 21250, netSettlement: 21250, hppSnapshot: 8000, profitAgen: 2000 }),
+    line({ id: "b", productName: "madinah a7 rest", grossOmzet: 59000, netSettlement: 59000, hppSnapshot: 20000, profitAgen: 9000 }),
+  ];
+
+  it("Uang Cair per SKU = porsi payout, total = payout order (tidak dobel)", () => {
+    const { rows, totals } = settlementBreakdown(lines, { estimasi: 80250, aktual: 42805 });
+    expect(rows[0].uangCair).toBeCloseTo(42805 * (21250 / 80250));
+    expect(totals.uangCair).toBeCloseTo(42805);
+    expect(totals.grossOmzet).toBe(80250);
+  });
+
+  it("Profit HPP = Uang Cair − HPP×qty; Selisih = Profit Agen − Profit HPP (sama dengan Laporan Profit)", () => {
+    const { rows, totals } = settlementBreakdown(lines, { estimasi: 80250, aktual: 42805 });
+    expect(rows[1].profitHpp).toBeCloseTo(rows[1].uangCair! - 20000);
+    expect(rows[1].selisih).toBeCloseTo(9000 - rows[1].profitHpp!);
+    expect(totals.profitHpp).toBeCloseTo(42805 - 28000);
+    expect(totals.selisih).toBeCloseTo(11000 - (42805 - 28000));
+  });
+
+  it("order belum cair -> Uang Cair/Profit HPP/Selisih null (bukan 0), Profit Agen tetap", () => {
+    const { rows, totals } = settlementBreakdown(lines, { estimasi: 80250, aktual: null });
+    expect(rows.every((r) => r.uangCair === null && r.profitHpp === null && r.selisih === null)).toBe(true);
+    expect(totals.uangCair).toBeNull();
+    expect(totals.profitAgen).toBe(11000);
+  });
+
+  it("baris CANCEL tidak ikut breakdown", () => {
+    const { rows } = settlementBreakdown([...lines, line({ id: "c", status: "CANCEL", grossOmzet: 5000 })], {
+      estimasi: 80250,
+      aktual: 42805,
+    });
+    expect(rows.map((r) => r.id)).toEqual(["a", "b"]);
   });
 });

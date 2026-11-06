@@ -1,11 +1,9 @@
 "use client";
 
-import { StatIcon } from "@/components/SummaryCard";
+import { RankBadge, StatIcon } from "@/components/SummaryCard";
 import { formatRupiah } from "@/lib/format";
 
 type Row = { toko: string; profitHpp: number; omzet: number; order: number };
-
-const RANK_TINT = ["bg-amber-100 text-amber-700", "bg-gray-100 text-gray-600", "bg-orange-100 text-orange-700"];
 
 function List({
   title,
@@ -30,13 +28,7 @@ function List({
         <ol className="space-y-2.5">
           {items.map((r, i) => (
             <li key={r.toko} className="flex items-center gap-3">
-              <span
-                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${
-                  RANK_TINT[i] ?? "bg-gray-100 text-gray-500"
-                }`}
-              >
-                {i + 1}
-              </span>
+              <RankBadge rank={i + 1} />
               <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{r.toko}</span>
               <span
                 className={`shrink-0 text-sm font-bold ${

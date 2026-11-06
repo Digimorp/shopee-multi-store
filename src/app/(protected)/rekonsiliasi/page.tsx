@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
 import ExportButtons from "@/components/ExportButtons";
 import StageBadge, { ReconBadge, SettleBadge } from "@/components/StageBadge";
 import { formatRupiah, formatDate, formatNumber } from "@/lib/format";
-import { allocateLines } from "@/lib/settlement";
+import { allocateLines, diffReconItems } from "@/lib/settlement";
+import Toast, { type ToastMessage } from "@/components/Toast";
+import SettlementDetailModal from "@/components/SettlementDetailModal";
+import { Icon } from "@/components/icons";
 
 type TabKey = "cair" | "pending" | "transit" | "SELISIH" | "BELUM_KETEMU" | "ALL";
 
@@ -33,6 +36,12 @@ export default function RekonsiliasiPage() {
   const [reconLoading, setReconLoading] = useState(true);
   const [cashflow, setCashflow] = useState<any>({ orders: [], summary: {} });
   const [cashflowLoading, setCashflowLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncNonce, setSyncNonce] = useState(0); // dinaikkan saat Sync ulang -> tabel cashflow ikut dimuat ulang
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const closeToast = useCallback(() => setToast(null), []);
+  const [detailSn, setDetailSn] = useState<string | null>(null); // No. Pesanan yang popup Settlement Details-nya terbuka
+  const closeDetail = useCallback(() => setDetailSn(null), []);
 
   const isCashflowTab = CASHFLOW_KEYS.has(tab);
 
@@ -48,12 +57,38 @@ export default function RekonsiliasiPage() {
   useEffect(() => {
     if (!isCashflowTab) return;
     setCashflowLoading(true);
-    fetch(`/api/reports/cashflow?${qs}&tab=${tab}`)
+    fetch(`/api/reports/cashflow?${qs}&tab=${tab}`, { cache: "no-store" })
       .then((r) => r.json())
       .then(setCashflow)
       .finally(() => setCashflowLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qs, tab]);
+  }, [qs, tab, syncNonce]);
+
+  // "Sync ulang" = jalankan ulang matching Order vs Income Report dari data yang SUDAH ada
+  // di DB (reconcile() dihitung tiap request, tidak ada status tersimpan). Tidak menarik
+  // data dari Shopee. Hasil dibandingkan dengan yang sedang tampil -> jumlah order berubah.
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/reconciliation?${qs}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const next = await res.json();
+      const d = diffReconItems(recon?.items ?? [], next.items ?? []);
+      setRecon(next);
+      setSyncNonce((n) => n + 1);
+      const parts = [`${formatNumber(d.changed)} order berubah status`];
+      if (d.added) parts.push(`${formatNumber(d.added)} order baru`);
+      if (d.removed) parts.push(`${formatNumber(d.removed)} order hilang`);
+      setToast({
+        title: d.changed + d.added + d.removed > 0 ? "Sync selesai — ada perubahan" : "Sync selesai — tidak ada perubahan",
+        detail: `${parts.join(", ")} dari ${formatNumber(d.total)} order dicek ulang.`,
+      });
+    } catch {
+      setToast({ tone: "error", title: "Sync gagal", detail: "Tidak bisa menghitung ulang rekonsiliasi. Coba lagi." });
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   const rate = recon?.rate ?? { match: 0, selisih: 0, belumKetemu: 0, total: 0, matchPct: 0 };
   const totals = recon?.totals ?? { estimasi: 0, aktual: 0, selisih: 0, adjustment: 0 };
@@ -111,7 +146,18 @@ export default function RekonsiliasiPage() {
             )}
           </p>
         </div>
-        {isCashflowTab && <ExportButtons report="cashflow" params={{ tab }} />}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleSync}
+            disabled={syncing || reconLoading}
+            title="Hitung ulang matching Order vs Income Report dari data yang sudah di-upload"
+            className="btn-ghost disabled:opacity-50"
+          >
+            <Icon name="refresh" size={16} strokeWidth={2} className={syncing ? "animate-spin" : ""} />
+            {syncing ? "Menghitung ulang…" : "Sync ulang"}
+          </button>
+          {isCashflowTab && <ExportButtons report="cashflow" params={{ tab }} />}
+        </div>
       </div>
 
       {/* Reconciliation Rate */}
@@ -200,7 +246,18 @@ export default function RekonsiliasiPage() {
                   render: (r) => {
                     const rc = reconMap.get(r.orderSn);
                     const stuck = rc?.flags?.includes("SAMPAI_7H_BELUM_CAIR");
-                    return <span className={stuck ? "font-semibold text-amber-700" : ""}>{r.orderSn}</span>;
+                    return (
+                      <button
+                        onClick={() => setDetailSn(r.orderSn)}
+                        disabled={!rc}
+                        title="Lihat Settlement Details"
+                        className={`underline decoration-dotted underline-offset-2 hover:text-brand-600 disabled:no-underline ${
+                          stuck ? "font-semibold text-amber-700" : ""
+                        }`}
+                      >
+                        {r.orderSn}
+                      </button>
+                    );
                   },
                 },
                 { header: "SKU", render: (r) => r.sku },
@@ -247,7 +304,21 @@ export default function RekonsiliasiPage() {
             rows={problemRows}
             emptyText={reconLoading ? "Memuat…" : "Tidak ada order pada kategori ini."}
             columns={[
-              { header: "No. Pesanan", render: (r) => <span className="font-medium">{r.orderSn}</span> },
+              {
+                header: "No. Pesanan",
+                render: (r) =>
+                  r.side === "income" ? (
+                    <span className="font-medium">{r.orderSn}</span> // order tidak ada di DB -> tak ada baris SKU
+                  ) : (
+                    <button
+                      onClick={() => setDetailSn(r.orderSn)}
+                      title="Lihat Settlement Details"
+                      className="font-medium underline decoration-dotted underline-offset-2 hover:text-brand-600"
+                    >
+                      {r.orderSn}
+                    </button>
+                  ),
+              },
               { header: "Toko", render: (r) => r.storeCode },
               { header: "Produk", render: (r) => <span className="block max-w-[180px] truncate">{r.productName}</span> },
               { header: "Estimasi", render: (r) => formatRupiah(r.estimasi) },
@@ -303,6 +374,11 @@ export default function RekonsiliasiPage() {
           ]}
         />
       </div>
+
+      {detailSn && reconMap.get(detailSn) && (
+        <SettlementDetailModal order={reconMap.get(detailSn)} qs={qs} onClose={closeDetail} />
+      )}
+      <Toast toast={toast} onClose={closeToast} />
     </div>
   );
 }

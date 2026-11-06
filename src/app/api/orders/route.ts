@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") as OrderStatus | null;
+  const orderSn = searchParams.get("orderSn"); // opsional: semua baris SKU 1 No. Pesanan (popup Settlement Details)
   const page = parseInt(searchParams.get("page") ?? "1");
   const pageSize = 50;
 
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
     orderCreatedAt: { gte: from, lte: to },
     deletedAt: null,
     ...(status ? { status } : {}),
+    ...(orderSn ? { orderSn } : {}),
   };
 
   const [orders, total] = await Promise.all([
