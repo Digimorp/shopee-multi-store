@@ -144,15 +144,15 @@ export default function RekonsiliasiPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard icon="hourglass" accent="brand" label="Total Estimasi (Pesanan)" value={formatRupiah(totals.estimasi)} />
-        <SummaryCard icon="coins" accent="green" label="Total Aktual (Income Report)" value={formatRupiah(totals.aktual)} />
+        <SummaryCard icon="hourglass" label="Total Estimasi (Pesanan)" value={formatRupiah(totals.estimasi)} />
+        <SummaryCard icon="coins" label="Total Aktual (Income Report)" value={formatRupiah(totals.aktual)} />
         <SummaryCard
           icon="trendingUp"
-          accent={totals.selisih < 0 ? "red" : "green"}
           label="Selisih Aktual − Estimasi"
           value={formatRupiah(totals.selisih)}
+          negative={totals.selisih < 0}
         />
-        <SummaryCard icon="sparkles" accent="purple" label="Adjustment Shopee" value={formatRupiah(totals.adjustment)} />
+        <SummaryCard icon="sparkles" label="Adjustment Shopee" value={formatRupiah(totals.adjustment)} />
       </div>
 
       {/* Tab gabungan: cashflow (Cair/Pending/Transit) + rekonsiliasi (Selisih/Belum Ketemu/Semua Order) */}
@@ -172,12 +172,11 @@ export default function RekonsiliasiPage() {
         {isCashflowTab ? (
           <>
             <div className="mb-3 grid gap-3 sm:grid-cols-4">
-              <SummaryCard icon="clipboard" accent="blue" label="Jumlah Transaksi" value={String(cashflow.summary?.count ?? 0)} />
-              <SummaryCard icon="cash" accent="brand" label="Total Omzet Bruto" value={formatRupiah(cashflow.summary?.totalGross ?? 0)} />
-              <SummaryCard icon="hourglass" accent="purple" label="Total Nilai — ESTIMASI" value={formatRupiah(cashflow.summary?.totalNet ?? 0)} />
+              <SummaryCard icon="clipboard" label="Jumlah Transaksi" value={String(cashflow.summary?.count ?? 0)} />
+              <SummaryCard icon="cash" label="Total Omzet Bruto" value={formatRupiah(cashflow.summary?.totalGross ?? 0)} />
+              <SummaryCard icon="hourglass" label="Total Nilai — ESTIMASI" value={formatRupiah(cashflow.summary?.totalNet ?? 0)} />
               <SummaryCard
                 icon="coins"
-                accent="green"
                 label={`Total Nilai — AKTUAL (${nMatched} matched)`}
                 value={formatRupiah(aktualTotal)}
               />

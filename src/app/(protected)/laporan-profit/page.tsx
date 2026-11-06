@@ -41,16 +41,16 @@ export default function LaporanProfitPage() {
       </p>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard icon="box" accent="green" label="Total Unit Keluar" value={formatNumber(data.summary?.totalQty ?? 0)} />
-        <SummaryCard icon="tag" accent="blue" label="Jumlah SKU Terjual" value={formatNumber(data.summary?.skuCount ?? 0)} />
-        <SummaryCard icon="coins" accent="orange" label="Total Uang Cair" value={formatRupiah(data.summary?.totalUangCair ?? 0)} />
-        <SummaryCard icon="trendingUp" accent="green" label="Total Profit HPP (Nett)" value={formatRupiah(data.summary?.totalProfitHpp ?? 0)} />
-        <SummaryCard icon="wallet" accent="purple" label="Total Profit Agen" value={formatRupiah(data.summary?.totalProfitAgen ?? 0)} />
+        <SummaryCard icon="box" label="Total Unit Keluar" value={formatNumber(data.summary?.totalQty ?? 0)} />
+        <SummaryCard icon="tag" label="Jumlah SKU Terjual" value={formatNumber(data.summary?.skuCount ?? 0)} />
+        <SummaryCard icon="coins" label="Total Uang Cair" value={formatRupiah(data.summary?.totalUangCair ?? 0)} />
+        <SummaryCard icon="trendingUp" label="Total Profit HPP (Nett)" value={formatRupiah(data.summary?.totalProfitHpp ?? 0)} />
+        <SummaryCard icon="wallet" label="Total Profit Agen" value={formatRupiah(data.summary?.totalProfitAgen ?? 0)} />
         <SummaryCard
           icon="scale"
           label="Selisih Agen vs Riil"
           value={formatRupiah(data.summary?.selisih ?? 0)}
-          accent={(data.summary?.selisih ?? 0) >= 0 ? "green" : "red"}
+          negative={(data.summary?.selisih ?? 0) < 0}
         />
       </div>
 

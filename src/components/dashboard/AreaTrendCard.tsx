@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { parseISO, startOfWeek, format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Icon, type IconName } from "@/components/icons";
+import { Icon } from "@/components/icons";
 import { formatRupiah } from "@/lib/format";
 import type { TrendPoint } from "@/components/TrendChart";
 
@@ -28,15 +28,6 @@ function axisLabel(key: string, b: Bucket): string {
   if (b === "monthly") return format(parseISO(key + "-01"), "MMM yy", { locale: idLocale });
   return format(parseISO(key), "d MMM", { locale: idLocale });
 }
-
-const MINI: { key: string; label: string; icon: IconName; tint: string }[] = [
-  { key: "totalOmzetBruto", label: "Omzet Bruto", icon: "cash", tint: "bg-brand-100 text-brand-600" },
-  { key: "cair", label: "Cair (Aktual)", icon: "coins", tint: "bg-emerald-100 text-emerald-600" },
-  { key: "belumCair", label: "Belum Cair", icon: "hourglass", tint: "bg-amber-100 text-amber-600" },
-  { key: "selisih", label: "Selisih", icon: "scale", tint: "bg-rose-100 text-rose-600" },
-  { key: "profitHpp", label: "Profit HPP", icon: "trendingUp", tint: "bg-blue-100 text-blue-600" },
-  { key: "profitAgen", label: "Profit Agen", icon: "sparkles", tint: "bg-orange-100 text-orange-600" },
-];
 
 export default function AreaTrendCard({
   trend,
@@ -142,20 +133,6 @@ export default function AreaTrendCard({
             </AreaChart>
           </ResponsiveContainer>
         )}
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4 border-t border-gray-100 pt-4 sm:grid-cols-3 lg:grid-cols-6">
-        {MINI.map((m) => (
-          <div key={m.key} className="flex items-center gap-2">
-            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${m.tint}`}>
-              <Icon name={m.icon} size={15} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[13px] font-bold tabular-nums text-gray-900">{formatRupiah(summary?.[m.key] ?? 0)}</p>
-              <p className="text-[11px] text-gray-400">{m.label}</p>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

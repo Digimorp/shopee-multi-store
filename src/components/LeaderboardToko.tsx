@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "@/components/icons";
+import { StatIcon } from "@/components/SummaryCard";
 import { formatRupiah } from "@/lib/format";
 
 type Row = { toko: string; profitHpp: number; omzet: number; order: number };
@@ -20,10 +20,8 @@ function List({
 }) {
   return (
     <div className="card p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-100 text-brand-600">
-          <Icon name={icon} size={15} />
-        </span>
+      <div className="mb-3 flex items-center gap-3">
+        <StatIcon icon={icon} />
         <p className="text-sm font-semibold text-gray-800">{title}</p>
       </div>
       {items.length === 0 ? (
