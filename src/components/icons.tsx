@@ -31,6 +31,8 @@ const PATHS: Record<string, string> = {
   fileText: "M14 3v5h5M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm-5 9h6m-6 4h6",
   receipt: "M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 5h6M9 12h6",
   refresh: "M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16m0 5v-5h5",
+  menu: "M4 6h16M4 12h16M4 18h16",
+  x: "M18 6 6 18M6 6l12 12",
   dot: "M12 12h.01",
 };
 

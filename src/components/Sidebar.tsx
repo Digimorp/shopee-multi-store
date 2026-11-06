@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Icon, type IconName } from "@/components/icons";
+import { useSidebar } from "@/components/SidebarContext";
 
 const MENU: { href: string; label: string; icon: IconName }[] = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
@@ -42,6 +44,13 @@ export default function Sidebar() {
   const role = (session?.user as any)?.role;
   // Jangan render menu Pengaturan (owner-only) sebelum sesi diketahui — cegah flash.
   const sessionReady = status !== "loading";
+  const { open, setOpen } = useSidebar();
+  const close = () => setOpen(false);
+
+  // Tutup drawer tiap pindah halaman (termasuk tombol back/forward browser).
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname, setOpen]);
 
   const qs = searchParams.toString();
   const withQs = (href: string) => (qs ? `${href}?${qs}` : href);
@@ -55,46 +64,72 @@ export default function Sidebar() {
     }`;
 
   return (
-    <aside className="hidden w-[230px] shrink-0 flex-col bg-sidebar md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex">
-      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5">
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-600 text-white shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
-          <Icon name="store" size={18} strokeWidth={2} />
-        </span>
-        <span className="text-[15px] font-bold leading-tight text-white">
-          Shopee
-          <br />
-          <span className="text-sidebar-muted">Multi-Toko</span>
-        </span>
-      </div>
+    <>
+      {/* Backdrop drawer — hanya di layar sempit (< lg). Klik = tutup. */}
+      <div
+        aria-hidden="true"
+        onClick={close}
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {MENU.map((m) => (
-          <Link key={m.href} href={withQs(m.href)} className={itemClass(m.href)}>
-            <Icon name={m.icon} size={18} />
-            <span className="truncate">{m.label}</span>
-          </Link>
-        ))}
-
-        {!sessionReady ? (
-          <div className="space-y-2 px-3 pt-6">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="h-8 animate-pulse rounded-xl bg-sidebar-hover" />
-            ))}
-          </div>
-        ) : (
-          role === "OWNER" && (
-            <>
-              <SectionLabel>Pengaturan</SectionLabel>
-              {SETTINGS_MENU.map((m) => (
-                <Link key={m.href} href={withQs(m.href)} className={itemClass(m.href)}>
-                  <Icon name={m.icon} size={18} />
-                  <span className="truncate">{m.label}</span>
-                </Link>
+      {/* < lg: off-canvas drawer (slide dari kiri). >= lg: selalu terbuka, fixed. */}
+      <aside
+        id="app-sidebar"
+        className={`fixed inset-y-0 left-0 z-50 flex w-[230px] max-w-[85vw] flex-col bg-sidebar shadow-2xl transition-[transform,visibility] duration-300 ease-out lg:visible lg:z-30 lg:translate-x-0 lg:shadow-none ${
+          // invisible saat tertutup: link di drawer tidak bisa kena Tab/screen reader.
+          open ? "visible translate-x-0" : "invisible -translate-x-full"
+        }`}
+      >
+        <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-600 text-white shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
+            <Icon name="store" size={18} strokeWidth={2} />
+          </span>
+          <span className="flex-1 text-[15px] font-bold leading-tight text-white">
+            Shopee
+            <br />
+            <span className="text-sidebar-muted">Multi-Toko</span>
+          </span>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Tutup menu"
+            className="grid h-8 w-8 place-items-center rounded-lg text-sidebar-text hover:bg-sidebar-hover hover:text-white lg:hidden"
+          >
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+  
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+          {MENU.map((m) => (
+            <Link key={m.href} href={withQs(m.href)} onClick={close} className={itemClass(m.href)}>
+              <Icon name={m.icon} size={18} />
+              <span className="truncate">{m.label}</span>
+            </Link>
+          ))}
+  
+          {!sessionReady ? (
+            <div className="space-y-2 px-3 pt-6">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-8 animate-pulse rounded-xl bg-sidebar-hover" />
               ))}
-            </>
-          )
-        )}
-      </nav>
-    </aside>
+            </div>
+          ) : (
+            role === "OWNER" && (
+              <>
+                <SectionLabel>Pengaturan</SectionLabel>
+                {SETTINGS_MENU.map((m) => (
+                  <Link key={m.href} href={withQs(m.href)} onClick={close} className={itemClass(m.href)}>
+                    <Icon name={m.icon} size={18} />
+                    <span className="truncate">{m.label}</span>
+                  </Link>
+                ))}
+              </>
+            )
+          )}
+        </nav>
+      </aside>
+    </>
   );
 }

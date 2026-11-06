@@ -6,6 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import { getDefaultPeriod } from "@/lib/period";
 import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
+import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
 
 function toInputDate(d: Date) {
@@ -21,6 +22,7 @@ export default function TopBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+  const { open: sidebarOpen, toggle } = useSidebar();
 
   const [stores, setStores] = useState<StoreOption[]>([]);
   const [storesLoaded, setStoresLoaded] = useState(false);
@@ -64,8 +66,18 @@ export default function TopBar() {
   const filterReady = !sessionLoading && storesLoaded;
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-white px-6 py-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-white px-4 py-3 sm:px-6">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={sidebarOpen ? "Tutup menu" : "Buka menu"}
+          aria-expanded={sidebarOpen}
+          aria-controls="app-sidebar"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:text-brand-500 lg:hidden"
+        >
+          <Icon name="menu" size={18} />
+        </button>
         {!filterReady ? (
           <Skeleton className="h-9 w-40 rounded-xl" />
         ) : stores.length === 0 ? (

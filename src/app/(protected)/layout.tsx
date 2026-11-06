@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
+import { SidebarProvider } from "@/components/SidebarContext";
 
 // Semua halaman di area ini butuh sesi login & baca query param (?storeId, ?from, ?to),
 // jadi selalu render dinamis — jangan di-prerender statis saat build.
@@ -8,16 +9,18 @@ export const dynamic = "force-dynamic";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-canvas">
-      <Suspense>
-        <Sidebar />
-      </Suspense>
-      <div className="flex min-w-0 flex-1 flex-col md:pl-[230px]">
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-canvas">
         <Suspense>
-          <TopBar />
+          <Sidebar />
         </Suspense>
-        <main className="flex-1 p-6">{children}</main>
+        <div className="flex min-w-0 flex-1 flex-col lg:pl-[230px]">
+          <Suspense>
+            <TopBar />
+          </Suspense>
+          <main className="min-w-0 flex-1 p-4 sm:p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

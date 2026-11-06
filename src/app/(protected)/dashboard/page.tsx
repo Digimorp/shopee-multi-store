@@ -91,14 +91,14 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AreaTrendCard trend={trend} summary={summary} loading={loading} error={error} periodLabel={periodLabel} />
         </div>
         <DonutCard rows={storePerf} loading={loading} error={error} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryCard accent="brand" icon="cash" label="Total Omzet Bruto" value={formatRupiah(summary?.totalOmzetBruto ?? 0)} />
         <SummaryCard
           accent="green"
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         <SummaryCard accent="purple" icon="sparkles" label="Profit Agen" value={formatRupiah(summary?.profitAgen ?? 0)} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <ActivityCard logs={logs} loading={loading} error={error} />
         <div className="lg:col-span-2">
           <RecentOrdersCard />
