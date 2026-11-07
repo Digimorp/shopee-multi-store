@@ -1,27 +1,22 @@
 "use client";
 
-import { RankBadge, StatIcon } from "@/components/SummaryCard";
+import { RankBadge } from "@/components/SummaryCard";
 import { formatRupiah } from "@/lib/format";
 
 type Row = { toko: string; profitHpp: number; omzet: number; order: number };
 
 function List({
   title,
-  icon,
   items,
   emptyText,
 }: {
   title: string;
-  icon: "trendingUp" | "undo";
   items: Row[];
   emptyText: string;
 }) {
   return (
     <div className="card p-6">
-      <div className="mb-3 flex items-center gap-3">
-        <StatIcon icon={icon} />
-        <p className="text-sm font-semibold text-gray-800">{title}</p>
-      </div>
+      <p className="mb-3 text-sm font-semibold text-gray-800">{title}</p>
       {items.length === 0 ? (
         <p className="py-4 text-center text-sm text-gray-400">{emptyText}</p>
       ) : (
@@ -55,13 +50,11 @@ export default function LeaderboardToko({ rows }: { rows: Row[] }) {
     <div className="grid gap-4 md:grid-cols-2">
       <List
         title="Toko Paling Untung (Profit HPP)"
-        icon="trendingUp"
         items={untung}
         emptyText="Belum ada toko dengan transaksi pada periode ini."
       />
       <List
         title="Toko Perlu Perhatian (Profit terendah)"
-        icon="undo"
         items={rugi}
         emptyText="Belum ada toko dengan transaksi pada periode ini."
       />

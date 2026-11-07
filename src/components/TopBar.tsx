@@ -70,7 +70,7 @@ export default function TopBar() {
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-white px-4 py-3 sm:px-6">
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-1">
         <button
           type="button"
           onClick={toggle}
@@ -100,6 +100,16 @@ export default function TopBar() {
             ))}
           </select>
         )}
+        {/* Tampilan saja: belum ada logic pencarian, sama seperti tombol ikon sebelumnya. */}
+        <label className="flex min-w-[12rem] flex-1 items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-gray-400 focus-within:ring-2 focus-within:ring-brand-300">
+          <Icon name="search" size={16} />
+          <input
+            type="search"
+            placeholder="Cari…"
+            aria-label="Cari"
+            className="w-full min-w-0 border-0 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+          />
+        </label>
         <div className="flex max-w-full items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 focus-within:ring-2 focus-within:ring-brand-300 sm:gap-2 sm:px-4">
           <input type="date" value={from} onChange={(e) => updateParam("from", e.target.value)} className={dateClass} />
           <span className="text-sm text-gray-400">s/d</span>
@@ -108,9 +118,6 @@ export default function TopBar() {
       </div>
 
       <div className="flex items-center gap-2">
-        <button className={iconBtnClass}>
-          <Icon name="search" size={18} />
-        </button>
         <AlertBell />
 
         <div className="mx-1 h-6 w-px bg-gray-200" />

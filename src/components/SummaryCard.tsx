@@ -1,15 +1,4 @@
-import { Icon, type IconName } from "@/components/icons";
-
-// Chip ikon judul section (header LeaderboardToko) — flat, 1 warna aksen hijau brand.
-export function StatIcon({ icon }: { icon: IconName }) {
-  return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-100 text-brand-600">
-      <Icon name={icon} size={20} strokeWidth={2} />
-    </span>
-  );
-}
-
-// Badge peringkat bulat bernomor (1/2/3…) — gaya flat & warna aksen sama dengan StatIcon.
+// Badge peringkat bulat bernomor (1/2/3…) — gaya flat, warna aksen hijau brand.
 export function RankBadge({ rank }: { rank: number }) {
   return (
     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-bold tabular-nums text-brand-600">
