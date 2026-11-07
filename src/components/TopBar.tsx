@@ -59,7 +59,10 @@ export default function TopBar() {
     .toUpperCase();
 
   const fieldClass =
-    "rounded-xl border border-gray-200 bg-canvas px-3 py-2 text-sm text-gray-700 outline-none focus:border-brand-400";
+    "rounded-full border-0 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-300";
+  const dateClass = "w-[7.75rem] min-w-0 shrink border-0 bg-transparent py-1 text-sm text-gray-700 outline-none sm:w-auto";
+  const iconBtnClass =
+    "grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-500 transition hover:text-brand-500";
 
   // Filter toko baru boleh dirender setelah sesi + daftar toko siap
   // (opsi "Semua Toko" tergantung role) — sebelum itu tampilkan skeleton, bukan tebakan.
@@ -74,12 +77,12 @@ export default function TopBar() {
           aria-label={sidebarOpen ? "Tutup menu" : "Buka menu"}
           aria-expanded={sidebarOpen}
           aria-controls="app-sidebar"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:text-brand-500 lg:hidden"
+          className={`${iconBtnClass} lg:hidden`}
         >
           <Icon name="menu" size={18} />
         </button>
         {!filterReady ? (
-          <Skeleton className="h-9 w-40 rounded-xl" />
+          <Skeleton className="h-9 w-40 rounded-full" />
         ) : stores.length === 0 ? (
           <a
             href="/settings/stores"
@@ -97,13 +100,15 @@ export default function TopBar() {
             ))}
           </select>
         )}
-        <input type="date" value={from} onChange={(e) => updateParam("from", e.target.value)} className={fieldClass} />
-        <span className="text-sm text-gray-300">s/d</span>
-        <input type="date" value={to} onChange={(e) => updateParam("to", e.target.value)} className={fieldClass} />
+        <div className="flex max-w-full items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 focus-within:ring-2 focus-within:ring-brand-300 sm:gap-2 sm:px-4">
+          <input type="date" value={from} onChange={(e) => updateParam("from", e.target.value)} className={dateClass} />
+          <span className="text-sm text-gray-400">s/d</span>
+          <input type="date" value={to} onChange={(e) => updateParam("to", e.target.value)} className={dateClass} />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-brand-500">
+        <button className={iconBtnClass}>
           <Icon name="search" size={18} />
         </button>
         <AlertBell />
@@ -117,7 +122,7 @@ export default function TopBar() {
               <Skeleton className="h-3.5 w-24" />
               <Skeleton className="h-2.5 w-14" />
             </div>
-            <Skeleton className="h-9 w-9 rounded-xl" />
+            <Skeleton className="h-9 w-9 rounded-full" />
           </div>
         ) : (
           <div className="flex items-center gap-2.5">
@@ -131,7 +136,7 @@ export default function TopBar() {
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               title="Keluar"
-              className="grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-400 hover:border-brand-300 hover:text-brand-500"
+              className={iconBtnClass}
             >
               <Icon name="logout" size={18} />
             </button>

@@ -59,20 +59,20 @@ export default function AreaTrendCard({
   const totalOmzet = summary?.totalOmzetBruto ?? 0;
 
   return (
-    <div className="card p-5">
+    <div className="card p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-gray-400">Total Omzet Bruto</p>
           <p className="mt-1 text-3xl font-bold text-gray-900">{formatRupiah(totalOmzet)}</p>
           <p className="mt-0.5 text-xs text-gray-400">Periode {periodLabel}</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-1 rounded-full bg-gray-100 p-1">
+        <div className="flex w-full flex-col items-end gap-2 sm:w-auto">
+          <div className="flex w-full justify-between gap-1 rounded-full bg-gray-100 p-1 sm:w-auto">
             {TABS.map((t) => (
               <button
                 key={t.key}
                 onClick={() => setBucket(t.key)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                className={`rounded-full px-2 py-1 text-xs font-medium transition sm:px-3 ${
                   bucket === t.key ? "bg-white text-brand-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
                 }`}
               >

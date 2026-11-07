@@ -38,7 +38,7 @@ export default function PerformaTokoPage() {
 
       <LeaderboardToko rows={rows} />
 
-      <div className="card p-5">
+      <div className="card p-6">
         <p className="mb-3 text-sm font-semibold text-gray-800">Omzet &amp; Profit per Toko</p>
         {chartData.length === 0 ? (
           <div className="flex h-64 items-center justify-center text-sm text-gray-400">Belum ada data pada periode ini.</div>

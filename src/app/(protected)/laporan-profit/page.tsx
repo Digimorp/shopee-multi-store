@@ -40,14 +40,21 @@ export default function LaporanProfitPage() {
         aktual. Selisih menunjukkan potensi gap antara harga jual ke agen dan penerimaan riil dari Shopee.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard icon="box" label="Total Unit Keluar" value={formatNumber(data.summary?.totalQty ?? 0)} />
-        <SummaryCard icon="tag" label="Jumlah SKU Terjual" value={formatNumber(data.summary?.skuCount ?? 0)} />
-        <SummaryCard icon="coins" label="Total Uang Cair" value={formatRupiah(data.summary?.totalUangCair ?? 0)} />
-        <SummaryCard icon="trendingUp" label="Total Profit HPP (Nett)" value={formatRupiah(data.summary?.totalProfitHpp ?? 0)} />
-        <SummaryCard icon="wallet" label="Total Profit Agen" value={formatRupiah(data.summary?.totalProfitAgen ?? 0)} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <SummaryCard label="Total Unit Keluar" value={formatNumber(data.summary?.totalQty ?? 0)} />
+        <SummaryCard label="Jumlah SKU Terjual" value={formatNumber(data.summary?.skuCount ?? 0)} />
+        <SummaryCard tone="success" label="Total Uang Cair" value={formatRupiah(data.summary?.totalUangCair ?? 0)} />
         <SummaryCard
-          icon="scale"
+          label="Total Profit HPP (Nett)"
+          value={formatRupiah(data.summary?.totalProfitHpp ?? 0)}
+          negative={(data.summary?.totalProfitHpp ?? 0) < 0}
+        />
+        <SummaryCard
+          label="Total Profit Agen"
+          value={formatRupiah(data.summary?.totalProfitAgen ?? 0)}
+          negative={(data.summary?.totalProfitAgen ?? 0) < 0}
+        />
+        <SummaryCard
           label="Selisih Agen vs Riil"
           value={formatRupiah(data.summary?.selisih ?? 0)}
           negative={(data.summary?.selisih ?? 0) < 0}

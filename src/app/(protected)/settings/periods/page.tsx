@@ -42,7 +42,7 @@ export default function SettingsPeriodsPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Settings Period & Cut-Off</h1>
 
-      <form onSubmit={saveCutoff} className="flex flex-wrap items-center gap-2 card p-5">
+      <form onSubmit={saveCutoff} className="flex flex-wrap items-center gap-2 card p-6">
         <label className="text-sm text-gray-600">Tanggal Cut-Off tiap bulan:</label>
         <input
           type="number"
@@ -58,7 +58,7 @@ export default function SettingsPeriodsPage() {
         <span className="text-xs text-gray-500">Periode berjalan saat ini: {formatPeriodLabel(currentPeriod)}</span>
       </form>
 
-      <div className="card p-5">
+      <div className="card p-6">
         <h2 className="mb-2 text-sm font-semibold text-gray-800">Lock Periode</h2>
         <p className="mb-2 text-xs text-gray-500">
           Periode yang dikunci tidak bisa menerima input data baru dari upload — dipakai setelah rekap bulanan final.

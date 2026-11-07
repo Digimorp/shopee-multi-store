@@ -120,7 +120,7 @@ export default function DataTable<T>({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-card">
+    <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>

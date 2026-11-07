@@ -68,12 +68,12 @@ export default function ReturCancelPage() {
         <ExportButtons report="retur" />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <SummaryCard icon="undo" label="Unit Batal" value={formatNumber(summary?.batal?.unit ?? 0)} />
-        <SummaryCard icon="box" label="Unit Retur" value={formatNumber(summary?.retur?.unit ?? 0)} />
-        <SummaryCard icon="check" label="Retur Layak Restok (unit)" value={formatNumber(summary?.layakRestok?.unit ?? 0)} />
-        <SummaryCard icon="tag" label="Retur Rusak (unit)" value={formatNumber(summary?.rusak?.unit ?? 0)} />
-        <SummaryCard icon="cash" label="Beban Kerugian HPP" value={formatRupiah(summary?.rusak?.kerugianHpp ?? 0)} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <SummaryCard tone="danger" label="Unit Batal" value={formatNumber(summary?.batal?.unit ?? 0)} />
+        <SummaryCard tone="warning" label="Unit Retur" value={formatNumber(summary?.retur?.unit ?? 0)} />
+        <SummaryCard tone="success" label="Retur Layak Restok (unit)" value={formatNumber(summary?.layakRestok?.unit ?? 0)} />
+        <SummaryCard tone="danger" label="Retur Rusak (unit)" value={formatNumber(summary?.rusak?.unit ?? 0)} />
+        <SummaryCard tone="danger" label="Beban Kerugian HPP" value={formatRupiah(summary?.rusak?.kerugianHpp ?? 0)} />
       </div>
       {summary?.belumDiklasifikasi?.unit > 0 && (
         <p className="text-xs text-amber-700">

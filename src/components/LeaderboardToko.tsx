@@ -17,7 +17,7 @@ function List({
   emptyText: string;
 }) {
   return (
-    <div className="card p-5">
+    <div className="card p-6">
       <div className="mb-3 flex items-center gap-3">
         <StatIcon icon={icon} />
         <p className="text-sm font-semibold text-gray-800">{title}</p>
@@ -29,7 +29,7 @@ function List({
           {items.map((r, i) => (
             <li key={r.toko} className="flex items-center gap-3">
               <RankBadge rank={i + 1} />
-              <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{r.toko}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">{r.toko}</span>
               <span
                 className={`shrink-0 text-sm font-bold ${
                   r.profitHpp > 0 ? "text-emerald-600" : r.profitHpp < 0 ? "text-rose-600" : "text-gray-400"

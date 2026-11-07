@@ -61,9 +61,9 @@ body {
 }
 
 @layer components {
-  /* Kartu standar — putih, border tipis, rounded, shadow halus */
+  /* Kartu standar — putih, flat: border tipis 1px + shadow minimal */
   .card {
-    @apply rounded-2xl border border-card-border bg-card shadow-card;
+    @apply rounded-2xl border border-card-border bg-card shadow-sm;
   }
 
   /* Tombol primer — solid hijau tua (bukan gradient) */
@@ -89,6 +89,14 @@ body {
   }
   .btn-chip-danger {
     @apply border-rose-200 text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700;
+  }
+
+  /* Link aksi di baris list/tabel — underline polos, bukan tombol */
+  .link-action {
+    @apply text-xs font-medium text-gray-600 underline underline-offset-2 transition hover:text-brand-600;
+  }
+  .link-action-danger {
+    @apply text-rose-600 hover:text-rose-700;
   }
 
   /* Pill tab (aktif dikendalikan lewat class tambahan) */

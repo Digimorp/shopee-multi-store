@@ -69,7 +69,7 @@ export default function UploadForm({
 
   if (stores.length === 0) {
     return (
-      <div className="card p-5">
+      <div className="card p-6">
         <p className="mb-1 text-sm font-semibold text-gray-800">{title}</p>
         <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
           Belum ada toko,{" "}
@@ -83,7 +83,7 @@ export default function UploadForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card p-5">
+    <form onSubmit={handleSubmit} className="card p-6">
       <p className="mb-1 text-sm font-semibold text-gray-800">{title}</p>
       {hint && <p className="mb-3 text-xs text-gray-400">{hint}</p>}
       <div className="mb-3 grid gap-3 sm:grid-cols-2">

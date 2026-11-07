@@ -161,7 +161,7 @@ export default function RekonsiliasiPage() {
       </div>
 
       {/* Reconciliation Rate */}
-      <div className="card p-5">
+      <div className="card p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold text-gray-800">Reconciliation Rate</p>
           <p className="text-sm text-gray-500">
@@ -189,16 +189,15 @@ export default function RekonsiliasiPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard icon="hourglass" label="Total Estimasi (Pesanan)" value={formatRupiah(totals.estimasi)} />
-        <SummaryCard icon="coins" label="Total Aktual (Income Report)" value={formatRupiah(totals.aktual)} />
+      <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+        <SummaryCard label="Total Estimasi (Pesanan)" value={formatRupiah(totals.estimasi)} />
+        <SummaryCard tone="success" label="Total Aktual (Income Report)" value={formatRupiah(totals.aktual)} />
         <SummaryCard
-          icon="trendingUp"
           label="Selisih Aktual − Estimasi"
           value={formatRupiah(totals.selisih)}
           negative={totals.selisih < 0}
         />
-        <SummaryCard icon="sparkles" label="Adjustment Shopee" value={formatRupiah(totals.adjustment)} />
+        <SummaryCard label="Adjustment Shopee" value={formatRupiah(totals.adjustment)} />
       </div>
 
       {/* Tab gabungan: cashflow (Cair/Pending/Transit) + rekonsiliasi (Selisih/Belum Ketemu/Semua Order) */}
@@ -217,12 +216,12 @@ export default function RekonsiliasiPage() {
 
         {isCashflowTab ? (
           <>
-            <div className="mb-3 grid gap-3 sm:grid-cols-4">
-              <SummaryCard icon="clipboard" label="Jumlah Transaksi" value={String(cashflow.summary?.count ?? 0)} />
-              <SummaryCard icon="cash" label="Total Omzet Bruto" value={formatRupiah(cashflow.summary?.totalGross ?? 0)} />
-              <SummaryCard icon="hourglass" label="Total Nilai — ESTIMASI" value={formatRupiah(cashflow.summary?.totalNet ?? 0)} />
+            <div className="mb-4 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+              <SummaryCard label="Jumlah Transaksi" value={String(cashflow.summary?.count ?? 0)} />
+              <SummaryCard label="Total Omzet Bruto" value={formatRupiah(cashflow.summary?.totalGross ?? 0)} />
+              <SummaryCard label="Total Nilai — ESTIMASI" value={formatRupiah(cashflow.summary?.totalNet ?? 0)} />
               <SummaryCard
-                icon="coins"
+                tone="success"
                 label={`Total Nilai — AKTUAL (${nMatched} matched)`}
                 value={formatRupiah(aktualTotal)}
               />

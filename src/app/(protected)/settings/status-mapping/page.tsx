@@ -92,7 +92,7 @@ export default function StatusMappingPage() {
         ditentukan otomatis dari ada/tidaknya kolom &quot;Waktu Dana Dilepaskan&quot;.
       </p>
 
-      <form onSubmit={handleSubmit} className="grid gap-2 card p-5 sm:grid-cols-6">
+      <form onSubmit={handleSubmit} className="grid gap-2 card p-6 sm:grid-cols-6">
         <input
           required
           placeholder="Pattern (mis. dibatalkan)"

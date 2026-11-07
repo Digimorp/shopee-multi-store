@@ -47,7 +47,7 @@ export default function AlertBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         title="Notifikasi"
-        className="relative grid h-9 w-9 place-items-center rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-brand-500"
+        className="relative grid h-9 w-9 place-items-center rounded-full bg-gray-100 text-gray-500 transition hover:text-brand-500"
       >
         <Icon name="bell" size={18} />
         {count > 0 && (

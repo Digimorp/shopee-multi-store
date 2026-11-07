@@ -62,7 +62,7 @@ export default function RecentOrdersCard() {
   }
 
   return (
-    <div className="card p-5">
+    <div className="card p-6">
       <div>
         <p className="text-sm font-semibold text-gray-800">Pesanan Terbaru</p>
         <p className="text-xs text-gray-400">{formatNumber(total)} pesanan pada periode ini</p>
@@ -84,8 +84,8 @@ export default function RecentOrdersCard() {
             {
               header: "Aksi",
               render: (r) => (
-                <div className="flex gap-1">
-                  <button onClick={() => setEditing(r)} className="btn-chip" title="Edit">
+                <div className="flex gap-3">
+                  <button onClick={() => setEditing(r)} className="link-action" title="Edit">
                     Edit
                   </button>
                   <button
@@ -93,7 +93,7 @@ export default function RecentOrdersCard() {
                       setDeleting(r);
                       setDeleteError("");
                     }}
-                    className="btn-chip btn-chip-danger"
+                    className="link-action link-action-danger"
                     title="Hapus"
                   >
                     Hapus

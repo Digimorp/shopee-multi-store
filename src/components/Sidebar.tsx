@@ -57,7 +57,7 @@ export default function Sidebar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   const itemClass = (href: string) =>
-    `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+    `group flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-medium transition ${
       isActive(href)
         ? "bg-sidebar-active text-sidebar-activeText"
         : "text-sidebar-text hover:bg-sidebar-hover hover:text-white"
@@ -112,7 +112,7 @@ export default function Sidebar() {
           {!sessionReady ? (
             <div className="space-y-2 px-3 pt-6">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-8 animate-pulse rounded-xl bg-sidebar-hover" />
+                <div key={i} className="h-8 animate-pulse rounded-full bg-sidebar-hover" />
               ))}
             </div>
           ) : (

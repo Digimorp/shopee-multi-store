@@ -105,7 +105,7 @@ export default function AuditLogPage() {
       />
 
       {expanded && (
-        <div className="card p-4">
+        <div className="card p-6">
           {(() => {
             const r = logs.find((l) => l.id === expanded);
             if (!r) return null;

@@ -1,15 +1,9 @@
 import { Icon, type IconName } from "@/components/icons";
 
-// Chip ikon stat — SATU gaya untuk semua metrik & halaman: flat, 1 warna aksen hijau brand.
-// Dipakai juga oleh header LeaderboardToko supaya tidak ada varian ikon lain.
-// `alert` = pengecualian khusus penanda "perlu dicek manual" (merah, selalu — bukan tren nilai).
-export function StatIcon({ icon, alert = false }: { icon: IconName; alert?: boolean }) {
+// Chip ikon judul section (header LeaderboardToko) — flat, 1 warna aksen hijau brand.
+export function StatIcon({ icon }: { icon: IconName }) {
   return (
-    <span
-      className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-        alert ? "bg-rose-100 text-rose-600" : "bg-brand-100 text-brand-600"
-      }`}
-    >
+    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-100 text-brand-600">
       <Icon name={icon} size={20} strokeWidth={2} />
     </span>
   );
@@ -24,34 +18,35 @@ export function RankBadge({ rank }: { rank: number }) {
   );
 }
 
-// Stat card baku: card putih flat, border tipis 1px abu, shadow minimal. Angka besar tetap gelap.
+// Warna angka mengikuti MAKNA metrik, bukan variasi per kartu.
+const TONES = {
+  neutral: "text-gray-900", // total, jumlah, dsb.
+  success: "text-emerald-600", // berhasil / selesai / cair
+  warning: "text-amber-600", // pending / menunggu
+  danger: "text-rose-600", // gagal / rugi / perlu dicek
+} as const;
+
+// Stat card baku untuk semua halaman: label kecil uppercase + angka besar, tanpa ikon.
+// Angka sengaja tidak di-truncate: nominal rupiah tidak boleh terpotong, lebih baik turun baris.
 export default function SummaryCard({
   label,
   value,
-  icon = "sparkles",
   sub,
+  tone = "neutral",
   negative = false,
-  alert = false,
 }: {
   label: string;
   value: string;
-  icon?: IconName;
   sub?: string;
-  /** true = angka ditampilkan merah (mis. selisih negatif). Ikon tetap hijau brand. */
+  tone?: keyof typeof TONES;
+  /** true = angka merah apa pun tone-nya (mis. selisih/profit bernilai negatif). */
   negative?: boolean;
-  /** true = ikon merah SELALU, penanda "perlu dicek manual" (mis. Selisih di Dashboard). */
-  alert?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-card p-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        <StatIcon icon={icon} alert={alert} />
-        <div className="min-w-0">
-          <p className={`truncate text-lg font-bold leading-tight ${negative ? "text-rose-600" : "text-gray-900"}`}>{value}</p>
-          <p className="truncate text-xs font-medium text-gray-400">{label}</p>
-        </div>
-      </div>
-      {sub && <p className="mt-2 text-[11px] text-gray-400">{sub}</p>}
+    <div className="card p-6">
+      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
+      <p className={`mt-2 break-words text-3xl font-bold leading-tight ${TONES[negative ? "danger" : tone]}`}>{value}</p>
+      {sub && <p className="mt-2 text-xs text-gray-400">{sub}</p>}
     </div>
   );
 }

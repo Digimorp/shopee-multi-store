@@ -118,7 +118,7 @@ export default function SettingsProductsPage() {
         berlaku untuk semua toko. Hanya Owner yang bisa mengubah.
       </p>
 
-      <form onSubmit={handleSubmit} className="grid gap-2 card p-5 sm:grid-cols-5">
+      <form onSubmit={handleSubmit} className="grid gap-2 card p-6 sm:grid-cols-5">
         <input required placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
         <input required placeholder="Nama Produk" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm sm:col-span-2" />
         <input required type="number" placeholder="HPP" value={form.hpp} onChange={(e) => setForm({ ...form, hpp: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
@@ -129,7 +129,7 @@ export default function SettingsProductsPage() {
         {err && <span className="sm:col-span-5 text-sm text-rose-600">{err}</span>}
       </form>
 
-      <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 card p-5">
+      <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 card p-6">
         <span className="text-sm text-gray-600">Import Master SKU via Excel (kolom: SKU, Nama Produk, HPP, Harga Katalog):</span>
         <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className="text-sm" />
         <button type="submit" className="btn-ghost">

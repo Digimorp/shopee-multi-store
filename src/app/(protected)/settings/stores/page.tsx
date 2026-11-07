@@ -77,7 +77,7 @@ export default function SettingsStoresPage() {
       <h1 className="text-xl font-bold text-gray-900">Master Data Toko</h1>
       <p className="text-sm text-gray-500">Kelola daftar toko Shopee yang dikelola perusahaan.</p>
 
-      <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 card p-5">
+      <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 card p-6">
         <input required placeholder="Kode (mis. TOKO15)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
         <input required placeholder="Nama Toko" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" />
         <button type="submit" className="btn-primary">

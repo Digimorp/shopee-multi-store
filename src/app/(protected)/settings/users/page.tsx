@@ -104,7 +104,7 @@ export default function SettingsUsersPage() {
         role, assignment toko, atau reset password admin yang sudah ada.
       </p>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 card p-5 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="grid gap-3 card p-6 sm:grid-cols-2">
         <input required placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
         <input required placeholder="Email / username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
         <input required type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
