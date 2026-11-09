@@ -4,13 +4,18 @@ import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { formatNumber } from "@/lib/format";
 
-// Floating panel (strata di atas card data yang flat): gradasi netral diagonal + bayangan panjang
-// yang lembut. SENGAJA tidak memakai class `.card` — di bawah `.theme-mono`, `.card` memaksa
-// box-shadow:none. Tanpa warna brand: warna hanya muncul di pill status (hijau/oranye).
+// Floating panel (strata di atas card data yang flat): gradasi hijau brand pastel diagonal +
+// bayangan panjang yang lembut. Dasar solid #EDF3E6 (sage pucat), lalu overlay diagonal dari
+// transparan ke #16301F (forest) di opacity 20% — sengaja rendah supaya teks tetap terbaca.
+// Subtitle (satu-satunya teks yang langsung di atas gradasi) memakai neutral-600: di atas sage
+// kontrasnya ~6:1, sedangkan neutral-500 turun ke ~3,7:1. Teks di dalam tile tak terpengaruh
+// karena tile hampir putih (white/80).
+// SENGAJA tidak memakai class `.card` — di bawah `.theme-mono`, `.card` memaksa box-shadow:none.
+// Ini satu-satunya card Dashboard yang berwarna; card data lain tetap flat/netral.
 // `self-start` mencegah panel ikut melar setinggi daftar Pesanan Terbaru di sebelahnya, dan
 // `lg:sticky` membuatnya tetap terlihat (mengambang) selagi daftar pesanan di-scroll.
 const PANEL =
-  "self-start rounded-3xl bg-gradient-to-br from-white to-neutral-200/70 p-6 ring-1 ring-black/5 " +
+  "self-start rounded-3xl bg-[#EDF3E6] bg-gradient-to-br from-transparent to-[#16301F]/20 p-6 ring-1 ring-black/5 " +
   "shadow-[0_28px_56px_-18px_rgba(10,10,10,0.34),0_10px_24px_-10px_rgba(10,10,10,0.14)] lg:sticky lg:top-6";
 
 const TILE = "rounded-2xl bg-white/80 px-4 py-3.5 ring-1 ring-black/[0.04] shadow-[0_1px_2px_rgba(10,10,10,0.04)]";
@@ -39,7 +44,7 @@ export default function ActivityCard({
   return (
     <div className={PANEL}>
       <p className="text-sm font-semibold text-neutral-900">Aktivitas Terbaru</p>
-      <p className="mt-0.5 text-xs text-neutral-500">Riwayat impor data pesanan</p>
+      <p className="mt-0.5 text-xs text-neutral-600">Riwayat impor data pesanan</p>
 
       <div className="mt-5">
         {loading ? (
