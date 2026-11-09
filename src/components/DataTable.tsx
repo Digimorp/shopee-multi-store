@@ -33,7 +33,7 @@ function pageWindow(current: number, total: number, delta = 2): (number | "...")
   return pages;
 }
 
-function PageNav({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
+export function PageNav({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center gap-1">

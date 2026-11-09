@@ -30,7 +30,11 @@ const CASHFLOW_KEYS = new Set<TabKey>(CASHFLOW_TABS.map((t) => t.key));
 export default function RekonsiliasiPage() {
   const searchParams = useSearchParams();
   const qs = searchParams.toString();
-  const [tab, setTab] = useState<TabKey>("cair");
+  // Bukan param "tab": qs diteruskan ke API cashflow, yang membaca nilai "tab" pertama di URL.
+  const [tab, setTab] = useState<TabKey>(() => {
+    const fromUrl = searchParams.get("reconTab");
+    return ALL_TABS.find((t) => t.key === fromUrl)?.key ?? "cair";
+  });
 
   const [recon, setRecon] = useState<any>(null);
   const [reconLoading, setReconLoading] = useState(true);

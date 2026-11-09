@@ -8,6 +8,7 @@ import AreaTrendCard from "@/components/dashboard/AreaTrendCard";
 import DonutCard from "@/components/dashboard/DonutCard";
 import ActivityCard from "@/components/dashboard/ActivityCard";
 import RecentOrdersCard from "@/components/dashboard/RecentOrdersCard";
+import QuickActions from "@/components/dashboard/QuickActions";
 import type { TrendPoint } from "@/components/TrendChart";
 import { getDefaultPeriod } from "@/lib/period";
 import { formatRupiah } from "@/lib/format";
@@ -81,6 +82,8 @@ export default function DashboardPage() {
         <h1 className="text-xl font-bold text-gray-900">Dashboard Utama</h1>
         <p className="text-sm text-gray-400">Ringkasan performa penjualan multi-toko Shopee</p>
       </div>
+
+      <QuickActions selisihCount={summary?.selisihCount} />
 
       {error && !loading && (
         <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import DataTable from "@/components/DataTable";
+import { PageNav } from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import OrderEditModal, { type OrderEditRow } from "@/components/OrderEditModal";
@@ -69,24 +69,25 @@ export default function RecentOrdersCard() {
       </div>
 
       <div className="mt-4">
-        <DataTable
-          rowKey={(r: any) => r.id}
-          rows={rows}
-          emptyText={loading ? "Memuat…" : "Belum ada pesanan."}
-          serverPagination={{ page, totalPages, onPageChange: changePage }}
-          columns={[
-            { header: "Tanggal", render: (r) => formatDate(r.orderCreatedAt) },
-            { header: "No. Pesanan", render: (r) => <span className="font-medium text-gray-700">{r.orderSn}</span> },
-            { header: "Toko", render: (r) => r.store?.code },
-            { header: "Produk", render: (r) => <span className="block max-w-[180px] truncate">{r.productName}</span> },
-            { header: "Qty", render: (r) => r.qty, className: "text-right" },
-            { header: "Status", render: (r) => <StatusBadge status={r.status} /> },
-            {
-              header: "Aksi",
-              render: (r) => (
-                <div className="flex gap-3">
-                  <button onClick={() => setEditing(r)} className="link-action" title="Edit">
-                    Edit
+        {rows.length === 0 ? (
+          <p className="py-10 text-center text-sm text-gray-400">{loading ? "Memuat…" : "Belum ada pesanan."}</p>
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {rows.map((r) => (
+              <li
+                key={r.id}
+                className="flex flex-col gap-2 py-3 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-gray-900">{r.orderSn}</p>
+                  <p className="break-words text-xs text-gray-500">
+                    {formatDate(r.orderCreatedAt)} · {r.store?.code} · {r.productName} · Qty {r.qty}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <StatusBadge status={r.status} />
+                  <button onClick={() => setEditing(r)} className="link-action" title="Lihat/Edit">
+                    Lihat/Edit
                   </button>
                   <button
                     onClick={() => {
@@ -99,10 +100,19 @@ export default function RecentOrdersCard() {
                     Hapus
                   </button>
                 </div>
-              ),
-            },
-          ]}
-        />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-card-border pt-3">
+            <span className="text-xs text-gray-400">
+              Halaman {page} dari {totalPages}
+            </span>
+            <PageNav page={page} totalPages={totalPages} onChange={changePage} />
+          </div>
+        )}
       </div>
 
       {editing && (
