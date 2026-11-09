@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageNav } from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
-import ConfirmDialog from "@/components/ConfirmDialog";
 import OrderEditModal, { type OrderEditRow } from "@/components/OrderEditModal";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -18,9 +17,6 @@ export default function RecentOrdersCard() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<OrderEditRow | null>(null);
-  const [deleting, setDeleting] = useState<any | null>(null);
-  const [deleteError, setDeleteError] = useState("");
-  const [deleteBusy, setDeleteBusy] = useState(false);
 
   function load(p: number) {
     setLoading(true);
@@ -45,21 +41,6 @@ export default function RecentOrdersCard() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-
-  async function confirmDelete() {
-    if (!deleting) return;
-    setDeleteBusy(true);
-    setDeleteError("");
-    const res = await fetch(`/api/orders/${deleting.id}`, { method: "DELETE" });
-    setDeleteBusy(false);
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      setDeleteError(d.error ?? "Gagal menghapus pesanan.");
-      return;
-    }
-    setDeleting(null);
-    load(page);
-  }
 
   return (
     <div className="card p-6">
@@ -89,16 +70,6 @@ export default function RecentOrdersCard() {
                   <button onClick={() => setEditing(r)} className="link-action" title="Lihat/Edit">
                     Lihat/Edit
                   </button>
-                  <button
-                    onClick={() => {
-                      setDeleting(r);
-                      setDeleteError("");
-                    }}
-                    className="link-action link-action-danger"
-                    title="Hapus"
-                  >
-                    Hapus
-                  </button>
                 </div>
               </li>
             ))}
@@ -123,17 +94,6 @@ export default function RecentOrdersCard() {
             setEditing(null);
             load(page);
           }}
-        />
-      )}
-
-      {deleting && (
-        <ConfirmDialog
-          title={`Hapus pesanan ${deleting.orderSn}?`}
-          message="Aksi ini bisa dibatalkan lewat log admin (data tidak dihapus permanen dari database, hanya disembunyikan dari laporan)."
-          strongWarning={deleteError || undefined}
-          busy={deleteBusy}
-          onConfirm={confirmDelete}
-          onCancel={() => setDeleting(null)}
         />
       )}
     </div>
