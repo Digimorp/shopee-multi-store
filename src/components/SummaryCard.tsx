@@ -8,11 +8,13 @@ export function RankBadge({ rank }: { rank: number }) {
 }
 
 // Warna angka mengikuti MAKNA metrik, bukan variasi per kartu.
+// Pakai varian `-text` dari token (bukan DEFAULT): angka ini duduk di atas kartu putih, dan warning
+// DEFAULT (mustard) di atas putih hanya ~1,8:1, sedangkan warning-text 5,4:1.
 const TONES = {
   neutral: "text-gray-900", // total, jumlah, dsb.
-  success: "text-emerald-600", // berhasil / selesai / cair
-  warning: "text-amber-600", // pending / menunggu
-  danger: "text-rose-600", // gagal / rugi / perlu dicek
+  success: "text-success-text", // berhasil / selesai / cair
+  warning: "text-warning-text", // pending / menunggu / retur
+  danger: "text-danger-text", // gagal / rugi / perlu dicek
 } as const;
 
 // Stat card baku untuk semua halaman: label kecil uppercase + angka besar, tanpa ikon.

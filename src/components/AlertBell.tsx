@@ -50,8 +50,9 @@ export default function AlertBell() {
         className="relative grid h-9 w-9 place-items-center rounded-full bg-gray-100 text-gray-500 transition hover:text-brand-500"
       >
         <Icon name="bell" size={18} />
+        {/* Badge jumlah = warning (mustard); teks gelap karena putih di atas mustard hanya ~1,8:1. */}
         {count > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-warning px-1 text-[10px] font-bold text-neutral-900">
             {count}
           </span>
         )}
@@ -70,7 +71,7 @@ export default function AlertBell() {
                 <li key={i} className="flex gap-3 px-4 py-3">
                   <span
                     className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full ${
-                      it.level === "warning" ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"
+                      it.level === "warning" ? "bg-warning-bg text-warning-text" : "bg-info-bg text-info-text"
                     }`}
                   >
                     <Icon name={it.level === "warning" ? "bell" : "check"} size={14} />

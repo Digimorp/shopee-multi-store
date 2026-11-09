@@ -25,6 +25,16 @@ const config: Config = {
           500: "var(--color-grape-500)",
           600: "var(--color-grape-600)",
         },
+        // Palet status/badge/notifikasi (earth-tone). Dipakai LEWAT TOKEN ini, jangan hardcode hex di komponen.
+        //  - DEFAULT = warna solid (isi badge solid, titik, ikon, border)
+        //  - bg      = latar badge "soft"
+        //  - text    = teks di atas bg soft, atau angka berwarna di atas putih (kontras >= 4,7:1)
+        // Catatan: teks di atas DEFAULT solid — putih utk success/danger, gelap (neutral-900) utk warning
+        // karena kuning mustard + putih hanya ~1,8:1.
+        success: { DEFAULT: "#176552", bg: "#E6EFEC", text: "#176552" },
+        warning: { DEFAULT: "#E8B84A", bg: "#FBF0D9", text: "#8A6416" },
+        danger: { DEFAULT: "#C06558", bg: "#F6E4E0", text: "#8F4238" },
+        info: { DEFAULT: "#4F9E88", bg: "#E6F2EE", text: "#2F6A5A" },
         canvas: {
           DEFAULT: "var(--color-canvas)",
           mono: "var(--color-canvas-mono)", // latar shell monokrom (redesign murmura)
