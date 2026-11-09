@@ -4,34 +4,14 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Icon, type IconName } from "@/components/icons";
+import { Icon } from "@/components/icons";
 import { useSidebar } from "@/components/SidebarContext";
+import { MENU, SETTINGS_MENU, isNavActive } from "@/components/navConfig";
 
-const MENU: { href: string; label: string; icon: IconName }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "home" },
-  { href: "/input", label: "Input & Import Data", icon: "upload" },
-  { href: "/rekonsiliasi", label: "Keuangan & Rekonsiliasi", icon: "scale" },
-  { href: "/laporan-profit", label: "Laporan Profit & Barang Keluar", icon: "coins" },
-  { href: "/performa-toko", label: "Performa Toko", icon: "trendingUp" },
-  { href: "/retur-cancel", label: "Retur & Pembatalan", icon: "undo" },
-  { href: "/laporan-rekap", label: "Laporan Rekapan", icon: "clipboard" },
-];
-
-const SETTINGS_MENU: { href: string; label: string; icon: IconName; ownerOnly: boolean }[] = [
-  { href: "/settings/users", label: "User Management", icon: "users", ownerOnly: true },
-  { href: "/settings/stores", label: "Master Data Toko", icon: "store", ownerOnly: true },
-  { href: "/settings/products", label: "Master Produk & HPP", icon: "tag", ownerOnly: true },
-  { href: "/settings/status-mapping", label: "Mapping Status Pesanan", icon: "sliders", ownerOnly: true },
-  { href: "/settings/periods", label: "Period & Cut-Off", icon: "calendar", ownerOnly: true },
-  { href: "/settings/audit-log", label: "Log Aktivitas Admin", icon: "fileText", ownerOnly: true },
-];
-
-// Label pemisah antar-grup menu di sidebar. Dibedakan jelas dari menu item:
-// warna tint hijau muda pudar + bold, huruf lebih kecil, tracking lebar,
-// dan jarak atas ekstra (pt, bukan mt — <nav> pakai space-y yang meng-override margin-top).
+// Label pemisah grup — hanya tampil di drawer layar sempit. Di rail desktop diganti garis tipis.
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1.5 pt-7 text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-muted">
+    <p className="px-3 pb-1.5 pt-7 text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-muted lg:hidden">
       {children}
     </p>
   );
@@ -54,11 +34,11 @@ export default function Sidebar() {
 
   const qs = searchParams.toString();
   const withQs = (href: string) => (qs ? `${href}?${qs}` : href);
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
+  // >= lg: kotak ikon 44px di tengah rail. < lg (drawer): baris penuh ikon + label.
   const itemClass = (href: string) =>
-    `group flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-medium transition ${
-      isActive(href)
+    `group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition lg:mx-auto lg:h-11 lg:w-11 lg:justify-center lg:px-0 lg:py-0 ${
+      isNavActive(pathname, href)
         ? "bg-sidebar-active text-sidebar-activeText"
         : "text-sidebar-text hover:bg-sidebar-hover hover:text-white"
     }`;
@@ -74,16 +54,16 @@ export default function Sidebar() {
         }`}
       />
 
-      {/* < lg: off-canvas drawer (slide dari kiri). >= lg: selalu terbuka, fixed. */}
+      {/* < lg: off-canvas drawer 230px berlabel. >= lg: rail ikon 64px, selalu terbuka, fixed. */}
       <aside
         id="app-sidebar"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[230px] max-w-[85vw] flex-col bg-sidebar shadow-2xl transition-[transform,visibility] duration-300 ease-out lg:visible lg:z-30 lg:translate-x-0 lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[230px] max-w-[85vw] flex-col bg-sidebar shadow-2xl transition-[transform,visibility] duration-300 ease-out lg:visible lg:z-30 lg:w-16 lg:translate-x-0 lg:shadow-none ${
           // invisible saat tertutup: link di drawer tidak bisa kena Tab/screen reader.
           open ? "visible translate-x-0" : "invisible -translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-600 text-white shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
+        <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5 lg:hidden">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-neutral-950">
             <Icon name="store" size={18} strokeWidth={2} />
           </span>
           <span className="flex-1 text-[15px] font-bold leading-tight text-white">
@@ -95,34 +75,35 @@ export default function Sidebar() {
             type="button"
             onClick={close}
             aria-label="Tutup menu"
-            className="grid h-8 w-8 place-items-center rounded-lg text-sidebar-text hover:bg-sidebar-hover hover:text-white lg:hidden"
+            className="grid h-8 w-8 place-items-center rounded-lg text-sidebar-text hover:bg-sidebar-hover hover:text-white"
           >
             <Icon name="x" size={18} />
           </button>
         </div>
-  
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+
+        <nav aria-label="Menu utama" className="flex-1 space-y-1 overflow-y-auto px-3 py-4 lg:space-y-2 lg:px-0 lg:py-5">
           {MENU.map((m) => (
-            <Link key={m.href} href={withQs(m.href)} onClick={close} className={itemClass(m.href)}>
-              <Icon name={m.icon} size={18} />
-              <span className="truncate">{m.label}</span>
+            <Link key={m.href} href={withQs(m.href)} onClick={close} title={m.label} className={itemClass(m.href)}>
+              <Icon name={m.icon} size={20} className="shrink-0" />
+              <span className="min-w-0 leading-snug lg:sr-only">{m.label}</span>
             </Link>
           ))}
-  
+
           {!sessionReady ? (
-            <div className="space-y-2 px-3 pt-6">
+            <div className="space-y-2 px-3 pt-6 lg:px-0">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-8 animate-pulse rounded-full bg-sidebar-hover" />
+                <div key={i} className="h-8 animate-pulse rounded-full bg-sidebar-hover lg:mx-auto lg:h-11 lg:w-11 lg:rounded-xl" />
               ))}
             </div>
           ) : (
             role === "OWNER" && (
               <>
                 <SectionLabel>Pengaturan</SectionLabel>
+                <hr className="mx-auto my-3 hidden w-6 border-sidebar-border lg:block" />
                 {SETTINGS_MENU.map((m) => (
-                  <Link key={m.href} href={withQs(m.href)} onClick={close} className={itemClass(m.href)}>
-                    <Icon name={m.icon} size={18} />
-                    <span className="truncate">{m.label}</span>
+                  <Link key={m.href} href={withQs(m.href)} onClick={close} title={m.label} className={itemClass(m.href)}>
+                    <Icon name={m.icon} size={20} className="shrink-0" />
+                    <span className="min-w-0 leading-snug lg:sr-only">{m.label}</span>
                   </Link>
                 ))}
               </>

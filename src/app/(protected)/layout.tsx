@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-canvas">
+      <div className="flex min-h-screen bg-canvas-mono">
         <Suspense>
           <Sidebar />
         </Suspense>
-        <div className="flex min-w-0 flex-1 flex-col lg:pl-[230px]">
+        <div className="flex min-w-0 flex-1 flex-col lg:pl-16">
           <Suspense>
             <TopBar />
           </Suspense>
