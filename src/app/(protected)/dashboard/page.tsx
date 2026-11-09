@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import SummaryCard from "@/components/SummaryCard";
+import StatCard from "@/components/dashboard/StatCard";
 import TopProductsTable from "@/components/TopProductsTable";
 import AreaTrendCard from "@/components/dashboard/AreaTrendCard";
 import DonutCard from "@/components/dashboard/DonutCard";
@@ -77,10 +77,11 @@ export default function DashboardPage() {
   }, [searchParams]);
 
   return (
-    <div className="space-y-5">
+    // theme-mono: palet monokrom netral, di-scope ke halaman ini saja (lihat globals.css).
+    <div className="theme-mono space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Dashboard Utama</h1>
-        <p className="text-sm text-gray-400">Ringkasan performa penjualan multi-toko Shopee</p>
+        <h1 className="text-xl font-bold text-neutral-950">Dashboard Utama</h1>
+        <p className="text-sm text-neutral-500">Ringkasan performa penjualan multi-toko Shopee</p>
       </div>
 
       <QuickActions selisihCount={summary?.selisihCount} />
@@ -102,31 +103,31 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <SummaryCard label="Total Omzet Bruto" value={formatRupiah(summary?.totalOmzetBruto ?? 0)} />
-        <SummaryCard
+        <StatCard label="Total Omzet Bruto" value={formatRupiah(summary?.totalOmzetBruto ?? 0)} />
+        <StatCard
           label="Cair (Aktual Income Report)"
           tone="success"
           value={formatRupiah(summary?.cair ?? 0)}
           sub={`${summary?.cairCount ?? 0} pesanan cocok`}
         />
-        <SummaryCard
+        <StatCard
           label="Belum Cair"
           tone="warning"
           value={formatRupiah(summary?.belumCair ?? 0)}
           sub={`${summary?.belumCairCount ?? 0} pesanan menunggu pencairan`}
         />
-        <SummaryCard
+        <StatCard
           label="Selisih (perlu dicek)"
           value={formatRupiah(summary?.selisih ?? 0)}
           tone="danger"
           sub={`${summary?.selisihCount ?? 0} pesanan beda nominal`}
         />
-        <SummaryCard
+        <StatCard
           label="Profit HPP (Nett)"
           value={formatRupiah(summary?.profitHpp ?? 0)}
           negative={(summary?.profitHpp ?? 0) < 0}
         />
-        <SummaryCard
+        <StatCard
           label="Profit Agen"
           value={formatRupiah(summary?.profitAgen ?? 0)}
           negative={(summary?.profitAgen ?? 0) < 0}

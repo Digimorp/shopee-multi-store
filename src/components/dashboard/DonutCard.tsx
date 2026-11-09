@@ -4,10 +4,11 @@ import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { formatRupiah } from "@/lib/format";
 
-// Flat: semua toko 1 hijau solid (nilai normal), dipisah celah paddingAngle; "Lainnya" abu netral.
-const SLICE_COLOR = "var(--color-brand-500)";
-const OTHERS_COLOR = "#d1d5db";
-const sliceColor = (name: string) => (name === "Lainnya" ? OTHERS_COLOR : SLICE_COLOR);
+// Monokrom flat: skala abu-abu solid menurut peringkat omzet toko (paling gelap = terbesar),
+// dipisah celah paddingAngle; "Lainnya" paling terang.
+const RAMP = ["#0a0a0a", "#404040", "#737373", "#a3a3a3", "#c4c4c4", "#dcdcdc"];
+const OTHERS_COLOR = "#ececec";
+const sliceColor = (name: string, i: number) => (name === "Lainnya" ? OTHERS_COLOR : RAMP[i % RAMP.length]);
 
 export default function DonutCard({
   rows,
@@ -48,7 +49,7 @@ export default function DonutCard({
               <PieChart>
                 <Pie isAnimationActive={false} data={slices} dataKey="value" innerRadius={58} outerRadius={84} paddingAngle={2} stroke="none">
                   {slices.map((s, i) => (
-                    <Cell key={i} fill={sliceColor(s.name)} />
+                    <Cell key={i} fill={sliceColor(s.name, i)} />
                   ))}
                 </Pie>
               </PieChart>
@@ -65,7 +66,7 @@ export default function DonutCard({
             {slices.map((s, i) => (
               <li key={i} className="flex items-center justify-between text-xs">
                 <span className="flex items-center gap-2 text-gray-600">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: sliceColor(s.name) }} />
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: sliceColor(s.name, i) }} />
                   {s.name}
                 </span>
                 <span className="font-semibold text-gray-800">

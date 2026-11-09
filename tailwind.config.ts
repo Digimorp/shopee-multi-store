@@ -25,7 +25,10 @@ const config: Config = {
           500: "var(--color-grape-500)",
           600: "var(--color-grape-600)",
         },
-        canvas: "var(--color-canvas)",
+        canvas: {
+          DEFAULT: "var(--color-canvas)",
+          mono: "var(--color-canvas-mono)", // latar shell monokrom (redesign murmura)
+        },
         card: {
           DEFAULT: "var(--color-card)",
           border: "var(--color-card-border)",

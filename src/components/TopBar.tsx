@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { getDefaultPeriod } from "@/lib/period";
 import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
+import SlidingTabs from "@/components/SlidingTabs";
+import { MENU, isNavActive } from "@/components/navConfig";
 import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
 
@@ -58,6 +61,13 @@ export default function TopBar() {
     .join("")
     .toUpperCase();
 
+  // Tab navigasi = menu utama yang sama dengan rail ikon (navConfig), filter toko/periode ikut terbawa.
+  const qs = searchParams.toString();
+  const withQs = (href: string) => (qs ? `${href}?${qs}` : href);
+  const tabItems = MENU.map((m) => ({ key: m.href, label: m.tabLabel, href: withQs(m.href) }));
+  // Halaman di luar menu utama (mis. /settings/*) -> tidak ada tab aktif, pill disembunyikan.
+  const activeTab = MENU.find((m) => isNavActive(pathname, m.href))?.href ?? null;
+
   const fieldClass =
     "rounded-full border-0 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-300";
   const dateClass = "w-[7.75rem] min-w-0 shrink border-0 bg-transparent py-1 text-sm text-gray-700 outline-none sm:w-auto";
@@ -69,8 +79,9 @@ export default function TopBar() {
   const filterReady = !sessionLoading && storesLoaded;
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-white px-4 py-3 sm:px-6">
-      <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-1">
+    <header className="theme-mono border-b border-neutral-200 bg-white">
+      {/* Baris 1: logo + tab navigasi + kontrol user. Di < lg tab turun ke baris sendiri (order-last). */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
         <button
           type="button"
           onClick={toggle}
@@ -81,6 +92,65 @@ export default function TopBar() {
         >
           <Icon name="menu" size={18} />
         </button>
+
+        <Link
+          href={withQs("/dashboard")}
+          aria-label="Shopee Multi-Toko — ke Dashboard"
+          className="flex shrink-0 items-center gap-2.5"
+        >
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-neutral-950 text-white">
+            <Icon name="store" size={18} strokeWidth={2} />
+          </span>
+          <span className="hidden text-[15px] font-bold leading-tight text-neutral-950 2xl:block">
+            Shopee <span className="text-neutral-400">Multi-Toko</span>
+          </span>
+        </Link>
+
+        <SlidingTabs
+          ariaLabel="Navigasi utama"
+          items={tabItems}
+          activeKey={activeTab}
+          className="order-last w-full lg:order-none lg:min-w-0 lg:w-auto lg:flex-1"
+        />
+
+        <div className="ml-auto flex items-center gap-2">
+          <AlertBell />
+
+          <div className="mx-1 h-6 w-px bg-gray-200" />
+
+          {sessionLoading ? (
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <div className="hidden flex-col gap-1 xl:flex">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-2.5 w-14" />
+              </div>
+              <Skeleton className="h-9 w-9 rounded-full" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-neutral-950 text-xs font-bold text-white">
+                {initials || "U"}
+              </span>
+              <div className="hidden leading-tight xl:block">
+                <div className="text-sm font-semibold text-gray-800">{name}</div>
+                <div className="text-[11px] text-gray-400">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                title="Keluar"
+                aria-label="Keluar"
+                className={iconBtnClass}
+              >
+                <Icon name="logout" size={18} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Baris 2: filter toko, pencarian, rentang tanggal (sama persis fungsinya dengan sebelumnya). */}
+      <div className="flex flex-wrap items-center gap-2 border-t border-neutral-100 px-4 py-2 sm:px-6">
         {!filterReady ? (
           <Skeleton className="h-9 w-40 rounded-full" />
         ) : stores.length === 0 ? (
@@ -115,40 +185,6 @@ export default function TopBar() {
           <span className="text-sm text-gray-400">s/d</span>
           <input type="date" value={to} onChange={(e) => updateParam("to", e.target.value)} className={dateClass} />
         </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <AlertBell />
-
-        <div className="mx-1 h-6 w-px bg-gray-200" />
-
-        {sessionLoading ? (
-          <div className="flex items-center gap-2.5">
-            <Skeleton className="h-9 w-9 rounded-full" />
-            <div className="hidden flex-col gap-1 sm:flex">
-              <Skeleton className="h-3.5 w-24" />
-              <Skeleton className="h-2.5 w-14" />
-            </div>
-            <Skeleton className="h-9 w-9 rounded-full" />
-          </div>
-        ) : (
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient text-xs font-bold text-white">
-              {initials || "U"}
-            </span>
-            <div className="hidden leading-tight sm:block">
-              <div className="text-sm font-semibold text-gray-800">{name}</div>
-              <div className="text-[11px] text-gray-400">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
-            </div>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              title="Keluar"
-              className={iconBtnClass}
-            >
-              <Icon name="logout" size={18} />
-            </button>
-          </div>
-        )}
       </div>
     </header>
   );
