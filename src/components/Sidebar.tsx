@@ -54,10 +54,14 @@ export default function Sidebar() {
         }`}
       />
 
-      {/* < lg: off-canvas drawer 230px berlabel. >= lg: rail ikon 64px, selalu terbuka, fixed. */}
+      {/* < lg: off-canvas drawer 230px berlabel, full-height biasa (TIDAK ikut capsule).
+          >= lg: capsule ikon 64px yang mengambang — margin seragam 12px dari tepi layar (atas/bawah/kiri),
+          rounded-full, shadow-2xl tetap dipakai. Margin kiri 12px masih di dalam gutter rail 64px + padding
+          konten 24px, jadi lebar area konten TIDAK berkurang (tabel lebar tidak jadi terpotong).
+          overflow-hidden supaya item yang di-scroll terpotong mengikuti lengkung capsule. */}
       <aside
         id="app-sidebar"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[230px] max-w-[85vw] flex-col bg-sidebar shadow-2xl transition-[transform,visibility] duration-300 ease-out lg:visible lg:z-30 lg:w-16 lg:translate-x-0 lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[230px] max-w-[85vw] flex-col bg-sidebar shadow-2xl transition-[transform,visibility] duration-300 ease-out lg:visible lg:inset-y-3 lg:left-3 lg:z-30 lg:w-16 lg:translate-x-0 lg:overflow-hidden lg:rounded-full ${
           // invisible saat tertutup: link di drawer tidak bisa kena Tab/screen reader.
           open ? "visible translate-x-0" : "invisible -translate-x-full"
         }`}

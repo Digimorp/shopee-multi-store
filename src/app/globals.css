@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design tokens — palet hijau sage/forest. Ubah di sini, bukan hardcode per komponen. */
+/* Design tokens — aksen (brand) monokrom HITAM di atas canvas sage. Ubah di sini, bukan hardcode per komponen. */
 :root {
-  /* Background utama: hijau mint/sage pucat */
+  /* Background utama: hijau mint/sage pucat (dipakai body + halaman login) */
   --color-canvas: #edf3e6;
   --color-card: #ffffff;
-  --color-card-border: #dbe6d2;
+  --color-card-border: #e5e5e5;
 
   /* Latar area konten di dalam shell (redesign monokrom). Token --color-canvas di atas
      sengaja TIDAK diubah: dipakai halaman login yang di luar scope redesign ini. */
@@ -19,31 +19,13 @@
   --color-sidebar-border: #262626;
   --color-sidebar-text: #a3a3a3;
   --color-sidebar-muted: #737373;
-  --color-sidebar-active: #fafafa;
+  /* Item menu aktif = mustard, diambil dari token `warning` di tailwind.config.ts (#E8B84A) supaya satu sumber.
+     Teks aktif di bawah tetap gelap (kontras ~9,7:1 di atas mustard). */
+  --color-sidebar-active: theme("colors.warning.DEFAULT");
   --color-sidebar-active-text: #0a0a0a;
 
-  /* Aksen utama (brand): hijau tua/forest green solid — tombol, link, focus, hover */
-  --color-brand-50: #eff7e9;
-  --color-brand-100: #dceed0;
-  --color-brand-200: #b9dfa7;
-  --color-brand-300: #93cb78;
-  --color-brand-400: #66ac49;
-  --color-brand-500: #468a30;
-  --color-brand-600: #337024;
-  --color-brand-700: #26591a;
-
-  /* Aksen kedua (muted plum) — variasi kecil di icon badge/chart */
-  --color-grape-400: #b49ab8;
-  --color-grape-500: #96789c;
-  --color-grape-600: #785f7d;
-}
-
-/* Tema monokrom netral (redesign "murmura"). SENGAJA di-scope lewat class, bukan di :root:
-   semua warna brand adalah CSS variable, jadi cukup di-override di subtree yang dibungkus
-   `theme-mono` (shell + Dashboard). Halaman lain tidak ikut berubah sampai redesign di-ACC —
-   saat itu tinggal pasang class ini di (protected)/layout.tsx. */
-.theme-mono {
-  --color-card-border: #e5e5e5;
+  /* Aksen utama (brand): HITAM monokrom — tombol, link, focus, hover. Sebelumnya hijau forest; nilai
+     monokrom ini dulu di-scope lewat `.theme-mono` (Dashboard + shell saja), kini jadi default seluruh app. */
   --color-brand-50: #fafafa;
   --color-brand-100: #f5f5f5;
   --color-brand-200: #e5e5e5;
@@ -52,11 +34,11 @@
   --color-brand-500: #404040;
   --color-brand-600: #0a0a0a;
   --color-brand-700: #000000;
-}
-/* Card: border tipis saja, tanpa shadow. Tombol primer: tanpa shadow berwarna hijau. */
-.theme-mono .card,
-.theme-mono .btn-primary {
-  box-shadow: none;
+
+  /* Aksen kedua (muted plum) — variasi kecil di icon badge/chart */
+  --color-grape-400: #b49ab8;
+  --color-grape-500: #96789c;
+  --color-grape-600: #785f7d;
 }
 
 html,
@@ -86,15 +68,15 @@ body {
 }
 
 @layer components {
-  /* Kartu standar — putih, flat: border tipis 1px + shadow minimal */
+  /* Kartu standar — putih, border tipis 1px + shadow lg (kerasa "mengambang", bukan flat) */
   .card {
-    @apply rounded-2xl border border-card-border bg-card shadow-sm;
+    @apply rounded-2xl border border-card-border bg-card shadow-lg;
   }
 
-  /* Tombol primer — solid hijau tua (bukan gradient) */
+  /* Tombol primer — solid hitam (bukan gradient), bentuk pill. Shadow netral (bukan hijau lagi). */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white
-      shadow-[0_4px_12px_rgba(23,48,31,0.25)] transition
+    @apply inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white
+      shadow-[0_4px_12px_rgba(10,10,10,0.25)] transition
       hover:bg-brand-700 active:brightness-95 disabled:opacity-60;
   }
 

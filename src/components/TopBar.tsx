@@ -79,7 +79,7 @@ export default function TopBar() {
   const filterReady = !sessionLoading && storesLoaded;
 
   return (
-    <header className="theme-mono border-b border-neutral-200 bg-white">
+    <header className="border-b border-neutral-200 bg-white">
       {/* Baris 1: logo + tab navigasi + kontrol user. Di < lg tab turun ke baris sendiri (order-last). */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
         <button

@@ -77,8 +77,7 @@ export default function DashboardPage() {
   }, [searchParams]);
 
   return (
-    // theme-mono: palet monokrom netral, di-scope ke halaman ini saja (lihat globals.css).
-    <div className="theme-mono space-y-5">
+    <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-neutral-950">Dashboard Utama</h1>
         <p className="text-sm text-neutral-500">Ringkasan performa penjualan multi-toko Shopee</p>
