@@ -3,7 +3,6 @@ import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { logPriceChangeIfNeeded } from "@/lib/priceLog";
-import { analyzeUploadAnomalies, type AnomalyRow, type KnownIssue } from "@/lib/aiAnomalyCheck";
 
 // Import master SKU GLOBAL dari Excel. Format kolom: SKU, Nama Produk, HPP, Harga Katalog.
 // Hanya OWNER yang boleh import.
@@ -42,23 +41,8 @@ export async function POST(req: NextRequest) {
     };
   });
 
-  // AI Anomaly Check — dijalankan SETELAH parsing berhasil, SEBELUM prisma.product.upsert.
-  // Fail-open: kalau AI gagal/timeout, proses import di bawah tetap lanjut seperti biasa.
-  const anomalyRows: AnomalyRow[] = parsedRows.map((p) => {
-    const issues: KnownIssue[] = [];
-    if (!p.valid) issues.push({ field: "row", message: p.errorMsg!, severity: "medium" });
-    return {
-      rowRef: p.sku || p.name || "(baris tidak lengkap)",
-      groupKey: p.sku || undefined,
-      numericValues: p.valid ? { hpp: p.hpp, catalogPrice: p.catalogPrice } : undefined,
-      issues,
-    };
-  });
-  const aiResult = await analyzeUploadAnomalies(anomalyRows, {
-    kind: "product",
-    storeName: "Global (semua toko)",
-    fileName: file.name,
-  });
+  // AI Anomaly Check DINONAKTIFKAN (T-013): analyzeUploadAnomalies tidak dipanggil lagi.
+  // File src/lib/aiAnomalyCheck.ts sengaja dibiarkan (tidak dihapus).
 
   let success = 0;
   let priceChanges = 0;
@@ -96,8 +80,5 @@ export async function POST(req: NextRequest) {
     priceChanges,
     errors,
     total: rows.length,
-    aiAnomalies: aiResult.anomalies,
-    aiCheckSkipped: aiResult.aiCheckSkipped,
-    aiSummary: aiResult.summary,
   });
 }

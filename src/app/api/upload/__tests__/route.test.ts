@@ -92,49 +92,77 @@ beforeEach(() => {
   parseShopeeFile.mockReturnValue({ rows: [sampleRow], errors: [], totalRows: 1 });
 });
 
-describe("POST /api/upload — commit tetap jalan terlepas dari hasil AI Anomaly Check", () => {
-  it("AI check gagal/di-skip (fail-open) -> order tetap di-create, response tetap sukses", async () => {
-    analyzeUploadAnomalies.mockResolvedValue({
-      anomalies: [],
-      summary: "Pemeriksaan AI gagal dijalankan (network/rate limit). Data tetap tersimpan seperti biasa.",
-      aiCheckSkipped: true,
-    });
-
+describe("POST /api/upload — AI Anomaly Check dinonaktifkan (T-013)", () => {
+  it("analyzeUploadAnomalies tidak dipanggil, order tetap di-create", async () => {
     const res = await POST(makeFakeRequest());
     const body = await res.json();
 
-    expect(orderCreate).toHaveBeenCalledTimes(1);
-    expect(uploadLogCreate).toHaveBeenCalledTimes(1);
-    expect(body.success).toBe(1);
-    expect(body.aiCheckSkipped).toBe(true);
-    expect(body.aiAnomalies).toEqual([]);
-  });
-
-  it("AI check sukses dengan anomali -> order tetap di-create sama seperti biasa, anomali ikut di response", async () => {
-    analyzeUploadAnomalies.mockResolvedValue({
-      anomalies: [{ severity: "high", rowRef: "SN-1", field: "unitPrice", message: "Harga tidak wajar." }],
-      summary: "Ditemukan 1 anomali harga.",
-      aiCheckSkipped: false,
-    });
-
-    const res = await POST(makeFakeRequest());
-    const body = await res.json();
-
-    expect(orderCreate).toHaveBeenCalledTimes(1);
-    expect(body.success).toBe(1);
-    expect(body.aiAnomalies).toHaveLength(1);
-    expect(body.aiCheckSkipped).toBe(false);
-  });
-
-  it("response status tetap 200 dan commit tetap terjadi walau hasil AI check aiCheckSkipped=true", async () => {
-    analyzeUploadAnomalies.mockResolvedValue({
-      anomalies: [],
-      summary: "Pemeriksaan AI dilewati (ANTHROPIC_API_KEY belum diset). Data tetap tersimpan seperti biasa.",
-      aiCheckSkipped: true,
-    });
-
-    const res = await POST(makeFakeRequest());
     expect(res.status).toBe(200);
+    expect(analyzeUploadAnomalies).not.toHaveBeenCalled();
     expect(orderCreate).toHaveBeenCalledTimes(1);
+    expect(body.success).toBe(1);
+    expect(body.aiAnomalies).toBeUndefined();
+    expect(uploadLogCreate.mock.calls[0][0].data.aiCheckResult).toBeUndefined();
+  });
+});
+
+describe("POST /api/upload — HPP tidak diketahui (T-013)", () => {
+  it("produk tidak ada di master -> HPP tidak dianggap 0: profit 0, productId null, masuk peringatan", async () => {
+    productFindMany.mockResolvedValue([]);
+    const res = await POST(makeFakeRequest());
+    const body = await res.json();
+
+    const data = orderCreate.mock.calls[0][0].data;
+    expect(data.productId).toBeUndefined();
+    expect(data.hppSnapshot).toBe(0);
+    expect(data.profitHpp).toBe(0); // dulu: 20000 - 0 = 20000 (profit palsu sebesar uang cair)
+    expect(data.profitAgen).toBe(0);
+    expect(body.hppUnknown).toEqual({ rows: 1, notInMaster: [{ sku: "SKU-A", rows: 1 }], emptyInMaster: [] });
+  });
+
+  it("produk ada di master tapi HPP belum diisi (0) -> diperlakukan sama, masuk daftar emptyInMaster", async () => {
+    productFindMany.mockResolvedValue([{ id: "p1", sku: "SKU-A", name: "Produk A", hpp: 0, catalogPrice: 30000 }]);
+    const res = await POST(makeFakeRequest());
+    const body = await res.json();
+
+    const data = orderCreate.mock.calls[0][0].data;
+    expect(data.productId).toBe("p1");
+    expect(data.profitHpp).toBe(0);
+    expect(data.profitAgen).toBe(0);
+    expect(body.hppUnknown).toEqual({ rows: 1, notInMaster: [], emptyInMaster: [{ sku: "SKU-A", rows: 1 }] });
+  });
+
+  it("daftar SKU HPP tidak diketahui ikut tersimpan ke UploadLog (aiCheckResult), bukan cuma di respons", async () => {
+    productFindMany.mockResolvedValue([{ id: "p2", sku: "SKU-B", name: "Produk B", hpp: 0, catalogPrice: 30000 }]);
+    parseShopeeFile.mockReturnValue({
+      rows: [sampleRow, { ...sampleRow, orderSn: "SN-2" }, { ...sampleRow, orderSn: "SN-3", sku: "SKU-B", productName: "Produk B" }],
+      errors: [],
+      totalRows: 3,
+    });
+    await POST(makeFakeRequest());
+
+    expect(uploadLogUpdate).toHaveBeenCalledTimes(1);
+    const saved = uploadLogUpdate.mock.calls[0][0].data.aiCheckResult;
+    expect(saved.source).toBe("hpp-check");
+    expect(saved.hppUnknown).toEqual({
+      rows: 3,
+      notInMaster: [{ sku: "SKU-A", rows: 2 }],
+      emptyInMaster: [{ sku: "SKU-B", rows: 1 }],
+    });
+    expect(saved.summary).toContain("3 baris HPP tidak diketahui");
+    // kompatibel dengan pembaca lama aiCheckResult
+    expect(saved.anomalies).toEqual([]);
+  });
+
+  it("produk dengan HPP terisi -> profit dihitung normal, tidak ada peringatan", async () => {
+    productFindMany.mockResolvedValue([{ id: "p1", sku: "SKU-A", name: "Produk A", hpp: 5000, catalogPrice: 30000 }]);
+    const res = await POST(makeFakeRequest());
+    const body = await res.json();
+
+    const data = orderCreate.mock.calls[0][0].data;
+    expect(data.hppSnapshot).toBe(5000);
+    expect(data.profitHpp).toBeGreaterThan(0);
+    expect(body.hppUnknown.rows).toBe(0);
+    expect(uploadLogUpdate.mock.calls[0][0].data.aiCheckResult.hppUnknown.rows).toBe(0);
   });
 });

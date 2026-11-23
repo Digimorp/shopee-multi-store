@@ -125,6 +125,41 @@ export default function UploadForm({
           {(formatResult ?? defaultResultText)(result)}
         </div>
       )}
+      {result?.hppUnknown?.rows > 0 && (
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <p className="font-semibold">
+            {result.hppUnknown.rows} baris tersimpan dengan HPP TIDAK DIKETAHUI — profitnya belum bisa dihitung.
+          </p>
+          <p className="mt-1 text-xs">
+            Isi HPP produk berikut di Master Produk. Sampai diisi, Profit HPP & Profit Agen baris ini disimpan 0
+            (bukan profit sebenarnya).
+          </p>
+          {result.hppUnknown.notInMaster?.length > 0 && (
+            <div className="mt-2">
+              <p className="text-xs font-medium">Tidak ditemukan di Master Produk:</p>
+              <ul className="mt-1 max-h-40 list-disc overflow-auto pl-5 text-xs">
+                {result.hppUnknown.notInMaster.map((x: { sku: string; rows: number }) => (
+                  <li key={`nm-${x.sku}`}>
+                    {x.sku} <span className="text-amber-600">({x.rows} baris)</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {result.hppUnknown.emptyInMaster?.length > 0 && (
+            <div className="mt-2">
+              <p className="text-xs font-medium">Ada di Master Produk tapi HPP belum diisi:</p>
+              <ul className="mt-1 max-h-40 list-disc overflow-auto pl-5 text-xs">
+                {result.hppUnknown.emptyInMaster.map((x: { sku: string; rows: number }) => (
+                  <li key={`em-${x.sku}`}>
+                    {x.sku} <span className="text-amber-600">({x.rows} baris)</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
       {result && (
         <AiAnomalyPanel
           anomalies={result.aiAnomalies ?? []}

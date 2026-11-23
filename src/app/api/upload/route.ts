@@ -5,7 +5,6 @@ import { parseShopeeFile } from "@/lib/parseShopee";
 import { classifyStatus, DEFAULT_STATUS_RULES, type StatusRule } from "@/lib/classification";
 import { calcProfitHpp, calcProfitAgen } from "@/lib/profit";
 import { getPeriodForDate } from "@/lib/period";
-import { analyzeUploadAnomalies, type AnomalyRow, type KnownIssue } from "@/lib/aiAnomalyCheck";
 import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -53,43 +52,17 @@ export async function POST(req: NextRequest) {
     (row.skuInduk ? productMap.get(row.skuInduk) : undefined) ||
     productByName.get(row.productName.trim().toLowerCase());
 
-  // AI Anomaly Check — dijalankan SETELAH parsing berhasil, SEBELUM data di-commit ke DB.
-  // Fail-open: kalau AI gagal/timeout, proses upload di bawah tetap lanjut seperti biasa.
-  const store = await prisma.store.findUnique({ where: { id: storeId } });
-  const anomalyRows: AnomalyRow[] = rows.map((row) => {
-    const issues: KnownIssue[] = [];
-    if (!matchProduct(row)) {
-      issues.push({
-        field: "sku",
-        message: `SKU/produk "${row.sku || row.skuInduk || row.productName}" tidak ditemukan di Master Produk.`,
-        severity: "medium",
-      });
-    }
-    return {
-      rowRef: row.orderSn,
-      groupKey: row.sku || row.skuInduk || row.productName,
-      numericValues: {
-        qty: row.qty,
-        unitPrice: row.unitPrice,
-        subtotal: row.subtotal,
-        totalPayment: row.totalPayment,
-        netSettlementRaw: row.netSettlementRaw,
-      },
-      statusLabel: row.rawStatus,
-      date: row.orderCreatedAt,
-      issues,
-    };
-  });
-  const orderDates = rows.map((r) => r.orderCreatedAt.getTime());
-  const periodLabel = orderDates.length
-    ? `${new Date(Math.min(...orderDates)).toISOString().slice(0, 10)} – ${new Date(Math.max(...orderDates)).toISOString().slice(0, 10)}`
-    : undefined;
-  const aiResult = await analyzeUploadAnomalies(anomalyRows, {
-    kind: "order",
-    storeName: store ? `${store.code} - ${store.name}` : storeId,
-    fileName: file.name,
-    periodLabel,
-  });
+  // AI Anomaly Check DINONAKTIFKAN (T-013): analyzeUploadAnomalies tidak dipanggil lagi saat
+  // upload. File src/lib/aiAnomalyCheck.ts sengaja dibiarkan (tidak dihapus).
+
+  // HPP tidak diketahui (T-013): baris yang produknya tidak ketemu di Master Produk, atau
+  // ketemu tapi HPP di master belum diisi (<= 0), TIDAK dianggap HPP 0. Penanda tanpa ubah
+  // skema: hppSnapshot = 0 (dan productId = null kalau tidak ketemu di master) berarti
+  // "HPP tidak diketahui"; profitHpp & profitAgen baris itu disimpan 0, bukan dihitung dari
+  // HPP palsu 0 (yang bikin profit terlihat sebesar omzet).
+  const hppUnknownNotInMaster = new Map<string, number>(); // sku/nama -> jumlah baris
+  const hppUnknownEmptyInMaster = new Map<string, number>();
+  let hppUnknownRows = 0;
 
   const uploadLog = await prisma.uploadLog.create({
     data: {
@@ -100,7 +73,6 @@ export async function POST(req: NextRequest) {
       successRows: 0,
       failedRows: errors.length,
       errorLog: errors.length ? JSON.stringify(errors.slice(0, 50)) : null,
-      aiCheckResult: aiResult as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -132,16 +104,23 @@ export async function POST(req: NextRequest) {
     const netSettlement = isCancel ? 0 : row.netSettlementRaw;
 
     const product = matchProduct(row);
-    const hpp = product?.hpp ?? 0;
+    const hppKnown = !!product && product.hpp > 0;
+    const hpp = hppKnown ? product!.hpp : 0; // 0 di sini = penanda "tidak diketahui", bukan HPP 0
     const catalogPrice = product?.catalogPrice ?? 0;
+    if (!hppKnown) {
+      hppUnknownRows++;
+      const key = product?.sku || row.sku || row.skuInduk || row.productName;
+      const bucket = product ? hppUnknownEmptyInMaster : hppUnknownNotInMaster;
+      bucket.set(key, (bucket.get(key) ?? 0) + 1);
+    }
 
     // Profit HPP (Nett): butuh uang benar-benar cair -> SELESAI saja.
     // Profit Agen: benchmark harga agen, dianggap terealisasi saat barang sampai ke pembeli
     // -> SELESAI atau PENDING_SETTLEMENT. TRANSIT/RETUR/CANCEL = 0.
     const profitHpp =
-      status === OrderStatus.SELESAI ? calcProfitHpp({ netSettlement, hpp, qty: row.qty }) : 0;
+      hppKnown && status === OrderStatus.SELESAI ? calcProfitHpp({ netSettlement, hpp, qty: row.qty }) : 0;
     const profitAgen =
-      status === OrderStatus.SELESAI || status === OrderStatus.PENDING_SETTLEMENT
+      hppKnown && (status === OrderStatus.SELESAI || status === OrderStatus.PENDING_SETTLEMENT)
         ? calcProfitAgen({ catalogPrice, hpp, qty: row.qty })
         : 0;
 
@@ -172,9 +151,33 @@ export async function POST(req: NextRequest) {
     success++;
   }
 
+  // Peringatan HPP tidak diketahui — disimpan juga ke UploadLog supaya bisa dilihat lagi
+  // setelah respons upload tertutup (GET /api/uploads). Pakai kolom aiCheckResult (Json) yang
+  // sudah ada & tidak terisi lagi sejak AI dinonaktifkan (T-013) — tanpa migrasi schema.
+  // Bentuknya tetap kompatibel dengan pembaca lama (anomalies/summary/aiCheckSkipped).
+  const hppUnknown = {
+    rows: hppUnknownRows,
+    notInMaster: [...hppUnknownNotInMaster].map(([sku, rows]) => ({ sku, rows })),
+    emptyInMaster: [...hppUnknownEmptyInMaster].map(([sku, rows]) => ({ sku, rows })),
+  };
+  const uploadCheckResult = {
+    source: "hpp-check",
+    hppUnknown,
+    anomalies: [],
+    summary:
+      hppUnknownRows > 0
+        ? `${hppUnknownRows} baris HPP tidak diketahui (${hppUnknown.notInMaster.length} SKU tidak ada di Master Produk, ${hppUnknown.emptyInMaster.length} SKU HPP belum diisi).`
+        : "Semua baris punya HPP.",
+    aiCheckSkipped: true,
+  };
+
   await prisma.uploadLog.update({
     where: { id: uploadLog.id },
-    data: { successRows: success, failedRows: totalRows - success },
+    data: {
+      successRows: success,
+      failedRows: totalRows - success,
+      aiCheckResult: uploadCheckResult as unknown as Prisma.InputJsonValue,
+    },
   });
 
   return NextResponse.json({
@@ -184,8 +187,7 @@ export async function POST(req: NextRequest) {
     skippedLocked,
     skippedOrFailed: totalRows - success,
     parseErrors: errors.slice(0, 20),
-    aiAnomalies: aiResult.anomalies,
-    aiCheckSkipped: aiResult.aiCheckSkipped,
-    aiSummary: aiResult.summary,
+    // Peringatan HPP tidak diketahui — profit baris-baris ini BELUM bisa dihitung.
+    hppUnknown,
   });
 }
