@@ -135,3 +135,37 @@ describe("GET /api/reports/recap — regresi bug Profit HPP pakai Estimasi", () 
     expect(row.profitHpp).toBe(150000 - 20000 * 2); // sama: hanya SN-M yang match
   });
 });
+
+describe("GET /api/reports/recap — T-013 baris tanpa HPP tidak dihitung sebagai profit", () => {
+  function setSnNTanpaHppDanCair() {
+    const base = orderFindMany.getMockImplementation()!;
+    orderFindMany.mockImplementation(async (args: any) => {
+      const rows = await base(args);
+      if (isReconcileOrderRowsQuery(args) || isAllOrderSnsQuery(args)) return rows;
+      return rows.map((o: any) => (o.orderSn === "SN-N" ? { ...o, hppSnapshot: 0 } : o));
+    });
+    incomeEntryFindMany.mockResolvedValue(
+      [
+        { orderSn: "SN-M", amount: 150000 },
+        { orderSn: "SN-N", amount: 80000 },
+      ].map((e) => ({ ...e, type: "ORDER", releasedAt: new Date("2026-09-10"), import: { createdAt: new Date("2026-09-11") } }))
+    );
+  }
+
+  it("monthly: Profit HPP per periode tanpa SN-N (HPP 0); tanpaHpp per periode", async () => {
+    setSnNTanpaHppDanCair();
+    const body = await (await GET(fakeReq("type=monthly&storeId=all"))).json();
+    const row = body.rows.find((r: any) => r.periodKey === PERIOD_KEY);
+    expect(row.profitHpp).toBe(150000 - 20000 * 2); // 110.000, BUKAN 190.000
+    expect(row.tanpaHpp).toEqual({ baris: 1, uangCair: 80000 });
+    expect(row.hpp).toBeUndefined();
+  });
+
+  it("yearly: sama, per tahun", async () => {
+    setSnNTanpaHppDanCair();
+    const body = await (await GET(fakeReq("type=yearly&storeId=all"))).json();
+    const row = body.rows.find((r: any) => r.year === "2026");
+    expect(row.profitHpp).toBe(110000);
+    expect(row.tanpaHpp).toEqual({ baris: 1, uangCair: 80000 });
+  });
+});

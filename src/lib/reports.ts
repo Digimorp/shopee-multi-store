@@ -1,7 +1,15 @@
 import { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getPeriodForDate, formatPeriodLabel, parsePeriodKey } from "@/lib/period";
-import { productGroupKey } from "@/lib/profit";
+import {
+  productGroupKey,
+  emptyTally,
+  addProfitLine,
+  emptyAgenTally,
+  addAgenLine,
+  type ProfitTally,
+  type AgenTally,
+} from "@/lib/profit";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 
 export type ColKind = "text" | "int" | "money" | "pct";
@@ -14,6 +22,19 @@ export type ReportDataset = {
 };
 
 export type ReportFilter = { storeIds: string[]; from: Date; to: Date };
+
+// T-013: baris tanpa HPP (hppSnapshot = 0) tidak dihitung ke profit -- dijumlah terpisah.
+type TanpaHpp = ProfitTally["tanpaHpp"];
+function sumTanpaHpp(list: { tanpaHpp: TanpaHpp }[]): TanpaHpp {
+  return {
+    baris: list.reduce((s, r) => s + r.tanpaHpp.baris, 0),
+    uangCair: list.reduce((s, r) => s + r.tanpaHpp.uangCair, 0),
+  };
+}
+const TANPA_HPP_LABEL = "Tanpa HPP (tidak dihitung ke profit)";
+function tanpaHppValue(t: TanpaHpp): string {
+  return int(t.baris) + " baris, " + rupiah(t.uangCair);
+}
 
 const rupiah = (n: number) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const int = (n: number) => Math.round(n || 0).toLocaleString("id-ID");
@@ -102,12 +123,12 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
   const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile(f));
   const bySku = new Map<
     string,
-    { sku: string; produk: string; qty: number; omzet: number; uangCair: number; profitHpp: number; profitAgen: number }
+    { sku: string; produk: string; qty: number; omzet: number; hpp: ProfitTally; agen: AgenTally }
   >();
   for (const o of orders) {
     const key = productGroupKey(o);
     const cur =
-      bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, uangCair: 0, profitHpp: 0, profitAgen: 0 };
+      bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, hpp: emptyTally(), agen: emptyAgenTally() };
     if (o.status === OrderStatus.SELESAI) {
       cur.qty += o.qty;
       cur.omzet += o.grossOmzet;
@@ -115,17 +136,22 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
       const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
       const groupAktual = aktualByOrderSn.get(o.orderSn);
       const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-      if (lineAktual != null) {
-        cur.uangCair += lineAktual;
-        cur.profitHpp += lineAktual - o.hppSnapshot * o.qty;
-      }
+      addProfitLine(cur.hpp, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
     }
-    cur.profitAgen += o.profitAgen;
+    addAgenLine(cur.agen, o);
     bySku.set(key, cur);
   }
   const totalOmzet = Array.from(bySku.values()).reduce((s, r) => s + r.omzet, 0);
   const rows = Array.from(bySku.values())
-    .map((r) => ({ ...r, selisih: r.profitAgen - r.profitHpp, share: totalOmzet ? r.omzet / totalOmzet : 0 }))
+    .map(({ hpp, agen, ...r }) => ({
+      ...r,
+      uangCair: hpp.uangCair,
+      profitHpp: hpp.profitHpp,
+      profitAgen: agen.profitAgen,
+      tanpaHpp: hpp.tanpaHpp,
+      selisih: agen.profitAgen - hpp.profitHpp,
+      share: totalOmzet ? r.omzet / totalOmzet : 0,
+    }))
     .sort((a, b) => b.profitHpp - a.profitHpp);
   const tQty = rows.reduce((s, r) => s + r.qty, 0);
   const tUangCair = rows.reduce((s, r) => s + r.uangCair, 0);
@@ -153,6 +179,7 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
       { label: "Total Profit HPP (Nett)", value: rupiah(tHpp) },
       { label: "Total Profit Agen", value: rupiah(tAgen) },
       { label: "Selisih Agen vs Riil", value: rupiah(tAgen - tHpp) },
+      { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) },
     ],
   };
 }
@@ -170,17 +197,15 @@ export async function datasetBarangKeluar(f: ReportFilter): Promise<ReportDatase
   const bySku = new Map<string, any>();
   for (const o of orders) {
     const key = productGroupKey(o);
-    const cur = bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, uangCair: 0, profitHpp: 0 };
+    // cur menyimpan field ProfitTally (profitHpp, uangCair, tanpaHpp) langsung -> addProfitLine(cur).
+    const cur = bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, ...emptyTally() };
     cur.qty += o.qty;
     cur.omzet += o.grossOmzet;
 
     const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
     const groupAktual = aktualByOrderSn.get(o.orderSn);
     const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-    if (lineAktual != null) {
-      cur.uangCair += lineAktual;
-      cur.profitHpp += lineAktual - o.hppSnapshot * o.qty;
-    }
+    addProfitLine(cur, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
     bySku.set(key, cur);
   }
   const totalQty = Array.from(bySku.values()).reduce((s, r) => s + r.qty, 0);
@@ -205,6 +230,7 @@ export async function datasetBarangKeluar(f: ReportFilter): Promise<ReportDatase
       { label: "Total unit keluar", value: int(totalQty) },
       { label: "Jumlah SKU terjual", value: int(bySku.size) },
       { label: "Total uang cair", value: rupiah(rows.reduce((s, r) => s + r.uangCair, 0)) },
+      { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) },
     ],
   };
 }
@@ -320,7 +346,9 @@ export async function storePerformanceRows(f: ReportFilter) {
       uangCair: 0,
       uangMengambang: 0,
       profitHpp: 0,
+      tanpaHpp: { baris: 0, uangCair: 0 },
       profitAgen: 0,
+      agen: emptyAgenTally(),
     });
   }
   for (const o of orders) {
@@ -334,15 +362,15 @@ export async function storePerformanceRows(f: ReportFilter) {
       const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
       const groupAktual = aktualByOrderSn.get(o.orderSn);
       const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-      if (lineAktual != null) {
-        row.uangCair += lineAktual;
-        row.profitHpp += lineAktual - o.hppSnapshot * o.qty;
-      }
+      // row menyimpan field ProfitTally (profitHpp, uangCair, tanpaHpp) langsung.
+      addProfitLine(row, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
     }
     if (o.status === OrderStatus.PENDING_SETTLEMENT) row.uangMengambang += o.netSettlement;
-    if (o.status === OrderStatus.SELESAI || o.status === OrderStatus.PENDING_SETTLEMENT) row.profitAgen += o.profitAgen;
+    if (o.status === OrderStatus.SELESAI || o.status === OrderStatus.PENDING_SETTLEMENT) addAgenLine(row.agen, o);
   }
-  return Array.from(byStore.values()).sort((a, b) => b.omzet - a.omzet);
+  return Array.from(byStore.values())
+    .map(({ agen, ...r }) => ({ ...r, profitAgen: agen.profitAgen }))
+    .sort((a, b) => b.omzet - a.omzet);
 }
 
 export async function datasetStorePerformance(f: ReportFilter): Promise<ReportDataset> {
@@ -364,6 +392,7 @@ export async function datasetStorePerformance(f: ReportFilter): Promise<ReportDa
       { label: "Total omzet bruto", value: rupiah(rows.reduce((s, r) => s + r.omzet, 0)) },
       { label: "Total uang cair", value: rupiah(rows.reduce((s, r) => s + r.uangCair, 0)) },
       { label: "Total profit HPP", value: rupiah(rows.reduce((s, r) => s + r.profitHpp, 0)) },
+      { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) },
     ],
   };
 }
@@ -384,22 +413,26 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
   const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(
     await reconcile({ storeIds: f.storeIds, from: new Date(0), to: new Date() })
   );
-  const actualProfitHpp = (o: (typeof orders)[number]): number => {
+  // Profit HPP per baris lewat addProfitLine: belum cair diabaikan, HPP tidak diketahui -> tanpaHpp.
+  const addActual = (t: ProfitTally, o: (typeof orders)[number]): void => {
     const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
     const groupAktual = aktualByOrderSn.get(o.orderSn);
     const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-    return lineAktual == null ? 0 : lineAktual - o.hppSnapshot * o.qty;
+    addProfitLine(t, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
   };
 
   if (type === "yearly") {
-    const byYear = new Map<string, { tahun: string; omzet: number; profitHpp: number }>();
+    const byYear = new Map<string, { tahun: string; omzet: number; hpp: ProfitTally }>();
     for (const o of orders) {
       const yr = String(o.orderCreatedAt.getFullYear());
-      const cur = byYear.get(yr) ?? { tahun: yr, omzet: 0, profitHpp: 0 };
+      const cur = byYear.get(yr) ?? { tahun: yr, omzet: 0, hpp: emptyTally() };
       cur.omzet += o.grossOmzet;
-      if (o.status === OrderStatus.SELESAI) cur.profitHpp += actualProfitHpp(o);
+      if (o.status === OrderStatus.SELESAI) addActual(cur.hpp, o);
       byYear.set(yr, cur);
     }
+    const yearRows = Array.from(byYear.values())
+      .sort((a, b) => (a.tahun < b.tahun ? 1 : -1))
+      .map((r) => ({ tahun: r.tahun, omzet: r.omzet, profitHpp: r.hpp.profitHpp, tanpaHpp: r.hpp.tanpaHpp }));
     return {
       title: "Rekap Tahunan (Multi-Toko)",
       columns: [
@@ -407,17 +440,18 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
         { key: "omzet", header: "Omzet", width: 20, align: "right", kind: "money" },
         { key: "profitHpp", header: "Profit HPP", width: 20, align: "right", kind: "money" },
       ],
-      rows: Array.from(byYear.values()).sort((a, b) => (a.tahun < b.tahun ? 1 : -1)),
+      rows: yearRows,
+      summary: [{ label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(yearRows)) }],
     };
   }
 
-  const byPeriod = new Map<string, { periodKey: string; periode: string; omzet: number; profitHpp: number }>();
+  const byPeriod = new Map<string, { periodKey: string; periode: string; omzet: number; hpp: ProfitTally }>();
   for (const o of orders) {
     const key = o.periodKey || getPeriodForDate(o.orderCreatedAt, cutoffDay).key;
     const cur =
-      byPeriod.get(key) ?? { periodKey: key, periode: formatPeriodLabel(parsePeriodKey(key)), omzet: 0, profitHpp: 0 };
+      byPeriod.get(key) ?? { periodKey: key, periode: formatPeriodLabel(parsePeriodKey(key)), omzet: 0, hpp: emptyTally() };
     cur.omzet += o.grossOmzet;
-    if (o.status === OrderStatus.SELESAI) cur.profitHpp += actualProfitHpp(o);
+    if (o.status === OrderStatus.SELESAI) addActual(cur.hpp, o);
     byPeriod.set(key, cur);
   }
   const sorted = Array.from(byPeriod.values()).sort((a, b) => (a.periodKey < b.periodKey ? 1 : -1));
@@ -428,7 +462,8 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
     return {
       periode: r.periode,
       omzet: r.omzet,
-      profitHpp: r.profitHpp,
+      profitHpp: r.hpp.profitHpp,
+      tanpaHpp: r.hpp.tanpaHpp,
       selisih: deltaOmzet,
       selisihPct: `${deltaPct.toFixed(1)}%`,
     };
@@ -443,6 +478,7 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
       { key: "selisihPct", header: "%", width: 8, align: "right" },
     ],
     rows,
+    summary: [{ label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) }],
   };
 }
 

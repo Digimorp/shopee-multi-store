@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
-import { productGroupKey } from "@/lib/profit";
+import { productGroupKey, emptyTally, addProfitLine, type ProfitTally } from "@/lib/profit";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { OrderStatus } from "@prisma/client";
 
@@ -35,22 +35,21 @@ export async function GET(req: NextRequest) {
   // per nama produk, tidak collapse jadi satu baris gabungan.
   const bySku = new Map<
     string,
-    { sku: string; name: string; omzet: number; uangCair: number; profitHpp: number; qty: number }
+    { sku: string; name: string; omzet: number; qty: number } & ProfitTally
   >();
+  // T-013: cur menyimpan field ProfitTally (profitHpp, uangCair, tanpaHpp) langsung; baris tanpa
+  // HPP (hppSnapshot = 0) tidak masuk profitHpp tapi dijumlah di tanpaHpp.
   for (const o of orders) {
     const key = productGroupKey(o);
     const cur =
-      bySku.get(key) ?? { sku: o.sku, name: o.productName, omzet: 0, uangCair: 0, profitHpp: 0, qty: 0 };
+      bySku.get(key) ?? { sku: o.sku, name: o.productName, omzet: 0, qty: 0, ...emptyTally() };
     cur.omzet += o.grossOmzet;
     cur.qty += o.qty;
 
     const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
     const groupAktual = aktualByOrderSn.get(o.orderSn);
     const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-    if (lineAktual != null) {
-      cur.uangCair += lineAktual;
-      cur.profitHpp += lineAktual - o.hppSnapshot * o.qty;
-    }
+    addProfitLine(cur, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
     bySku.set(key, cur);
   }
 
@@ -63,5 +62,10 @@ export async function GET(req: NextRequest) {
   const byOmzet = [...all].sort((a, b) => b.omzet - a.omzet).slice(0, 15);
   const byQty = [...all].sort((a, b) => b.qty - a.qty).slice(0, 15);
 
-  return NextResponse.json({ byOmzet, byQty, all: allRanked, totalQty, skuCount: all.length });
+  const tanpaHpp = {
+    baris: all.reduce((s, r) => s + r.tanpaHpp.baris, 0),
+    uangCair: all.reduce((s, r) => s + r.tanpaHpp.uangCair, 0),
+  };
+
+  return NextResponse.json({ byOmzet, byQty, all: allRanked, totalQty, skuCount: all.length, tanpaHpp });
 }

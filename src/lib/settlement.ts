@@ -1,6 +1,8 @@
 // Logika pencairan MURNI (tanpa Prisma/DB) — aman di-import dari client component
 // (mis. halaman /rekonsiliasi) maupun server (src/lib/reconciliation.ts me-re-export ini).
 
+import { lineProfitHpp, emptyTally, addProfitLine, emptyAgenTally, addAgenLine } from "@/lib/profit";
+
 /** Status pencairan per No. Pesanan — SELALU diturunkan dari baris SKU + entri income, tidak disimpan. */
 export type SettleStatus = "AKTUAL" | "SEBAGIAN" | "BELUM";
 
@@ -105,23 +107,41 @@ export type SettlementLine = {
 
 export type SettlementRow = SettlementLine & { uangCair: number | null; profitHpp: number | null; selisih: number | null };
 
+export type SettlementTotals = {
+  grossOmzet: number;
+  uangCair: number | null;
+  profitHpp: number | null;
+  profitAgen: number;
+  selisih: number | null;
+  /** Baris sudah cair tapi HPP tidak diketahui (hppSnapshot = 0): tidak masuk profit. */
+  tanpaHpp: { baris: number; uangCair: number };
+};
+
 /**
  * Breakdown per baris SKU untuk 1 No. Pesanan (popup Settlement Details). Rumus SAMA dengan
  * Laporan Profit (src/lib/reports.ts datasetProfit): Uang Cair = alokasi aktual proporsional,
  * Profit HPP = Uang Cair − HPP×qty, Selisih = Profit Agen − Profit HPP. Baris CANCEL tidak ikut
  * (sama seperti reconcile()). Order belum cair -> Uang Cair/Profit HPP/Selisih = null, BUKAN 0.
+ * T-013: baris dengan HPP tidak diketahui (hppSnapshot = 0) -> Profit HPP & Selisih baris itu
+ * null; total Profit HPP/Agen hanya dari baris ber-HPP; baris itu dijumlah di totals.tanpaHpp.
  */
 export function settlementBreakdown(
   lines: SettlementLine[],
   order: { estimasi: number; aktual: number | null } | undefined
-): { rows: SettlementRow[]; totals: { grossOmzet: number; uangCair: number | null; profitHpp: number | null; profitAgen: number; selisih: number | null } } {
+): { rows: SettlementRow[]; totals: SettlementTotals } {
   const active = lines.filter((l) => l.status !== "CANCEL");
   const groupEstimasi = order?.estimasi ?? active.reduce((s, l) => s + l.netSettlement, 0);
   const rows: SettlementRow[] = active.map((l) => {
     const uangCair = allocateActual(l.netSettlement, groupEstimasi, order?.aktual ?? undefined);
-    const profitHpp = uangCair == null ? null : uangCair - l.hppSnapshot * l.qty;
+    const profitHpp = lineProfitHpp({ qty: l.qty, hppSnapshot: l.hppSnapshot, uangCair });
     return { ...l, uangCair, profitHpp, selisih: profitHpp == null ? null : l.profitAgen - profitHpp };
   });
+  const hpp = emptyTally();
+  const agen = emptyAgenTally();
+  for (const r of rows) {
+    addProfitLine(hpp, { qty: r.qty, hppSnapshot: r.hppSnapshot, uangCair: r.uangCair });
+    addAgenLine(agen, r);
+  }
   const sumOrNull = (k: "uangCair" | "profitHpp" | "selisih") =>
     rows.some((r) => r[k] != null) ? rows.reduce((s, r) => s + (r[k] ?? 0), 0) : null;
   return {
@@ -130,8 +150,9 @@ export function settlementBreakdown(
       grossOmzet: rows.reduce((s, r) => s + r.grossOmzet, 0),
       uangCair: sumOrNull("uangCair"),
       profitHpp: sumOrNull("profitHpp"),
-      profitAgen: rows.reduce((s, r) => s + r.profitAgen, 0),
+      profitAgen: agen.profitAgen,
       selisih: sumOrNull("selisih"),
+      tanpaHpp: hpp.tanpaHpp,
     },
   };
 }

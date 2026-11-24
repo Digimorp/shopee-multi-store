@@ -129,3 +129,28 @@ describe("GET /api/reports/store-performance — regresi bug Uang Cair/Profit HP
     expect(row.profitHpp).toBe(80000 - 5000 * 2); // 70.000 = aktual SN-X - hppSnapshot*qty, SN-Y tidak ikut
   });
 });
+
+describe("GET /api/reports/store-performance — T-013 baris tanpa HPP tidak dihitung sebagai profit", () => {
+  it("SN-Y HPP 0 & sudah cair: masuk Uang Cair + tanpaHpp, tidak masuk Profit HPP / Profit Agen", async () => {
+    const base = orderFindMany.getMockImplementation()!;
+    orderFindMany.mockImplementation(async (args: any) => {
+      const rows = await base(args);
+      if (isReconcileOrderRowsQuery(args) || isAllOrderSnsQuery(args)) return rows;
+      return rows.map((o: any) => (o.orderSn === "SN-Y" ? { ...o, hppSnapshot: 0 } : o));
+    });
+    incomeEntryFindMany.mockResolvedValue(
+      [
+        { orderSn: "SN-X", amount: 80000 },
+        { orderSn: "SN-Y", amount: 40000 },
+      ].map((e) => ({ ...e, type: "ORDER", releasedAt: new Date("2026-09-10"), import: { createdAt: new Date("2026-09-11") } }))
+    );
+
+    const body = await (await GET(fakeReq())).json();
+    const row = body.rows.find((r: any) => r.toko === "S1 - Toko Satu");
+    expect(row.uangCair).toBe(120000); // 80.000 + 40.000 -- Uang Cair tetap total
+    expect(row.profitHpp).toBe(80000 - 5000 * 2); // 70.000 -- SN-Y TIDAK menambah 40.000
+    expect(row.tanpaHpp).toEqual({ baris: 1, uangCair: 40000 });
+    expect(row.profitAgen).toBe(5000); // profitAgen SN-Y (2.000) tidak dihitung
+    expect(row.agen).toBeUndefined(); // tally internal tidak bocor ke respons
+  });
+});

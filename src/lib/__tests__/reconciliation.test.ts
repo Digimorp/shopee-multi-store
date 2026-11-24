@@ -290,3 +290,38 @@ describe("settlementBreakdown", () => {
     expect(rows.map((r) => r.id)).toEqual(["a", "b"]);
   });
 });
+
+describe("settlementBreakdown — T-013 baris tanpa HPP", () => {
+  const line = (o: Partial<Parameters<typeof settlementBreakdown>[0][number]>) => ({
+    id: "x", sku: "", productName: "P", qty: 1, status: "SELESAI", grossOmzet: 0, netSettlement: 0, hppSnapshot: 0, profitAgen: 0, ...o,
+  });
+  // 2 baris: a ber-HPP, b HPP 0 (tidak di master). Payout 100.000, estimasi 40.000 + 60.000.
+  const lines = [
+    line({ id: "a", grossOmzet: 40000, netSettlement: 40000, hppSnapshot: 10000, qty: 2, profitAgen: 5000 }),
+    line({ id: "b", grossOmzet: 60000, netSettlement: 60000, hppSnapshot: 0, qty: 1, profitAgen: 30000 }),
+  ];
+
+  it("baris HPP 0: Profit HPP & Selisih null, Uang Cair tetap terisi", () => {
+    const { rows } = settlementBreakdown(lines, { estimasi: 100000, aktual: 100000 });
+    expect(rows[1].uangCair).toBeCloseTo(60000);
+    expect(rows[1].profitHpp).toBeNull();
+    expect(rows[1].selisih).toBeNull();
+    expect(rows[0].profitHpp).toBeCloseTo(40000 - 20000);
+  });
+
+  it("totals: Profit HPP/Agen hanya baris ber-HPP; Uang Cair total; tanpaHpp terpisah", () => {
+    const { totals } = settlementBreakdown(lines, { estimasi: 100000, aktual: 100000 });
+    expect(totals.uangCair).toBeCloseTo(100000);
+    expect(totals.profitHpp).toBeCloseTo(20000); // BUKAN 80.000
+    expect(totals.profitAgen).toBe(5000); // profitAgen baris b (30.000) tidak dihitung
+    expect(totals.selisih).toBeCloseTo(5000 - 20000);
+    expect(totals.tanpaHpp.baris).toBe(1);
+    expect(totals.tanpaHpp.uangCair).toBeCloseTo(60000);
+  });
+
+  it("belum cair: tanpaHpp kosong (baris belum cair diabaikan)", () => {
+    const { totals } = settlementBreakdown(lines, { estimasi: 100000, aktual: null });
+    expect(totals.tanpaHpp).toEqual({ baris: 0, uangCair: 0 });
+    expect(totals.profitAgen).toBe(5000);
+  });
+});

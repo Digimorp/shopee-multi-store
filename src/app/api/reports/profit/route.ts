@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
-import { productGroupKey } from "@/lib/profit";
+import {
+  productGroupKey,
+  emptyTally,
+  addProfitLine,
+  emptyAgenTally,
+  addAgenLine,
+  type ProfitTally,
+  type AgenTally,
+} from "@/lib/profit";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { OrderStatus } from "@prisma/client";
 
@@ -48,14 +56,17 @@ export async function GET(req: NextRequest) {
   // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —
   // order yang belum ter-link Master Produk (productId null & sku kosong) tetap terpisah
   // per nama produk, tidak collapse jadi satu baris gabungan.
+  // T-013: Profit HPP & Profit Agen HANYA dari baris yang HPP-nya diketahui (hppSnapshot > 0).
+  // Baris tanpa HPP tetap masuk Uang Cair, tapi dilaporkan terpisah di tanpaHpp -- lihat
+  // addProfitLine/addAgenLine di src/lib/profit.ts.
   const bySku = new Map<
     string,
-    { sku: string; name: string; qty: number; omzet: number; uangCair: number; profitHpp: number; profitAgen: number }
+    { sku: string; name: string; qty: number; omzet: number; hpp: ProfitTally; agen: AgenTally }
   >();
   for (const o of orders) {
     const key = productGroupKey(o);
     const cur =
-      bySku.get(key) ?? { sku: o.sku, name: o.productName, qty: 0, omzet: 0, uangCair: 0, profitHpp: 0, profitAgen: 0 };
+      bySku.get(key) ?? { sku: o.sku, name: o.productName, qty: 0, omzet: 0, hpp: emptyTally(), agen: emptyAgenTally() };
     if (o.status === OrderStatus.SELESAI) {
       cur.qty += o.qty;
       cur.omzet += o.grossOmzet;
@@ -63,27 +74,34 @@ export async function GET(req: NextRequest) {
       const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
       const groupAktual = aktualByOrderSn.get(o.orderSn);
       const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-      if (lineAktual != null) {
-        cur.uangCair += lineAktual;
-        cur.profitHpp += lineAktual - o.hppSnapshot * o.qty;
-      }
       // lineAktual null = order ini belum match ke Income Report (belum cair) -> tidak
       // dihitung ke Uang Cair/Profit HPP sama sekali (bukan ditandai 0, tapi excluded).
+      addProfitLine(cur.hpp, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
     }
-    cur.profitAgen += o.profitAgen;
+    addAgenLine(cur.agen, o);
     bySku.set(key, cur);
   }
 
-  const totalOmzet = Array.from(bySku.values()).reduce((s, r) => s + r.omzet, 0);
-  const rows = Array.from(bySku.values()).map((r) => ({
+  const groups = Array.from(bySku.values());
+  const totalOmzet = groups.reduce((s, r) => s + r.omzet, 0);
+  const rows = groups.map(({ hpp, agen, ...r }) => ({
     ...r,
-    selisih: r.profitAgen - r.profitHpp,
+    uangCair: hpp.uangCair,
+    profitHpp: hpp.profitHpp,
+    profitAgen: agen.profitAgen,
+    tanpaHpp: hpp.tanpaHpp,
+    selisih: agen.profitAgen - hpp.profitHpp,
     share: totalOmzet ? r.omzet / totalOmzet : 0,
   }));
   const totalQty = rows.reduce((s, r) => s + r.qty, 0);
   const totalUangCair = rows.reduce((s, r) => s + r.uangCair, 0);
   const totalProfitHpp = rows.reduce((s, r) => s + r.profitHpp, 0);
   const totalProfitAgen = rows.reduce((s, r) => s + r.profitAgen, 0);
+  const tanpaHpp = {
+    baris: groups.reduce((s, g) => s + g.hpp.tanpaHpp.baris, 0),
+    uangCair: groups.reduce((s, g) => s + g.hpp.tanpaHpp.uangCair, 0),
+  };
+  const tanpaHppAgen = { baris: groups.reduce((s, g) => s + g.agen.tanpaHpp.baris, 0) };
 
   return NextResponse.json({
     rows: rows.sort((a, b) => b.profitHpp - a.profitHpp),
@@ -94,6 +112,8 @@ export async function GET(req: NextRequest) {
       totalProfitHpp,
       totalProfitAgen,
       selisih: totalProfitAgen - totalProfitHpp,
+      tanpaHpp,
+      tanpaHppAgen,
     },
   });
 }

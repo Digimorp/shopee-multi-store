@@ -5,6 +5,7 @@ import { getAccessibleStoreIds, assertStoreAccess } from "@/lib/rbac";
 import { OrderStatus } from "@prisma/client";
 import { getPeriodForDate, formatPeriodLabel, parsePeriodKey } from "@/lib/period";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
+import { emptyTally, addProfitLine, type ProfitTally } from "@/lib/profit";
 
 // type=monthly -> rekap per periode cut-off (26-25) untuk N bulan terakhir
 // type=yearly  -> rekap per tahun, multi toko
@@ -34,36 +35,43 @@ export async function GET(req: NextRequest) {
   const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(
     await reconcile({ storeIds, from: new Date(0), to: new Date() })
   );
-  const actualProfitHpp = (o: (typeof orders)[number]): number => {
+  // T-013: Profit HPP per baris lewat addProfitLine -- belum cair diabaikan, baris tanpa HPP
+  // (hppSnapshot = 0) tidak masuk profit tapi dijumlah terpisah di tanpaHpp.
+  const addActual = (t: ProfitTally, o: (typeof orders)[number]): void => {
     const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
     const groupAktual = aktualByOrderSn.get(o.orderSn);
     const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-    return lineAktual == null ? 0 : lineAktual - o.hppSnapshot * o.qty;
+    addProfitLine(t, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
   };
 
   if (type === "yearly") {
-    const byYear = new Map<string, { year: string; omzet: number; profitHpp: number }>();
+    const byYear = new Map<string, { year: string; omzet: number; hpp: ProfitTally }>();
     for (const o of orders) {
       const year = String(o.orderCreatedAt.getFullYear());
-      const cur = byYear.get(year) ?? { year, omzet: 0, profitHpp: 0 };
+      const cur = byYear.get(year) ?? { year, omzet: 0, hpp: emptyTally() };
       cur.omzet += o.grossOmzet;
-      if (o.status === OrderStatus.SELESAI) cur.profitHpp += actualProfitHpp(o);
+      if (o.status === OrderStatus.SELESAI) addActual(cur.hpp, o);
       byYear.set(year, cur);
     }
-    return NextResponse.json({ rows: Array.from(byYear.values()).sort((a, b) => (a.year < b.year ? 1 : -1)) });
+    const yearRows = Array.from(byYear.values())
+      .sort((a, b) => (a.year < b.year ? 1 : -1))
+      .map((r) => ({ year: r.year, omzet: r.omzet, profitHpp: r.hpp.profitHpp, tanpaHpp: r.hpp.tanpaHpp }));
+    return NextResponse.json({ rows: yearRows });
   }
 
   // monthly / comparison — grouping by periodKey (siklus cut-off 26-25)
-  const byPeriod = new Map<string, { periodKey: string; label: string; omzet: number; profitHpp: number }>();
+  const byPeriod = new Map<string, { periodKey: string; label: string; omzet: number; hpp: ProfitTally }>();
   for (const o of orders) {
     const key = o.periodKey || getPeriodForDate(o.orderCreatedAt, cutoffDay).key;
-    const cur = byPeriod.get(key) ?? { periodKey: key, label: formatPeriodLabel(parsePeriodKey(key)), omzet: 0, profitHpp: 0 };
+    const cur = byPeriod.get(key) ?? { periodKey: key, label: formatPeriodLabel(parsePeriodKey(key)), omzet: 0, hpp: emptyTally() };
     cur.omzet += o.grossOmzet;
-    if (o.status === OrderStatus.SELESAI) cur.profitHpp += actualProfitHpp(o);
+    if (o.status === OrderStatus.SELESAI) addActual(cur.hpp, o);
     byPeriod.set(key, cur);
   }
 
-  const rows = Array.from(byPeriod.values()).sort((a, b) => (a.periodKey < b.periodKey ? 1 : -1));
+  const rows = Array.from(byPeriod.values())
+    .sort((a, b) => (a.periodKey < b.periodKey ? 1 : -1))
+    .map(({ hpp, ...r }) => ({ ...r, profitHpp: hpp.profitHpp, tanpaHpp: hpp.tanpaHpp }));
   const rowsWithDelta = rows.map((r, i) => {
     const prev = rows[i + 1];
     const deltaOmzet = prev ? r.omzet - prev.omzet : 0;
