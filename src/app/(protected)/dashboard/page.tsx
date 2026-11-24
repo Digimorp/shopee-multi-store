@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import StatCard from "@/components/dashboard/StatCard";
 import TopProductsTable from "@/components/TopProductsTable";
 import AreaTrendCard from "@/components/dashboard/AreaTrendCard";
@@ -47,6 +48,12 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  // Admin Toko yang belum dihubungkan ke toko mana pun: API menjawab 403, itu bukan "gagal muat".
+  const { data: session } = useSession();
+  const sessionUser = session?.user as any;
+  const noStore = !!sessionUser && sessionUser.role !== "OWNER" && Array.isArray(sessionUser.storeIds) && sessionUser.storeIds.length === 0;
+  const shownError = error && !noStore;
 
   useEffect(() => {
     let alive = true;
@@ -120,7 +127,13 @@ export default function DashboardPage() {
 
       <QuickActions selisihCount={summary?.selisihCount} />
 
-      {error && !loading && (
+      {noStore && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Akun kamu belum dihubungkan ke toko. Hubungi Owner.
+        </div>
+      )}
+
+      {shownError && !loading && (
         <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span>Sebagian data gagal dimuat. Angka di bawah mungkin tidak lengkap.</span>
           <button onClick={() => location.reload()} className="btn-ghost px-3 py-1.5 text-xs">
@@ -131,9 +144,9 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <AreaTrendCard trend={trend} summary={summary} loading={loading} error={error} periodLabel={periodLabel} />
+          <AreaTrendCard trend={trend} summary={summary} loading={loading} error={shownError} periodLabel={periodLabel} />
         </div>
-        <DonutCard rows={storePerf} loading={loading} error={error} />
+        <DonutCard rows={storePerf} loading={loading} error={shownError} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -170,7 +183,7 @@ export default function DashboardPage() {
       <TanpaHppNote tanpaHpp={summary?.tanpaHpp} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <ActivityCard logs={logs} loading={loading} error={error} />
+        <ActivityCard logs={logs} loading={loading} error={shownError} />
         <div className="lg:col-span-2">
           <RecentOrdersCard />
         </div>

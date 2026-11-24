@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { StoreOption } from "@/types";
 import AiAnomalyPanel from "@/components/AiAnomalyPanel";
 
@@ -26,6 +27,8 @@ export default function UploadForm({
 }) {
   const searchParams = useSearchParams();
   const currentStoreId = searchParams.get("storeId");
+  const { data: session } = useSession();
+  const isOwner = (session?.user as any)?.role === "OWNER";
 
   const [storeId, setStoreId] = useState(currentStoreId && currentStoreId !== "all" ? currentStoreId : stores[0]?.id ?? "");
   const [file, setFile] = useState<File | null>(null);
@@ -72,11 +75,17 @@ export default function UploadForm({
       <div className="card p-6">
         <p className="mb-1 text-sm font-semibold text-gray-800">{title}</p>
         <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-          Belum ada toko,{" "}
-          <a href="/settings/stores" className="font-medium underline hover:no-underline">
-            tambahkan di Master Data Toko
-          </a>{" "}
-          dulu sebelum upload.
+          {isOwner ? (
+            <>
+              Belum ada toko,{" "}
+              <a href="/settings/stores" className="font-medium underline hover:no-underline">
+                tambahkan di Master Data Toko
+              </a>{" "}
+              dulu sebelum upload.
+            </>
+          ) : (
+            "Akun kamu belum dihubungkan ke toko. Hubungi Owner."
+          )}
         </div>
       </div>
     );

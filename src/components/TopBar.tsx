@@ -201,12 +201,18 @@ export default function TopBar() {
         {!filterReady ? (
           <Skeleton className="h-9 w-40 rounded-full" />
         ) : stores.length === 0 ? (
-          <a
-            href="/settings/stores"
-            className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 hover:bg-amber-100"
-          >
-            Belum ada toko, tambahkan di Master Data Toko
-          </a>
+          role === "OWNER" ? (
+            <a
+              href="/settings/stores"
+              className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 hover:bg-amber-100"
+            >
+              Belum ada toko, tambahkan di Master Data Toko
+            </a>
+          ) : (
+            <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              Akun kamu belum dihubungkan ke toko. Hubungi Owner.
+            </span>
+          )
         ) : (
           <select value={storeId} onChange={(e) => updateParam("storeId", e.target.value)} className={fieldClass}>
             {role === "OWNER" && <option value="all">Semua Toko ({stores.length})</option>}

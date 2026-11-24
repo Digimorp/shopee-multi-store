@@ -34,6 +34,24 @@ describe("getSessionUser", () => {
     getServerSession.mockResolvedValue({ user: owner });
     expect(await getSessionUser()).toEqual(owner);
   });
+
+  // T-013 nomor 10: fail-closed -- tidak pernah mengembalikan user setengah jadi.
+  it.each([
+    ["token ditandai tidak valid", { ...admin, invalid: true }],
+    ["tanpa id", { ...admin, id: undefined }],
+    ["id kosong", { ...admin, id: "" }],
+    ["tanpa role", { ...admin, role: undefined }],
+    ["role tidak dikenal", { ...admin, role: "SUPERADMIN" }],
+    ["storeIds bukan array", { ...admin, storeIds: undefined }],
+  ])("null kalau %s", async (_label, user) => {
+    getServerSession.mockResolvedValue({ user });
+    expect(await getSessionUser()).toBeNull();
+  });
+
+  it("admin dengan storeIds kosong tetap user sah (bukan null)", async () => {
+    getServerSession.mockResolvedValue({ user: { ...admin, storeIds: [] } });
+    expect(await getSessionUser()).toEqual({ ...admin, storeIds: [] });
+  });
 });
 
 describe("getAccessibleStoreIds", () => {
