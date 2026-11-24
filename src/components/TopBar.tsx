@@ -208,7 +208,7 @@ export default function TopBar() {
             >
               Belum ada toko, tambahkan di Master Data Toko
             </a>
-          ) : (
+          ) : (session?.user as any)?.invalid ? null : (
             <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
               Akun kamu belum dihubungkan ke toko. Hubungi Owner.
             </span>

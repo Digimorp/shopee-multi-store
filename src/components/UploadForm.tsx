@@ -29,6 +29,8 @@ export default function UploadForm({
   const currentStoreId = searchParams.get("storeId");
   const { data: session } = useSession();
   const isOwner = (session?.user as any)?.role === "OWNER";
+  // Akun nonaktif / terhapus: jangan tampilkan pesan "belum dihubungkan" (InvalidSessionGuard akan signOut).
+  const sessionInvalid = (session?.user as any)?.invalid === true;
 
   const [storeId, setStoreId] = useState(currentStoreId && currentStoreId !== "all" ? currentStoreId : stores[0]?.id ?? "");
   const [file, setFile] = useState<File | null>(null);
@@ -83,7 +85,7 @@ export default function UploadForm({
               </a>{" "}
               dulu sebelum upload.
             </>
-          ) : (
+          ) : sessionInvalid ? null : (
             "Akun kamu belum dihubungkan ke toko. Hubungi Owner."
           )}
         </div>
