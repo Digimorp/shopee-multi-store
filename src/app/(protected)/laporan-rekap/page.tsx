@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import ExportButtons from "@/components/ExportButtons";
+import TanpaHppNote, { sumTanpaHpp } from "@/components/TanpaHppNote";
 import { formatRupiah } from "@/lib/format";
 
 export default function LaporanRekapPage() {
@@ -78,6 +79,7 @@ export default function LaporanRekapPage() {
           ]}
         />
       )}
+      <TanpaHppNote tanpaHpp={sumTanpaHpp(rows)} />
     </div>
   );
 }

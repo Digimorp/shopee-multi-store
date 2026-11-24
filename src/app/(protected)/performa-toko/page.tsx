@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import DataTable from "@/components/DataTable";
 import ExportButtons from "@/components/ExportButtons";
 import LeaderboardToko from "@/components/LeaderboardToko";
+import TanpaHppNote, { sumTanpaHpp } from "@/components/TanpaHppNote";
 import { formatRupiah, formatNumber } from "@/lib/format";
 
 export default function PerformaTokoPage() {
@@ -80,6 +81,7 @@ export default function PerformaTokoPage() {
           { header: "Profit Agen", render: (r) => formatRupiah(r.profitAgen) },
         ]}
       />
+      <TanpaHppNote tanpaHpp={sumTanpaHpp(rows)} />
     </div>
   );
 }

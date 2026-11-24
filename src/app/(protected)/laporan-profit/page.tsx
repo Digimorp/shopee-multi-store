@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
 import ExportButtons from "@/components/ExportButtons";
+import TanpaHppNote from "@/components/TanpaHppNote";
 import { formatRupiah, formatNumber } from "@/lib/format";
 
 type SortKey = "profitHpp" | "qty";
@@ -65,6 +66,7 @@ export default function LaporanProfitPage() {
           negative={(data.summary?.selisih ?? 0) < 0}
         />
       </div>
+      <TanpaHppNote tanpaHpp={data.summary?.tanpaHpp} />
 
       <div className="flex gap-2">
         <button

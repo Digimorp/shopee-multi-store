@@ -9,6 +9,7 @@ import DonutCard from "@/components/dashboard/DonutCard";
 import ActivityCard from "@/components/dashboard/ActivityCard";
 import RecentOrdersCard from "@/components/dashboard/RecentOrdersCard";
 import QuickActions from "@/components/dashboard/QuickActions";
+import TanpaHppNote from "@/components/TanpaHppNote";
 import type { TrendPoint } from "@/components/TrendChart";
 import {
   formatPeriodMonthLabel,
@@ -166,6 +167,7 @@ export default function DashboardPage() {
           negative={(summary?.profitAgen ?? 0) < 0}
         />
       </div>
+      <TanpaHppNote tanpaHpp={summary?.tanpaHpp} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <ActivityCard logs={logs} loading={loading} error={error} />
