@@ -7,7 +7,7 @@ import DataTable from "@/components/DataTable";
 import ExportButtons from "@/components/ExportButtons";
 import LeaderboardToko from "@/components/LeaderboardToko";
 import TanpaHppNote, { sumTanpaHpp } from "@/components/TanpaHppNote";
-import { formatRupiah, formatNumber } from "@/lib/format";
+import { formatAxisShort, formatRupiah, formatNumber } from "@/lib/format";
 
 export default function PerformaTokoPage() {
   const searchParams = useSearchParams();
@@ -52,7 +52,7 @@ export default function PerformaTokoPage() {
                 tick={{ fontSize: 11, fill: "#9ca3af" }}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+                tickFormatter={(v) => formatAxisShort(v)}
               />
               <Tooltip
                 formatter={(v: number) => formatRupiah(v)}

@@ -6,7 +6,7 @@ import { parseISO, startOfWeek, format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { Icon } from "@/components/icons";
 import SlidingTabs from "@/components/SlidingTabs";
-import { formatRupiah } from "@/lib/format";
+import { formatAxisShort, formatRupiah } from "@/lib/format";
 import type { TrendPoint } from "@/components/TrendChart";
 
 type Bucket = "daily" | "weekly" | "monthly" | "yearly";
@@ -130,8 +130,8 @@ export default function AreaTrendCard({
                 tick={{ fontSize: 10, fill: "#a3a3a3" }}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => `${Math.round(v / 1000)}k`}
-                width={38}
+                tickFormatter={(v) => formatAxisShort(v)}
+                width={46}
               />
               <Tooltip
                 formatter={(v: number) => formatRupiah(v)}
