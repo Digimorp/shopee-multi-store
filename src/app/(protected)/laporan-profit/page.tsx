@@ -32,6 +32,11 @@ export default function LaporanProfitPage() {
         <ExportButtons report="profit" />
       </div>
 
+      <p className="inline-block rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-800">
+        <strong>Dasar tanggal: tanggal pesanan dibuat.</strong> Filter tanggal memilih pesanan yang DIBUAT dalam rentang
+        itu — angkanya tidak bisa dibandingkan langsung dengan Laporan Rekapan (per periode cut-off).
+      </p>
+
       <p className="text-xs text-gray-500">
         Unit Keluar/Omzet Bruto/Kontribusi Omzet dihitung dari pesanan <strong>berstatus Selesai</strong>. Uang Cair &amp;
         Profit HPP (Nett) pakai nilai <strong>AKTUAL dari Income Report yang sudah di-match</strong> (bukan estimasi nilai

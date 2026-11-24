@@ -25,6 +25,11 @@ export default function LaporanRekapPage() {
         Rekap bulanan mengikuti siklus cut-off (tgl 26 s/d tgl 25). Komparasi menunjukkan selisih omzet vs periode
         sebelumnya.
       </p>
+      <p className="inline-block rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-800">
+        <strong>Dasar tanggal: kode periode cut-off yang ditetapkan saat file diupload</strong> (dari tanggal pesanan
+        dibuat, dengan aturan cut-off yang berlaku waktu upload). Tidak terpengaruh filter tanggal — angkanya tidak bisa
+        dibandingkan langsung dengan Laporan Profit atau Rekonsiliasi.
+      </p>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-2">
