@@ -34,10 +34,10 @@ export const GET = withPeriodError(async (req: NextRequest) => {
   // (period yang salah format sudah ditolak resolveFilters di atas.) Label bulan tidak bergantung
   // cutoffDay — bulan akhir periode selalu = bulan di parameter — jadi cutoff default cukup di sini.
   const periodParam = searchParams.get("period");
-  const periodText =
-    periodParam && /^\d{4}-(0[1-9]|1[0-2])$/.test(periodParam)
-      ? formatPeriodMonthLabel(getPeriodForMonth(periodParam))
-      : formatPeriodLabel(makePeriod(from, to));
+  const hasPeriod = !!periodParam && /^\d{4}-(0[1-9]|1[0-2])$/.test(periodParam);
+  const periodText = hasPeriod
+    ? formatPeriodMonthLabel(getPeriodForMonth(periodParam!))
+    : formatPeriodLabel(makePeriod(from, to));
   const subtitle = `Periode ${periodText}  -  ${scope}`;
   const stamp = Date.now();
   const safe = report.replace(/[^a-z0-9-]/gi, "");
@@ -62,7 +62,9 @@ export const GET = withPeriodError(async (req: NextRequest) => {
     ds.title,
     ds.columns.map((c) => ({ header: c.header, key: c.key, width: Math.max(10, c.width * 1.6), kind: c.kind })),
     ds.rows,
-    ds.summary
+    ds.summary,
+    // T-013 butir 14: subjudul sama dengan PDF, hanya kalau parameter period ada.
+    hasPeriod ? subtitle : undefined
   );
   return new NextResponse(new Uint8Array(xlsx), {
     headers: {
