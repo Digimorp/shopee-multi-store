@@ -5,7 +5,7 @@
 /* Design tokens — palet hijau sage/forest. Ubah di sini, bukan hardcode per komponen. */
 :root {
   /* Background utama: hijau mint/sage pucat */
-  --color-canvas: #edf3e6;
+  --color-canvas: #f7f8fa;
   --color-card: #ffffff;
   --color-card-border: #dbe6d2;
 
