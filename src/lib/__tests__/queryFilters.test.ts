@@ -115,7 +115,7 @@ describe("resolveFilters — 4. period format salah", () => {
       const p = resolveFilters(req(`period=${encodeURIComponent(bad)}`), user);
       await expect(p).rejects.toBeInstanceOf(InvalidPeriodError);
       await expect(p).rejects.toMatchObject({ status: 400 });
-      await expect(p).rejects.toThrow(/Format yang benar YYYY-MM/);
+      await expect(p).rejects.toThrow(/Format period harus YYYY-MM/);
       expect(periodSettingFindFirst).not.toHaveBeenCalled();
     }
   );

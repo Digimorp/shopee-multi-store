@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
+import { withPeriodError } from "@/lib/periodError";
 import { buildReportDataset, datasetToPdfRows, type ReportKey } from "@/lib/reports";
 import { buildXlsx } from "@/lib/export";
 import { buildTablePdf } from "@/lib/pdf";
@@ -8,7 +9,7 @@ import { formatPeriodLabel, formatPeriodMonthLabel, getPeriodForMonth, makePerio
 
 // Endpoint export tunggal untuk semua laporan.
 // GET /api/reports/export?report=<key>&format=xlsx|pdf&storeId&from&to&tab&type
-export async function GET(req: NextRequest) {
+export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -69,4 +70,4 @@ export async function GET(req: NextRequest) {
       "Content-Disposition": `attachment; filename="laporan-${safe}-${stamp}.xlsx"`,
     },
   });
-}
+});

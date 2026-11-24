@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SessionUser, assertStoreAccess } from "@/lib/rbac";
 import { getDefaultPeriod, getPeriodForMonth, getCurrentPeriodMonth } from "@/lib/period";
+import { InvalidPeriodError } from "@/lib/periodError";
 
 export type ResolvedFilters = {
   storeIds: string[];
@@ -9,18 +10,9 @@ export type ResolvedFilters = {
   to: Date;
 };
 
-/**
- * Parameter `period` di URL tidak valid. Membawa status 400 + pesan yang bisa langsung
- * ditampilkan ke pengguna. CATATAN: route pemanggil belum menangkap error ini, jadi
- * saat ini Next.js membalasnya sebagai 500 — lihat laporan T-013 langkah 2.
- */
-export class InvalidPeriodError extends Error {
-  readonly status = 400;
-  constructor(value: string) {
-    super(`Parameter period tidak valid: "${value}". Format yang benar YYYY-MM, contoh period=2027-01.`);
-    this.name = "InvalidPeriodError";
-  }
-}
+// InvalidPeriodError dipindah ke src/lib/periodError.ts (bersama withPeriodError yang
+// mengubahnya jadi HTTP 400). Tetap diekspor ulang dari sini untuk pemanggil lama.
+export { InvalidPeriodError };
 
 const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -38,7 +30,7 @@ async function getCutoffDay(): Promise<number> {
  * Baca query param `storeId` dan filter waktu dari request, validasi akses toko user.
  * Urutan filter waktu:
  *  1. `period=YYYY-MM` -> periode cut-off bulan itu dalam WIB (cutoffDay dari PeriodSetting, default 25).
- *     Format salah -> lempar InvalidPeriodError (status 400).
+ *     Format salah -> lempar InvalidPeriodError; route membungkus handler dengan withPeriodError -> HTTP 400.
  *  2. Tidak ada `period` tapi ada `from`/`to` -> perilaku lama, tidak berubah (link lama tetap jalan).
  *  3. Tidak ada keduanya -> periode cut-off yang sedang berjalan dalam WIB.
  * `period=` kosong diperlakukan sama dengan tidak ada.

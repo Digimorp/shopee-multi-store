@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
+import { withPeriodError } from "@/lib/periodError";
 import { OrderStatus } from "@prisma/client";
 
 const TAB_STATUS: Record<string, OrderStatus> = {
@@ -10,7 +11,7 @@ const TAB_STATUS: Record<string, OrderStatus> = {
   transit: OrderStatus.TRANSIT,
 };
 
-export async function GET(req: NextRequest) {
+export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -32,4 +33,4 @@ export async function GET(req: NextRequest) {
   const totalFee = orders.reduce((s, o) => s + o.adminFee, 0);
 
   return NextResponse.json({ orders, summary: { totalGross, totalNet, totalFee, count: orders.length } });
-}
+});

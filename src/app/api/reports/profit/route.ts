@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
+import { withPeriodError } from "@/lib/periodError";
 import {
   productGroupKey,
   emptyTally,
@@ -14,7 +15,7 @@ import {
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { OrderStatus } from "@prisma/client";
 
-export async function GET(req: NextRequest) {
+export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -116,4 +117,4 @@ export async function GET(req: NextRequest) {
       tanpaHppAgen,
     },
   });
-}
+});

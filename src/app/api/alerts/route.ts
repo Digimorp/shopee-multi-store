@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
+import { withPeriodError } from "@/lib/periodError";
 import { OrderStatus } from "@prisma/client";
 
 // Ambang "uang mengambang" — bisa di-override lewat env, default Rp 5.000.000.
@@ -9,7 +10,7 @@ const MENGAMBANG_THRESHOLD = Number(process.env.ALERT_MENGAMBANG_THRESHOLD ?? 5_
 
 export type AlertItem = { level: "warning" | "info"; title: string; detail: string };
 
-export async function GET(req: NextRequest) {
+export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -53,4 +54,4 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ items, count: items.filter((i) => i.level === "warning").length });
-}
+});

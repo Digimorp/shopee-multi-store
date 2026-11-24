@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
+import { withPeriodError } from "@/lib/periodError";
 import { reconcile, MATCH_TOLERANCE, FINAL_LOCK_DAYS, STUCK_DAYS } from "@/lib/reconciliation";
 
 // Hasil rekonsiliasi Order (estimasi) vs Income Report (aktual) — per periode per toko.
-export async function GET(req: NextRequest) {
+export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -21,4 +22,4 @@ export async function GET(req: NextRequest) {
       payoutRatio: result.payoutRatio,
     },
   });
-}
+});
