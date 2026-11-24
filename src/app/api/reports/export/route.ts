@@ -64,7 +64,8 @@ export const GET = withPeriodError(async (req: NextRequest) => {
     ds.rows,
     ds.summary,
     // T-013 butir 14: subjudul sama dengan PDF, hanya kalau parameter period ada.
-    hasPeriod ? subtitle : undefined
+    // Batch4 H: Rekap tidak diberi subjudul — isinya memuat rentang lebih luas dari 1 periode.
+    hasPeriod && report !== "recap" ? subtitle : undefined
   );
   return new NextResponse(new Uint8Array(xlsx), {
     headers: {
