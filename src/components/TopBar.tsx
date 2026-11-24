@@ -3,14 +3,22 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { getDefaultPeriod } from "@/lib/period";
+import { formatPeriodMonthLabel, getCurrentPeriodMonth, getPeriodForMonth } from "@/lib/period";
 import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
 import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
 
-function toInputDate(d: Date) {
-  return d.toISOString().slice(0, 10);
+const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
+const MONTH_OPTIONS = 24; // bulan berjalan + 23 bulan sebelumnya
+const LEGACY_RANGE = "__legacy-range";
+const INVALID_PERIOD = "__invalid-period";
+
+/** "2027-01" mundur n bulan -> "2026-11" dst. */
+function shiftMonth(ym: string, n: number): string {
+  const [y, m] = ym.split("-").map(Number);
+  const idx = y * 12 + (m - 1) - n;
+  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, "0")}`;
 }
 
 function Skeleton({ className = "" }: { className?: string }) {
@@ -26,11 +34,13 @@ export default function TopBar() {
 
   const [stores, setStores] = useState<StoreOption[]>([]);
   const [storesLoaded, setStoresLoaded] = useState(false);
-  const def = getDefaultPeriod();
+  // cutoffDay dari /api/periods (sumber yang sama dengan server). null = belum dimuat.
+  const [cutoffDay, setCutoffDay] = useState<number | null>(null);
 
   const storeId = searchParams.get("storeId") ?? "all";
-  const from = searchParams.get("from") ?? toInputDate(def.from);
-  const to = searchParams.get("to") ?? toInputDate(def.to);
+  const periodParam = searchParams.get("period") || null; // period= kosong = tidak ada (sama seperti server)
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
 
   useEffect(() => {
     fetch("/api/stores")
@@ -39,13 +49,51 @@ export default function TopBar() {
       .finally(() => setStoresLoaded(true));
   }, []);
 
+  useEffect(() => {
+    fetch("/api/periods")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setCutoffDay(Number.isInteger(d.cutoffDay) ? d.cutoffDay : 25))
+      .catch(() => setCutoffDay(25)); // sama dengan default server kalau PeriodSetting kosong
+  }, []);
+
+  // Bulan periode berjalan WIB — dihitung dengan fungsi yang sama persis dengan server (resolveFilters).
+  const currentMonth = cutoffDay != null ? getCurrentPeriodMonth(cutoffDay) : null;
+
+  // Nilai pilihan aktif: period di URL > link lama from/to > default bulan berjalan.
+  const selectedPeriod = periodParam
+    ? PERIOD_PARAM.test(periodParam)
+      ? periodParam
+      : INVALID_PERIOD
+    : fromParam || toParam
+      ? LEGACY_RANGE
+      : currentMonth;
+
+  const monthOptions = currentMonth ? Array.from({ length: MONTH_OPTIONS }, (_, i) => shiftMonth(currentMonth, i)) : [];
+  // Link ke bulan di luar 24 bulan terakhir tetap tampil sebagai pilihan, tidak dipaksa ganti.
+  if (periodParam && PERIOD_PARAM.test(periodParam) && !monthOptions.includes(periodParam)) monthOptions.push(periodParam);
+  const monthLabel = (m: string) => formatPeriodMonthLabel(getPeriodForMonth(m, cutoffDay ?? 25));
+
+  function pushParams(params: URLSearchParams) {
+    if (!params.get("storeId")) params.set("storeId", storeId);
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   function updateParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
-    if (!params.get("from")) params.set("from", from);
-    if (!params.get("to")) params.set("to", to);
-    if (!params.get("storeId")) params.set("storeId", storeId);
-    router.push(`${pathname}?${params.toString()}`);
+    // Belum ada filter waktu sama sekali -> tulis eksplisit bulan berjalan (dulu: from/to default).
+    if (!params.get("period") && !params.get("from") && !params.get("to") && currentMonth) {
+      params.set("period", currentMonth);
+    }
+    pushParams(params);
+  }
+
+  function selectMonth(month: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("period", month);
+    params.delete("from");
+    params.delete("to");
+    pushParams(params);
   }
 
   const sessionLoading = status === "loading";
@@ -60,7 +108,6 @@ export default function TopBar() {
 
   const fieldClass =
     "rounded-full border-0 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-300";
-  const dateClass = "w-[7.75rem] min-w-0 shrink border-0 bg-transparent py-1 text-sm text-gray-700 outline-none sm:w-auto";
   const iconBtnClass =
     "grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-500 transition hover:text-brand-500";
 
@@ -110,11 +157,33 @@ export default function TopBar() {
             className="w-full min-w-0 border-0 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
           />
         </label>
-        <div className="flex max-w-full items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 focus-within:ring-2 focus-within:ring-brand-300 sm:gap-2 sm:px-4">
-          <input type="date" value={from} onChange={(e) => updateParam("from", e.target.value)} className={dateClass} />
-          <span className="text-sm text-gray-400">s/d</span>
-          <input type="date" value={to} onChange={(e) => updateParam("to", e.target.value)} className={dateClass} />
-        </div>
+        {selectedPeriod == null ? (
+          <Skeleton className="h-9 w-40 rounded-full" />
+        ) : (
+          <select
+            value={selectedPeriod}
+            onChange={(e) => selectMonth(e.target.value)}
+            aria-label="Periode cut-off"
+            title={`Periode cut-off tgl ${(cutoffDay ?? 25) + 1}–${cutoffDay ?? 25} (WIB)`}
+            className={`${fieldClass} max-w-full`}
+          >
+            {selectedPeriod === LEGACY_RANGE && (
+              <option value={LEGACY_RANGE} disabled>
+                {fromParam ?? "…"} s/d {toParam ?? "…"}
+              </option>
+            )}
+            {selectedPeriod === INVALID_PERIOD && (
+              <option value={INVALID_PERIOD} disabled>
+                Periode tidak valid: {periodParam}
+              </option>
+            )}
+            {monthOptions.map((m) => (
+              <option key={m} value={m}>
+                {monthLabel(m)}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

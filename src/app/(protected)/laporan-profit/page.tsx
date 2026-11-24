@@ -33,8 +33,8 @@ export default function LaporanProfitPage() {
       </div>
 
       <p className="inline-block rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-800">
-        <strong>Dasar tanggal: tanggal pesanan dibuat.</strong> Filter tanggal memilih pesanan yang DIBUAT dalam rentang
-        itu — angkanya tidak bisa dibandingkan langsung dengan Laporan Rekapan (per periode cut-off).
+        <strong>Dasar tanggal: tanggal pesanan dibuat.</strong> Bulan cut-off (26–25) berdasarkan tanggal pesanan dibuat.
+        Laporan Rekapan memakai kode periode yang tersimpan saat upload, jadi angkanya bisa sedikit berbeda.
       </p>
 
       <p className="text-xs text-gray-500">

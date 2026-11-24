@@ -10,11 +10,23 @@ import ActivityCard from "@/components/dashboard/ActivityCard";
 import RecentOrdersCard from "@/components/dashboard/RecentOrdersCard";
 import QuickActions from "@/components/dashboard/QuickActions";
 import type { TrendPoint } from "@/components/TrendChart";
-import { getDefaultPeriod } from "@/lib/period";
+import {
+  formatPeriodMonthLabel,
+  getCurrentPeriodMonth,
+  getDefaultPeriod,
+  getPeriodForMonth,
+} from "@/lib/period";
 import { formatRupiah } from "@/lib/format";
+
+const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 function fmtShort(d: Date) {
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** Tanggal batas periode ditampilkan dalam WIB, apa pun zona waktu browser. */
+function fmtWib(d: Date) {
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
 }
 
 async function getJson(url: string): Promise<any> {
@@ -69,12 +81,34 @@ export default function DashboardPage() {
     };
   }, [qs]);
 
+  // cutoffDay dari /api/periods — sumber yang sama dengan server & TopBar. null = belum dimuat.
+  const [cutoffDay, setCutoffDay] = useState<number | null>(null);
+  useEffect(() => {
+    fetch("/api/periods")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setCutoffDay(Number.isInteger(d.cutoffDay) ? d.cutoffDay : 25))
+      .catch(() => setCutoffDay(25));
+  }, []);
+
+  // Urutan sama dengan resolveFilters: period=YYYY-MM > link lama from/to > bulan berjalan WIB.
   const periodLabel = useMemo(() => {
-    const def = getDefaultPeriod();
+    const period = searchParams.get("period");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
-    return `${fmtShort(from ? new Date(from) : def.from)} – ${fmtShort(to ? new Date(to) : def.to)}`;
-  }, [searchParams]);
+    if (period && PERIOD_PARAM.test(period)) {
+      const month = formatPeriodMonthLabel(getPeriodForMonth(period)); // label bulan tidak bergantung cutoff
+      if (cutoffDay == null) return month;
+      const p = getPeriodForMonth(period, cutoffDay);
+      return `${month} (${fmtWib(p.from)} – ${fmtWib(p.to)})`;
+    }
+    if (from || to) {
+      const def = getDefaultPeriod();
+      return `${fmtShort(from ? new Date(from) : def.from)} – ${fmtShort(to ? new Date(to) : def.to)}`;
+    }
+    if (cutoffDay == null) return "…";
+    const p = getPeriodForMonth(getCurrentPeriodMonth(cutoffDay), cutoffDay);
+    return `${formatPeriodMonthLabel(p)} (${fmtWib(p.from)} – ${fmtWib(p.to)})`;
+  }, [searchParams, cutoffDay]);
 
   return (
     <div className="space-y-5">
