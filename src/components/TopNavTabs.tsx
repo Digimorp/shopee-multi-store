@@ -10,6 +10,8 @@ import { fitTabs } from "@/lib/fitTabs";
 // Class ukuran tab SAMA dengan SlidingTabs size "md" (ITEM_BASE + SIZE.md) supaya hasil ukur = lebar asli.
 const TAB_CLS = "whitespace-nowrap rounded-full text-center font-medium px-4 py-2 text-[13px]";
 const MORE_LABEL = "Lainnya";
+// T-013 butir 12b (keputusan Founder): tab ini selalu tampil di baris menu, tidak pernah masuk "Lainnya".
+const PINNED_KEYS = new Set(["/retur-cancel"]); // Retur & Pembatalan (navConfig)
 
 // useLayoutEffect di browser (ukur sebelum paint), useEffect saat SSR (hindari warning).
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -18,6 +20,7 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
  * T-013 butir 12: tab menu atas yang tidak terpotong di layar laptop.
  * Tab yang muat tampil seperti biasa (SlidingTabs, tidak diubah); tab yang tidak muat pindah ke
  * menu "Lainnya" di ujung kanan, urutan tetap sama. Kalau semua muat, tombol Lainnya tidak ada.
+ * Tab pinned (PINNED_KEYS) tidak pernah masuk Lainnya; yang dipindah tab lain dari paling belakang.
  */
 export default function TopNavTabs({
   items,
@@ -32,7 +35,8 @@ export default function TopNavTabs({
   const boxRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [visibleCount, setVisibleCount] = useState(items.length);
+  // visible[i] = tab i tampil di baris; awalnya semua (SSR), diukur ulang sebelum paint.
+  const [visible, setVisible] = useState<boolean[]>(() => items.map(() => true));
   const [open, setOpen] = useState(false);
   // items dibuat ulang tiap render TopBar; ukur ulang hanya kalau labelnya berubah.
   const labelsKey = items.map((it) => it.label).join("|");
@@ -46,7 +50,9 @@ export default function TopNavTabs({
       const nodes = [...measure.children] as HTMLElement[];
       const widths = nodes.slice(0, items.length).map((n) => n.getBoundingClientRect().width);
       const moreWidth = nodes[items.length]?.getBoundingClientRect().width ?? 0;
-      setVisibleCount(fitTabs(widths, box.clientWidth, moreWidth));
+      const pinned = items.map((it) => PINNED_KEYS.has(it.key));
+      const next = fitTabs(widths, box.clientWidth, moreWidth, pinned);
+      setVisible((prev) => (prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next));
     };
     recompute();
     const ro = new ResizeObserver(recompute);
@@ -72,8 +78,9 @@ export default function TopNavTabs({
     };
   }, [open]);
 
-  const shown = items.slice(0, visibleCount);
-  const overflow = items.slice(visibleCount);
+  // Urutan tetap sama seperti items (navConfig); hanya dipisah tampil / Lainnya.
+  const shown = items.filter((_, i) => visible[i] !== false);
+  const overflow = items.filter((_, i) => visible[i] === false);
   const overflowActive = overflow.some((it) => it.key === activeKey);
 
   return (
