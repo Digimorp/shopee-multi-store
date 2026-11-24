@@ -27,3 +27,5 @@ tsconfig.tsbuildinfo
 
 # Screenshot verifikasi T-013 (lokal, jangan commit)
 screenshots-t013/
+# T-013 batch4: file backup lokal (nama-asli.backup-YYYYMMDD...) tidak ikut Git
+*.backup-*
