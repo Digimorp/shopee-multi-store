@@ -95,8 +95,11 @@ export default function RekonsiliasiPage() {
   }
 
   const rate = recon?.rate ?? { match: 0, selisih: 0, belumKetemu: 0, total: 0, matchPct: 0 };
-  const totals = recon?.totals ?? { estimasi: 0, aktual: 0, selisih: 0, adjustment: 0 };
+  const totals = recon?.totals ?? { estimasi: 0, aktual: 0, selisih: 0, adjustment: 0, aktualPesanan: 0, incomeTanpaPesanan: 0 };
+  // T-013 butir 9: Total Aktual = Uang Cair pesanan periode ini (MATCH + SELISIH), sama dengan Dashboard & Laporan Profit.
+  const aktualPesanan: number = totals.aktualPesanan ?? totals.aktual;
   const items: any[] = recon?.items ?? [];
+  const incomeTanpaPesananCount = items.filter((i) => i.side === "income").length;
   const adjustments: any[] = recon?.adjustments ?? [];
   const cfg = recon?.config ?? { toleransiRp: 5, finalLockDays: 14, stuckDays: 7, payoutRatio: 1 };
   const payoutRatio = cfg.payoutRatio ?? 1;
@@ -202,13 +205,27 @@ export default function RekonsiliasiPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         <SummaryCard label="Total Estimasi (Pesanan)" value={formatRupiah(totals.estimasi)} />
-        <SummaryCard tone="success" label="Total Aktual (Income Report)" value={formatRupiah(totals.aktual)} />
+        <SummaryCard
+          tone="success"
+          label="Total Aktual (Income Report)"
+          value={formatRupiah(aktualPesanan)}
+          sub="Pesanan periode ini (MATCH + SELISIH)"
+        />
         <SummaryCard
           label="Selisih Aktual − Estimasi"
           value={formatRupiah(totals.selisih)}
           negative={totals.selisih < 0}
         />
-        <SummaryCard label="Adjustment Shopee" value={formatRupiah(totals.adjustment)} />
+        <SummaryCard
+          label="Income tanpa pesanan"
+          value={formatRupiah(totals.incomeTanpaPesanan ?? 0)}
+          sub={`${incomeTanpaPesananCount} entri, dana dilepas di periode ini`}
+        />
+        <SummaryCard
+          label="Adjustment Shopee"
+          value={formatRupiah(totals.adjustment)}
+          sub={`${adjustments.length} entri, dana dilepas di periode ini`}
+        />
       </div>
 
       {/* Tab gabungan: cashflow (Cair/Pending/Transit) + rekonsiliasi (Selisih/Belum Ketemu/Semua Order) */}

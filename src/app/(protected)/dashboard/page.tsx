@@ -155,7 +155,7 @@ export default function DashboardPage() {
           label="Cair (Aktual Income Report)"
           tone="success"
           value={formatRupiah(summary?.cair ?? 0)}
-          sub={`${summary?.cairCount ?? 0} pesanan cocok`}
+          sub={`${summary?.cairCount ?? 0} pesanan sudah cair`}
         />
         <StatCard
           label="Belum Cair"
@@ -165,9 +165,9 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Selisih (perlu dicek)"
-          value={formatRupiah(summary?.selisih ?? 0)}
+          value={`${summary?.selisihCount ?? 0} pesanan`}
           tone="danger"
-          sub={`${summary?.selisihCount ?? 0} pesanan beda nominal`}
+          sub="sudah termasuk di Cair"
         />
         <StatCard
           label="Profit HPP (Nett)"
