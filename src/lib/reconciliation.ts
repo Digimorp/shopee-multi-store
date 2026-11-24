@@ -56,7 +56,20 @@ export type AdjustmentItem = {
 
 export type ReconResult = {
   rate: { match: number; selisih: number; belumKetemu: number; total: number; matchPct: number };
-  totals: { estimasi: number; aktual: number; selisih: number; adjustment: number };
+  totals: {
+    estimasi: number;
+    /** aktualPesanan + incomeTanpaPesanan (nama lama, dipertahankan untuk pemakai lama). */
+    aktual: number;
+    selisih: number;
+    /** T-013 butir 9: ADJUSTMENT yang tanggal dananya (releasedAt, fallback tanggal import) masuk periode. */
+    adjustment: number;
+    /** T-013 butir 9: "Uang Cair" = aktual Income Report pesanan periode ini (MATCH + SELISIH). */
+    aktualPesanan: number;
+    /** T-013 butir 9: income ORDER yang pesanannya tidak ada di DB, tanggal dana masuk periode. */
+    incomeTanpaPesanan: number;
+  };
+  /** Jumlah entri non-pesanan periode ini yang releasedAt-nya kosong -> tanggal import dipakai. */
+  nonPesananFallbackImport: number;
   payoutRatio: number; // median aktual/estimasi toko (1 = estimasi sudah = payout / data belum cukup)
   items: ReconItem[];
   adjustments: AdjustmentItem[];
@@ -299,10 +312,23 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
     });
   }
 
+  // T-013 butir 9: income NON-PESANAN (ADJUSTMENT & ORDER yang pesanannya tidak ada di DB) hanya
+  // dihitung kalau tanggal dana dilepas (releasedAt) masuk periode f.from-f.to. releasedAt kosong ->
+  // pakai tanggal import (dihitung di nonPesananFallbackImport). Entri ORDER yang pesanannya ADA
+  // di DB tidak lewat sini -- tetap ikut periode pesanannya (logika per pesanan di atas).
+  let nonPesananFallbackImport = 0;
+  const inPeriod = (releasedAt: Date | null, importAt: Date) => {
+    const d = releasedAt ?? importAt;
+    const ok = d >= f.from && d <= f.to;
+    if (ok && !releasedAt) nonPesananFallbackImport++;
+    return ok;
+  };
+
   // Entri income ORDER yang ordernya benar-benar tidak ada di DB toko ini -> BELUM_KETEMU sisi income
   for (const [orderSn, agg] of incomeByOrderSn) {
     if (matchedIncomeOrderSns.has(orderSn)) continue;
     if (allOrderSns.has(orderSn)) continue; // order ada tapi di luar periode -> abaikan
+    if (!inPeriod(agg.releasedAt, agg.importAt)) continue; // dana dilepas di luar periode
     items.push({
       orderSn,
       storeCode: "-",
@@ -324,7 +350,7 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
   }
 
   const adjustments: AdjustmentItem[] = incomeEntries
-    .filter((e) => e.type === "ADJUSTMENT")
+    .filter((e) => e.type === "ADJUSTMENT" && inPeriod(e.releasedAt, e.import.createdAt))
     .map((e) => ({
       storeCode: "-",
       kind: e.adjustmentKind ?? "Adjustment",
@@ -344,14 +370,18 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
   rate.matchPct = rate.total ? rate.match / rate.total : 0;
 
   const reconciled = items.filter((i) => i.aktual != null);
+  const aktualPesanan = reconciled.filter((i) => i.side !== "income").reduce((s, i) => s + (i.aktual ?? 0), 0);
+  const incomeTanpaPesanan = reconciled.filter((i) => i.side === "income").reduce((s, i) => s + (i.aktual ?? 0), 0);
   const totals = {
     estimasi: items.reduce((s, i) => s + i.estimasi, 0),
-    aktual: reconciled.reduce((s, i) => s + (i.aktual ?? 0), 0),
+    aktual: aktualPesanan + incomeTanpaPesanan,
     selisih: reconciled.reduce((s, i) => s + (i.selisih ?? 0), 0),
     adjustment: adjustments.reduce((s, a) => s + a.amount, 0),
+    aktualPesanan,
+    incomeTanpaPesanan,
   };
 
-  return { rate, totals, payoutRatio, items, adjustments };
+  return { rate, totals, payoutRatio, items, adjustments, nonPesananFallbackImport };
 }
 
 export type ActualLookup = {

@@ -55,21 +55,25 @@ export const GET = withPeriodError(async (req: NextRequest) => {
 
   // "Cair" TIDAK boleh dihitung dari total status Selesai (gross/estimasi dari data Order)
   // vs total Income Report -- beda cakupan periode (delay pencairan s.d. H+14) & beda basis
-  // (gross vs net setelah fee). Match per No. Pesanan (reconcile()) lalu pecah 3 angka terpisah:
-  // Cair (match aktual), Belum Cair (Selesai, belum muncul di Income Report), Selisih (flag admin).
+  // (gross vs net setelah fee). Match per No. Pesanan (reconcile()).
+  // T-013 butir 9 (definisi Founder): Cair = aktual Income Report pesanan periode ini, apa pun
+  // hasil cocoknya (MATCH + SELISIH) -- sama dengan Uang Cair Laporan Profit (buildActualLookup)
+  // dan totals.aktualPesanan Rekonsiliasi. SELISIH SUDAH termasuk di Cair; selisihCount hanya
+  // menandai pesanan yang perlu dicek admin. Income non-pesanan (side "income") tidak masuk.
   let cair = 0;
   let cairCount = 0;
   let belumCair = 0;
   let belumCairCount = 0;
-  let selisih = 0;
+  let selisihAktual = 0;
   let selisihCount = 0;
   for (const it of recon.items) {
-    if (it.category === "MATCH") {
+    if (it.side !== "income" && (it.category === "MATCH" || it.category === "SELISIH")) {
       cair += it.aktual ?? 0;
       cairCount++;
-    } else if (it.category === "SELISIH") {
-      selisih += it.aktual ?? 0;
-      selisihCount++;
+      if (it.category === "SELISIH") {
+        selisihAktual += it.aktual ?? 0;
+        selisihCount++;
+      }
     } else if (it.category === "BELUM_KETEMU" && it.side === "order" && it.status === OrderStatus.SELESAI) {
       belumCair += it.estimasi;
       belumCairCount++;
@@ -88,7 +92,9 @@ export const GET = withPeriodError(async (req: NextRequest) => {
     cairCount,
     belumCair,
     belumCairCount,
-    selisih,
+    // `selisih` = JUMLAH pesanan SELISIH (dulu Rp). Nilai Rp-nya di selisihAktual (sudah termasuk di cair).
+    selisih: selisihCount,
     selisihCount,
+    selisihAktual,
   });
 });

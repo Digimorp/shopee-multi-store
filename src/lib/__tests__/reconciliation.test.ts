@@ -85,10 +85,11 @@ function reconItem(over: Partial<ReconItem> = {}): ReconItem {
 function reconResult(items: ReconItem[]): ReconResult {
   return {
     rate: { match: 0, selisih: 0, belumKetemu: 0, total: 0, matchPct: 0 },
-    totals: { estimasi: 0, aktual: 0, selisih: 0, adjustment: 0 },
+    totals: { estimasi: 0, aktual: 0, selisih: 0, adjustment: 0, aktualPesanan: 0, incomeTanpaPesanan: 0 },
     payoutRatio: 1,
     items,
     adjustments: [],
+    nonPesananFallbackImport: 0,
   };
 }
 
