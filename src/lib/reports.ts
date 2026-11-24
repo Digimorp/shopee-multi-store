@@ -7,6 +7,7 @@ import {
   addProfitLine,
   emptyAgenTally,
   addAgenLine,
+  lineProfitAgen,
   type ProfitTally,
   type AgenTally,
 } from "@/lib/profit";
@@ -495,19 +496,35 @@ export async function datasetOrders(f: ReportFilter): Promise<ReportDataset> {
     PENDING_SETTLEMENT: "Belum Cair",
     SELESAI: "Selesai",
   };
-  const rows = orders.map((o) => ({
-    toko: o.store.code,
-    noPesanan: o.orderSn,
-    sku: o.sku,
-    produk: o.productName,
-    qty: o.qty,
-    status: statusLabel[o.status] ?? o.status,
-    tanggal: ymd(o.orderCreatedAt),
-    omzetBruto: o.grossOmzet,
-    uangCair: o.status === OrderStatus.SELESAI ? o.netSettlement : 0,
-    profitHpp: o.profitHpp,
-    profitAgen: o.profitAgen,
-  }));
+  // T-013: rumus SAMA dengan Laporan Profit -- Uang Cair = nilai AKTUAL dari Income Report
+  // (reconcile + allocateActual; belum cair -> 0), Profit HPP/Agen hanya untuk baris yang HPP-nya
+  // diketahui. Baris tanpa HPP: profit 0 di kolom, ditandai tanpaHpp=true, dan dijumlah di ringkasan.
+  // BUKAN lagi kolom Order.profitHpp/profitAgen tersimpan.
+  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile(f));
+  const total = emptyTally();
+  const rows = orders.map((o) => {
+    const line = emptyTally();
+    if (o.status === OrderStatus.SELESAI) {
+      const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
+      const lineAktual = allocateActual(o.netSettlement, groupEstimasi, aktualByOrderSn.get(o.orderSn));
+      addProfitLine(line, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
+      addProfitLine(total, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
+    }
+    return {
+      toko: o.store.code,
+      noPesanan: o.orderSn,
+      sku: o.sku,
+      produk: o.productName,
+      qty: o.qty,
+      status: statusLabel[o.status] ?? o.status,
+      tanggal: ymd(o.orderCreatedAt),
+      omzetBruto: o.grossOmzet,
+      uangCair: line.uangCair,
+      profitHpp: line.profitHpp,
+      profitAgen: lineProfitAgen(o) ?? 0,
+      tanpaHpp: line.tanpaHpp.baris > 0,
+    };
+  });
   return {
     title: "Detail Semua Pesanan",
     columns: [
@@ -524,6 +541,11 @@ export async function datasetOrders(f: ReportFilter): Promise<ReportDataset> {
       { key: "profitAgen", header: "Profit Agen", width: 11, align: "right", kind: "money" },
     ],
     rows,
+    summary: [
+      { label: "Total uang cair", value: rupiah(total.uangCair) },
+      { label: "Total profit HPP", value: rupiah(total.profitHpp) },
+      { label: TANPA_HPP_LABEL, value: tanpaHppValue(total.tanpaHpp) },
+    ],
   };
 }
 

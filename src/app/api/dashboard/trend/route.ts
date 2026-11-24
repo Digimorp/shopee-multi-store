@@ -4,6 +4,8 @@ import { getSessionUser } from "@/lib/rbac";
 import { resolveFilters } from "@/lib/queryFilters";
 import { OrderStatus } from "@prisma/client";
 import { format } from "date-fns";
+import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
+import { emptyTally, addProfitLine, type ProfitTally } from "@/lib/profit";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser();
@@ -19,21 +21,34 @@ export async function GET(req: NextRequest) {
       status: { not: OrderStatus.CANCEL },
       deletedAt: null,
     },
-    select: { orderCreatedAt: true, grossOmzet: true, profitHpp: true, status: true },
+    select: { orderSn: true, orderCreatedAt: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, qty: true, status: true },
   });
 
-  const byDate = new Map<string, { omzet: number; profit: number }>();
+  // T-013: profit per tanggal pakai rumus SAMA dengan Laporan Profit -- uang cair AKTUAL
+  // (reconcile + allocateActual), baris tanpa HPP tidak masuk profit (dijumlah di tanpaHpp).
+  // BUKAN lagi kolom Order.profitHpp tersimpan.
+  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile({ storeIds, from, to }));
+
+  const byDate = new Map<string, { omzet: number; hpp: ProfitTally }>();
   for (const o of orders) {
     const key = format(o.orderCreatedAt, "yyyy-MM-dd");
-    const cur = byDate.get(key) ?? { omzet: 0, profit: 0 };
+    const cur = byDate.get(key) ?? { omzet: 0, hpp: emptyTally() };
     cur.omzet += o.grossOmzet;
-    if (o.status === OrderStatus.SELESAI) cur.profit += o.profitHpp;
+    if (o.status === OrderStatus.SELESAI) {
+      const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
+      const lineAktual = allocateActual(o.netSettlement, groupEstimasi, aktualByOrderSn.get(o.orderSn));
+      addProfitLine(cur.hpp, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
+    }
     byDate.set(key, cur);
   }
 
   const trend = Array.from(byDate.entries())
     .sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([date, v]) => ({ date, omzet: v.omzet, profit: v.profit }));
+    .map(([date, v]) => ({ date, omzet: v.omzet, profit: v.hpp.profitHpp, tanpaHpp: v.hpp.tanpaHpp }));
+  const tanpaHpp = {
+    baris: trend.reduce((s, p) => s + p.tanpaHpp.baris, 0),
+    uangCair: trend.reduce((s, p) => s + p.tanpaHpp.uangCair, 0),
+  };
 
-  return NextResponse.json({ trend });
+  return NextResponse.json({ trend, tanpaHpp });
 }
