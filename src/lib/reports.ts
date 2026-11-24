@@ -63,6 +63,16 @@ const baseWhere = (f: ReportFilter): Prisma.OrderWhereInput => ({
 
 // ---------------------------------------------------------------------------
 
+/**
+ * T-013 butir 15: SKU untuk kolom export. File Pesanan Shopee sering tidak punya SKU
+ * (Order.sku kosong). Urutan: SKU di pesanan -> SKU Master Produk (lewat productId) -> "-".
+ * Tidak pernah mengarang SKU.
+ */
+export function exportSku(o: { sku: string | null; product?: { sku: string | null } | null }): string {
+  return o.sku?.trim() || o.product?.sku?.trim() || "-";
+}
+const PRODUCT_SKU = { select: { sku: true } } as const;
+
 export async function datasetCashflow(f: ReportFilter, tab: string): Promise<ReportDataset> {
   const status =
     tab === "pending" ? OrderStatus.PENDING_SETTLEMENT : tab === "transit" ? OrderStatus.TRANSIT : OrderStatus.SELESAI;
@@ -70,7 +80,7 @@ export async function datasetCashflow(f: ReportFilter, tab: string): Promise<Rep
 
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status },
-    include: { store: { select: { code: true, name: true } } },
+    include: { store: { select: { code: true, name: true } }, product: PRODUCT_SKU },
     orderBy: { orderCreatedAt: "desc" },
   });
 
@@ -78,7 +88,7 @@ export async function datasetCashflow(f: ReportFilter, tab: string): Promise<Rep
     tanggal: ymd(o.orderCreatedAt),
     toko: o.store.code,
     noPesanan: o.orderSn,
-    sku: o.sku,
+    sku: exportSku(o),
     produk: o.productName,
     qty: o.qty,
     omzetBruto: o.grossOmzet,
@@ -111,7 +121,7 @@ export async function datasetCashflow(f: ReportFilter, tab: string): Promise<Rep
 export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status: { in: [OrderStatus.SELESAI, OrderStatus.PENDING_SETTLEMENT] } },
-    select: { orderSn: true, sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, profitAgen: true, status: true },
+    select: { orderSn: true, sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, profitAgen: true, status: true, product: PRODUCT_SKU },
   });
   // Sama seperti route API-nya (src/app/api/reports/profit/route.ts): Unit Keluar/Omzet
   // Bruto hanya dari status Selesai; Profit Agen dari Selesai + Pending (independen dari
@@ -129,7 +139,7 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
   for (const o of orders) {
     const key = productGroupKey(o);
     const cur =
-      bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, hpp: emptyTally(), agen: emptyAgenTally() };
+      bySku.get(key) ?? { sku: exportSku(o), produk: o.productName, qty: 0, omzet: 0, hpp: emptyTally(), agen: emptyAgenTally() };
     if (o.status === OrderStatus.SELESAI) {
       cur.qty += o.qty;
       cur.omzet += o.grossOmzet;
@@ -188,7 +198,7 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
 export async function datasetBarangKeluar(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status: OrderStatus.SELESAI },
-    select: { orderSn: true, sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, hppSnapshot: true },
+    select: { orderSn: true, sku: true, productId: true, productName: true, qty: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, product: PRODUCT_SKU },
   });
   // Uang Cair/Profit HPP HARUS pakai nilai AKTUAL dari Income Report yang sudah match lewat
   // reconcile(), BUKAN Order.netSettlement yang cuma estimasi — lihat datasetProfit() di atas.
@@ -199,7 +209,7 @@ export async function datasetBarangKeluar(f: ReportFilter): Promise<ReportDatase
   for (const o of orders) {
     const key = productGroupKey(o);
     // cur menyimpan field ProfitTally (profitHpp, uangCair, tanpaHpp) langsung -> addProfitLine(cur).
-    const cur = bySku.get(key) ?? { sku: o.sku, produk: o.productName, qty: 0, omzet: 0, ...emptyTally() };
+    const cur = bySku.get(key) ?? { sku: exportSku(o), produk: o.productName, qty: 0, omzet: 0, ...emptyTally() };
     cur.qty += o.qty;
     cur.omzet += o.grossOmzet;
 
@@ -264,7 +274,7 @@ export async function returnsSummary(f: ReportFilter) {
 export async function datasetReturns(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: { ...baseWhere(f), status: { in: [OrderStatus.CANCEL, OrderStatus.RETUR] } },
-    include: { store: { select: { code: true } } },
+    include: { store: { select: { code: true } }, product: PRODUCT_SKU },
     orderBy: { orderCreatedAt: "desc" },
   });
   const kondisi = (o: (typeof orders)[number]) =>
@@ -279,7 +289,7 @@ export async function datasetReturns(f: ReportFilter): Promise<ReportDataset> {
     tanggal: ymd(o.orderCreatedAt),
     toko: o.store.code,
     noPesanan: o.orderSn,
-    sku: o.sku,
+    sku: exportSku(o),
     produk: o.productName,
     qty: o.qty,
     status: o.status === OrderStatus.CANCEL ? "Batal" : "Retur",
@@ -486,7 +496,7 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
 export async function datasetOrders(f: ReportFilter): Promise<ReportDataset> {
   const orders = await prisma.order.findMany({
     where: baseWhere(f),
-    include: { store: { select: { code: true, name: true } } },
+    include: { store: { select: { code: true, name: true } }, product: PRODUCT_SKU },
     orderBy: [{ storeId: "asc" }, { orderCreatedAt: "desc" }],
   });
   const statusLabel: Record<string, string> = {
@@ -513,7 +523,7 @@ export async function datasetOrders(f: ReportFilter): Promise<ReportDataset> {
     return {
       toko: o.store.code,
       noPesanan: o.orderSn,
-      sku: o.sku,
+      sku: exportSku(o),
       produk: o.productName,
       qty: o.qty,
       status: statusLabel[o.status] ?? o.status,
