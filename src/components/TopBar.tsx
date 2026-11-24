@@ -7,7 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { formatPeriodMonthLabel, getCurrentPeriodMonth, getPeriodForMonth } from "@/lib/period";
 import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
-import SlidingTabs from "@/components/SlidingTabs";
+import TopNavTabs from "@/components/TopNavTabs";
 import { MENU, isNavActive } from "@/components/navConfig";
 import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
@@ -153,8 +153,7 @@ export default function TopBar() {
           </span>
         </Link>
 
-        <SlidingTabs
-          ariaLabel="Navigasi utama"
+        <TopNavTabs
           items={tabItems}
           activeKey={activeTab}
           className="order-last w-full lg:order-none lg:min-w-0 lg:w-auto lg:flex-1"
