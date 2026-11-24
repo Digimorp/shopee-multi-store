@@ -21,3 +21,9 @@ tsconfig.tsbuildinfo
 
 # Editor / tooling lokal
 .claude/
+
+# Akun uji database LOKAL (berisi password, jangan commit)
+.akun-lokal.txt
+
+# Screenshot verifikasi T-013 (lokal, jangan commit)
+screenshots-t013/
