@@ -31,7 +31,7 @@ export default function Toast({
     >
       <span
         className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
-          error ? "bg-rose-100 text-rose-600" : "bg-brand-100 text-brand-600"
+          error ? "bg-danger-bg text-danger-text" : "bg-success-bg text-success-text"
         }`}
       >
         <Icon name={error ? "x" : "check"} size={16} strokeWidth={2.2} />

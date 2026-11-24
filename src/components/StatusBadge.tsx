@@ -1,9 +1,15 @@
+// Warna mengikuti MAKNA status (token di tailwind.config.ts), bukan sekadar ganti nama warna:
+//   danger  = batal (hasil negatif final)        warning = retur (perlu perhatian; sama dgn kartu "Unit Retur")
+//   info    = transit & belum cair (sama-sama "proses", belum final)
+//   success = selesai
+// TRANSIT dan PENDING_SETTLEMENT sengaja satu warna (info): keduanya "belum final". Retur dijaga tetap
+// beda dari Batal karena keduanya tampil berdampingan di kolom Status halaman Retur & Pembatalan.
 const STYLES: Record<string, string> = {
-  CANCEL: "bg-rose-100 text-rose-700",
-  RETUR: "bg-amber-100 text-amber-700",
-  TRANSIT: "bg-blue-100 text-blue-700",
-  PENDING_SETTLEMENT: "bg-violet-100 text-violet-700",
-  SELESAI: "bg-emerald-100 text-emerald-700",
+  CANCEL: "bg-danger-bg text-danger-text",
+  RETUR: "bg-warning-bg text-warning-text",
+  TRANSIT: "bg-info-bg text-info-text",
+  PENDING_SETTLEMENT: "bg-info-bg text-info-text",
+  SELESAI: "bg-success-bg text-success-text",
 };
 
 const LABELS: Record<string, string> = {

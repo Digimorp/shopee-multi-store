@@ -3,9 +3,11 @@
 import { useState } from "react";
 import type { Anomaly } from "@/lib/aiAnomalyCheck";
 
+// Severity -> token: Tinggi = danger, Sedang = warning, Rendah = netral (abu, bukan status berwarna).
+// Badge solid: putih di atas danger (4,0:1); warning pakai teks gelap karena putih di atas mustard ~1,8:1.
 const SEVERITY_STYLE: Record<string, { badge: string; row: string; label: string; rank: number }> = {
-  high: { badge: "bg-rose-500 text-white", row: "border-rose-200 bg-rose-50", label: "Tinggi", rank: 3 },
-  medium: { badge: "bg-amber-500 text-white", row: "border-amber-200 bg-amber-50", label: "Sedang", rank: 2 },
+  high: { badge: "bg-danger text-white", row: "border-danger/30 bg-danger-bg", label: "Tinggi", rank: 3 },
+  medium: { badge: "bg-warning text-neutral-900", row: "border-warning/40 bg-warning-bg", label: "Sedang", rank: 2 },
   low: { badge: "bg-gray-400 text-white", row: "border-gray-200 bg-gray-50", label: "Rendah", rank: 1 },
 };
 
