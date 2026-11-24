@@ -60,6 +60,7 @@ export type ReconResult = {
     estimasi: number;
     /** aktualPesanan + incomeTanpaPesanan (nama lama, dipertahankan untuk pemakai lama). */
     aktual: number;
+    /** aktualPesanan - estimasi pesanan yang sudah cair (MATCH + SELISIH); income tanpa pesanan tidak ikut. */
     selisih: number;
     /** T-013 butir 9: ADJUSTMENT yang tanggal dananya (releasedAt, fallback tanggal import) masuk periode. */
     adjustment: number;
@@ -370,12 +371,16 @@ export async function reconcile(f: ReconFilter): Promise<ReconResult> {
   rate.matchPct = rate.total ? rate.match / rate.total : 0;
 
   const reconciled = items.filter((i) => i.aktual != null);
-  const aktualPesanan = reconciled.filter((i) => i.side !== "income").reduce((s, i) => s + (i.aktual ?? 0), 0);
+  // Item sisi pesanan yang sudah cair (MATCH + SELISIH) — basis "Uang Cair" (T-013 butir 9).
+  const cairPesanan = reconciled.filter((i) => i.side !== "income");
+  const aktualPesanan = cairPesanan.reduce((s, i) => s + (i.aktual ?? 0), 0);
   const incomeTanpaPesanan = reconciled.filter((i) => i.side === "income").reduce((s, i) => s + (i.aktual ?? 0), 0);
   const totals = {
     estimasi: items.reduce((s, i) => s + i.estimasi, 0),
     aktual: aktualPesanan + incomeTanpaPesanan,
-    selisih: reconciled.reduce((s, i) => s + (i.selisih ?? 0), 0),
+    // T-013 butir 9b: selisih = aktualPesanan - estimasi pesanan yang sudah cair. Income tanpa
+    // pesanan TIDAK ikut (dulu ikut sebagai aktual - 0, membuat kartu tidak sejalan dgn Total Aktual).
+    selisih: cairPesanan.reduce((s, i) => s + (i.selisih ?? 0), 0),
     adjustment: adjustments.reduce((s, a) => s + a.amount, 0),
     aktualPesanan,
     incomeTanpaPesanan,

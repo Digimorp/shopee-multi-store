@@ -203,3 +203,23 @@ describe("(3) releasedAt kosong -> tanggal import dipakai, dan dihitung", () => 
     expect(s.nonPesananFallbackImport).toBe(1);
   });
 });
+
+describe("(9b) totals.selisih = aktualPesanan - estimasi pesanan yang sudah cair", () => {
+  it("income tanpa pesanan dan pesanan yang belum cair tidak ikut", async () => {
+    setOrders([
+      { orderSn: "M1", netSettlement: 100000, status: OrderStatus.SELESAI, day: "2026-08-01" }, // MATCH 99.000
+      { orderSn: "S1", netSettlement: 100000, status: OrderStatus.SELESAI, day: "2026-08-03" }, // SELISIH 60.000
+      { orderSn: "B1", netSettlement: 100000, status: OrderStatus.SELESAI, day: "2026-08-04" }, // belum cair
+    ]);
+    setIncome([
+      { type: "ORDER", orderSn: "M1", amount: 99000, releasedAt: "2026-08-10T03:00:00Z" },
+      { type: "ORDER", orderSn: "S1", amount: 60000, releasedAt: "2026-08-12T03:00:00Z" },
+      { type: "ORDER", orderSn: "X-TIDAK-ADA", amount: 77777, releasedAt: "2026-08-13T03:00:00Z" },
+      { type: "ADJUSTMENT", amount: 5000, releasedAt: "2026-08-14T03:00:00Z" },
+    ]);
+    const r = await reconcile({ storeIds: STORE, from: AUG.from, to: AUG.to });
+    expect(r.totals.aktualPesanan).toBe(159000);
+    expect(r.totals.selisih).toBe(159000 - 200000); // BUKAN -41.000 + 77.777
+    expect(r.totals.incomeTanpaPesanan).toBe(77777); // tetap ada, terpisah
+  });
+});
