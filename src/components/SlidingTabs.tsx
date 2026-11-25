@@ -87,7 +87,7 @@ export default function SlidingTabs({
     }
   }, [place, activeKey]);
 
-  // Ukuran container berubah (font Poppins selesai dimuat, lebar layar) -> posisi ulang TANPA animasi.
+  // Ukuran container berubah (font web selesai dimuat, lebar layar) -> posisi ulang TANPA animasi.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;

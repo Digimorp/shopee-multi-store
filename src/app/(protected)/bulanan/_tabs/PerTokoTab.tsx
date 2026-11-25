@@ -52,19 +52,19 @@ export default function PerformaTokoPage() {
           <ResponsiveContainer width="100%" height={300} debounce={150}>
             <BarChart data={chartData} barGap={4} barCategoryGap={18}>
               <CartesianGrid strokeDasharray="4 4" stroke="#f1f1f4" vertical={false} />
-              <XAxis dataKey="toko" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="toko" tick={{ fontSize: 13, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
               <YAxis
-                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                tick={{ fontSize: 13, fill: "#9ca3af" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => formatAxisShort(v)}
               />
               <Tooltip
                 formatter={(v: unknown) => (typeof v === "number" ? formatRupiah(v) : "-")}
-                contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 12 }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 13 }}
                 cursor={{ fill: "#f5f5f5" /* = --color-brand-100 (globals.css) */ }}
               />
-              <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+              <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
               <Bar isAnimationActive={false} dataKey="Omzet" fill="#0a0a0a" /* = --color-brand-600, sama dgn Omzet di AreaTrendCard */ radius={[6, 6, 0, 0]} />
               <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#a3a3a3" radius={[6, 6, 0, 0]} />
             </BarChart>

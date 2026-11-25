@@ -194,15 +194,15 @@ export default function RekonsiliasiPage() {
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-lg font-bold text-success-text">{formatNumber(rate.match)}</p>
-            <p className="text-[11px] text-gray-400">CAIR ({pct(rate.match)}%)</p>
+            <p className="text-xs text-gray-400">CAIR ({pct(rate.match)}%)</p>
           </div>
           <div>
             <p className="text-lg font-bold text-amber-600">{formatNumber(rate.selisih)}</p>
-            <p className="text-[11px] text-gray-400">SELISIH ({pct(rate.selisih)}%)</p>
+            <p className="text-xs text-gray-400">SELISIH ({pct(rate.selisih)}%)</p>
           </div>
           <div>
             <p className="text-lg font-bold text-rose-600">{formatNumber(rate.belumKetemu)}</p>
-            <p className="text-[11px] text-gray-400">BELUM KETEMU ({pct(rate.belumKetemu)}%)</p>
+            <p className="text-xs text-gray-400">BELUM KETEMU ({pct(rate.belumKetemu)}%)</p>
           </div>
         </div>
       </div>
@@ -299,7 +299,7 @@ export default function RekonsiliasiPage() {
                   },
                 },
                 { header: "SKU", render: (r) => r.sku },
-                { header: "Produk", render: (r) => <span className="block max-w-[160px] truncate">{r.productName}</span> },
+                { header: "Produk", render: (r) => <span className="cell-wrap">{r.productName}</span> },
                 { header: "Qty", render: (r) => r.qty },
                 { header: "Estimasi", render: (r) => formatRupiah(r.netSettlement) },
                 {
@@ -312,7 +312,7 @@ export default function RekonsiliasiPage() {
                     return (multiLineOrders.get(r.orderSn) ?? 1) > 1 ? (
                       <span title={`Alokasi proporsional dari payout order ${formatRupiah(order?.aktual ?? 0)}`}>
                         {formatRupiah(a)}
-                        <span className="block text-[10px] text-gray-400">dari {formatRupiah(order?.aktual ?? 0)}</span>
+                        <span className="block text-xs text-gray-400">dari {formatRupiah(order?.aktual ?? 0)}</span>
                       </span>
                     ) : (
                       formatRupiah(a)
@@ -358,7 +358,7 @@ export default function RekonsiliasiPage() {
                   ),
               },
               { header: "Toko", render: (r) => r.storeCode },
-              { header: "Produk", render: (r) => <span className="block max-w-[180px] truncate">{r.productName}</span> },
+              { header: "Produk", render: (r) => <span className="cell-wrap">{r.productName}</span> },
               { header: "Estimasi", render: (r) => formatRupiah(r.estimasi) },
               { header: "Aktual", render: (r) => (r.aktual == null ? <span className="text-gray-300">—</span> : formatRupiah(r.aktual)) },
               {
@@ -379,7 +379,7 @@ export default function RekonsiliasiPage() {
                 header: "Catatan",
                 render: (r) =>
                   r.flags?.length ? (
-                    <span className="text-[11px] text-amber-700">{r.flags.join(", ")}</span>
+                    <span className="text-xs text-amber-700">{r.flags.join(", ")}</span>
                   ) : (
                     <span className="text-gray-300">—</span>
                   ),

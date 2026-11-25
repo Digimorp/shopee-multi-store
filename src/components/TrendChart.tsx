@@ -23,8 +23,8 @@ export default function TrendChart({ data }: { data: TrendPoint[] }) {
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+        <XAxis dataKey="date" tick={{ fontSize: 13 }} />
+        <YAxis tick={{ fontSize: 13 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
         <Tooltip formatter={(v: number) => formatRupiah(v)} />
         <Legend />
         <Line type="monotone" dataKey="omzet" name="Omzet" stroke="#ee4d2d" strokeWidth={2} dot={false} />

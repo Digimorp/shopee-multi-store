@@ -202,7 +202,7 @@ export default function TopBar() {
               </span>
               <div className="hidden leading-tight xl:block">
                 <div className="text-sm font-semibold text-gray-800">{name}</div>
-                <div className="text-[11px] text-gray-400">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
+                <div className="text-xs text-gray-400">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
               </div>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
@@ -269,7 +269,7 @@ export default function TopBar() {
             ))}
           </select>
           {/* Rentang sudah jadi nama opsi -> tidak ditulis dobel; cukup keterangan dasar tanggalnya. */}
-          <span className="text-[11px] leading-tight text-gray-400">{basisNote}</span>
+          <span className="text-xs leading-tight text-gray-400">{basisNote}</span>
           </>
         )}
       </div>

@@ -94,11 +94,11 @@ export default function InputPage() {
               header: "Status",
               render: (r) =>
                 r.isDeleted ? (
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] text-rose-600">dihapus</span>
+                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-600">dihapus</span>
                 ) : r.isSuperseded ? (
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">kadaluarsa</span>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">kadaluarsa</span>
                 ) : (
-                  <span className="rounded-full bg-success-bg px-2 py-0.5 text-[11px] text-success-text">aktif</span>
+                  <span className="rounded-full bg-success-bg px-2 py-0.5 text-xs text-success-text">aktif</span>
                 ),
             },
             {

@@ -52,7 +52,7 @@ export default function AiAnomalyPanel({
         className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
       >
         <span className="flex items-center gap-2 text-sm font-medium text-gray-800">
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${style.badge}`}>
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${style.badge}`}>
             {style.label}
           </span>
           ⚠ {anomalies.length} potensi anomali terdeteksi
@@ -71,7 +71,7 @@ export default function AiAnomalyPanel({
               const rowStyle = SEVERITY_STYLE[a.severity] ?? SEVERITY_STYLE.low;
               return (
                 <li key={i} className={`rounded-lg border px-2.5 py-1.5 text-xs ${rowStyle.row}`}>
-                  <span className={`mr-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${rowStyle.badge}`}>
+                  <span className={`mr-2 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${rowStyle.badge}`}>
                     {rowStyle.label}
                   </span>
                   <span className="font-medium text-gray-700">{a.rowRef}</span>
@@ -82,7 +82,7 @@ export default function AiAnomalyPanel({
             })}
           </ul>
           {aiCheckSkipped && (
-            <p className="mt-2 text-[11px] text-gray-400">
+            <p className="mt-2 text-xs text-gray-400">
               Catatan: pemeriksaan AI tidak selesai penuh (fallback ke pemeriksaan statistik lokal) — anomali di atas mungkin belum lengkap.
             </p>
           )}

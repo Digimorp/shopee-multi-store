@@ -35,7 +35,7 @@ export default function TopProductsTable({ byOmzet, byQty }: { byOmzet: ProductR
         columns={[
           { header: "#", render: (r) => <RankBadge rank={r.rank} /> },
           { header: "SKU", render: (r) => r.sku },
-          { header: "Produk", render: (r) => r.name },
+          { header: "Produk", render: (r) => <span className="cell-wrap">{r.name}</span> },
           { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
           { header: "Unit Keluar", render: (r) => formatNumber(r.qty) },
         ]}

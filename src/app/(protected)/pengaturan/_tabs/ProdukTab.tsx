@@ -151,7 +151,7 @@ export default function SettingsProductsPage() {
         rows={products}
         columns={[
           { header: "SKU", render: (r) => r.sku },
-          { header: "Nama Produk", render: (r) => r.name },
+          { header: "Nama Produk", render: (r) => <span className="cell-wrap">{r.name}</span> },
           { header: "HPP", render: (r) => formatRupiah(r.hpp) },
           { header: "Harga Katalog", render: (r) => formatRupiah(r.catalogPrice) },
           { header: "Harga Agen (50%)", render: (r) => formatRupiah(r.catalogPrice * 0.5) },
@@ -235,7 +235,7 @@ export default function SettingsProductsPage() {
           columns={[
             { header: "Waktu", render: (r) => formatDate(r.createdAt) },
             { header: "SKU", render: (r) => r.sku },
-            { header: "Produk", render: (r) => r.name },
+            { header: "Produk", render: (r) => <span className="cell-wrap">{r.name}</span> },
             {
               header: "HPP",
               render: (r) =>
@@ -263,7 +263,7 @@ export default function SettingsProductsPage() {
             {
               header: "Sumber",
               render: (r) => (
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                   {r.source === "import" ? "Import Excel" : "Manual"}
                 </span>
               ),

@@ -36,7 +36,7 @@ export default function SummaryCard({
   return (
     <div className="card p-6">
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className={`mt-2 break-words text-3xl font-bold leading-tight ${TONES[negative ? "danger" : tone]}`}>{value}</p>
+      <p className={`num mt-2 break-words text-3xl font-bold leading-tight ${TONES[negative ? "danger" : tone]}`}>{value}</p>
       {sub && <p className="mt-2 text-xs text-gray-400">{sub}</p>}
     </div>
   );

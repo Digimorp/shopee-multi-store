@@ -115,7 +115,7 @@ export default function ReturCancelPage() {
           { header: "Toko", render: (r) => r.store.code },
           { header: "No. Pesanan", render: (r) => r.orderSn },
           { header: "SKU", render: (r) => r.sku },
-          { header: "Produk", render: (r) => r.productName },
+          { header: "Produk", render: (r) => <span className="cell-wrap">{r.productName}</span> },
           { header: "Qty", render: (r) => r.qty },
           { header: "Status", render: (r) => <StatusBadge status={r.status} /> },
           ...(tab === "retur"

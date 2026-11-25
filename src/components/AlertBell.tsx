@@ -52,7 +52,7 @@ export default function AlertBell() {
         <Icon name="bell" size={18} />
         {/* Badge jumlah = warning (mustard); teks gelap karena putih di atas mustard hanya ~1,8:1. */}
         {count > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-warning px-1 text-[10px] font-bold text-neutral-900">
+          <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-warning px-1 text-xs font-bold text-neutral-900">
             {count}
           </span>
         )}
@@ -78,7 +78,7 @@ export default function AlertBell() {
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800">{it.title}</p>
-                    <p className="text-[11px] leading-snug text-gray-400">{it.detail}</p>
+                    <p className="text-xs leading-snug text-gray-400">{it.detail}</p>
                   </div>
                 </li>
               ))}

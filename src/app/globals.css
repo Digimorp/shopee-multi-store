@@ -49,8 +49,27 @@ body {
 body {
   background-color: var(--color-canvas);
   color: #1f2937;
-  font-feature-settings: "cv11", "ss01";
+  /* T-013 batch 17: dasar 16px, line-height 1.5 (fitur glyph khusus font lama dihapus). */
+  font-size: 1rem;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* T-013 batch 17: angka uang/jumlah rata (tabular) di semua tabel, kartu angka, dan tooltip grafik. */
+table,
+.recharts-tooltip-wrapper,
+.recharts-default-tooltip,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sel nama produk panjang: membungkus, tidak terpotong. */
+.cell-wrap {
+  display: block;
+  min-width: 10rem;
+  max-width: 18rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Scrollbar halus */

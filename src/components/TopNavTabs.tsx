@@ -86,8 +86,11 @@ export default function TopNavTabs({
 
   return (
     <div ref={boxRef} className={`relative flex min-w-0 items-center gap-1 ${className}`}>
-      {/* Salinan tak terlihat untuk mengukur lebar asli semua tab + tombol Lainnya. */}
-      <div ref={measureRef} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 flex">
+      {/* Salinan tak terlihat untuk mengukur lebar asli semua tab + tombol Lainnya.
+          T-013 batch 17: dibungkus wadah 0x0 overflow-hidden supaya salinan ini tidak melebarkan halaman
+          di layar HP (lebar tab tetap terukur dari offsetWidth, tidak terpengaruh pemotongan). */}
+      <div aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 h-0 w-0 overflow-hidden">
+      <div ref={measureRef} className="flex w-max">
         {items.map((it) => (
           <span key={it.key} className={TAB_CLS}>
             {it.label}
@@ -97,6 +100,7 @@ export default function TopNavTabs({
           {MORE_LABEL}
           <Icon name="chevronDown" size={14} />
         </span>
+      </div>
       </div>
 
       <SlidingTabs

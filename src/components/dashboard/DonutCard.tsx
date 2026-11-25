@@ -56,7 +56,7 @@ export default function DonutCard({
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 grid place-items-center">
               <div className="text-center">
-                <p className="text-[10px] text-gray-400">Total</p>
+                <p className="text-xs text-gray-400">Total</p>
                 <p className="text-sm font-bold text-gray-900">{formatRupiah(total)}</p>
               </div>
             </div>

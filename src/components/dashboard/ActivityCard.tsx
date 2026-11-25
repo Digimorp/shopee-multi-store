@@ -62,7 +62,7 @@ export default function ActivityCard({
                   <div className="flex items-center justify-between gap-3">
                     <p className="min-w-0 truncate text-sm font-semibold text-neutral-900">{l.store?.code ?? "-"}</p>
                     <span
-                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${
                         failed
                           ? "bg-amber-50 text-amber-700 ring-amber-600/15"
                           : "bg-success-bg text-success-text ring-success/15"
@@ -80,11 +80,11 @@ export default function ActivityCard({
                   <div className="mt-2.5 flex items-center justify-between gap-3">
                     <span
                       title={l.fileName}
-                      className="min-w-0 truncate rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] text-neutral-500"
+                      className="min-w-0 truncate rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500"
                     >
                       {l.fileName}
                     </span>
-                    <span className="shrink-0 text-[11px] text-neutral-400">
+                    <span className="shrink-0 text-xs text-neutral-400">
                       {l.createdAt
                         ? formatDistanceToNow(new Date(l.createdAt), { addSuffix: true, locale: idLocale })
                         : ""}

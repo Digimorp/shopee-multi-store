@@ -14,7 +14,7 @@ function UangCairCell({ r }: { r: any }) {
   return (
     <div>
       <div>{formatRupiah(r.uangCairTotal ?? 0)}</div>
-      <div className="max-w-[260px] whitespace-normal text-[11px] leading-tight text-gray-400">
+      <div className="max-w-[260px] whitespace-normal text-xs leading-tight text-gray-400">
         {rincianUangCairSub(r.uangCairRincian)}
       </div>
     </div>

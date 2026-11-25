@@ -10,7 +10,7 @@ const STAGES: Record<string, { label: string; cls: string }> = {
 export default function StageBadge({ stage }: { stage: string }) {
   const s = STAGES[stage] ?? { label: stage, cls: "bg-gray-100 text-gray-600" };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${s.cls}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.cls}`}>
       {s.label}
     </span>
   );
@@ -34,7 +34,7 @@ export function SettleBadge({ status }: { status: string }) {
   return (
     <span
       title={s.title}
-      className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${s.cls}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.cls}`}
     >
       {s.label}
     </span>
@@ -53,7 +53,7 @@ export function ReconBadge({ category }: { category: string }) {
   const label = category === "BELUM_KETEMU" ? "Belum Ketemu" : category === "SELISIH" ? "Selisih" : "Cair";
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
         RECON[category] ?? "bg-gray-400 text-white"
       }`}
     >

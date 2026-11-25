@@ -109,7 +109,7 @@ export default function LaporanProfitPage() {
         rows={sorted}
         columns={[
           { header: "SKU", render: (r) => r.sku },
-          { header: "Produk", render: (r) => <span className="block max-w-[200px] truncate">{r.name}</span> },
+          { header: "Produk", render: (r) => <span className="cell-wrap">{r.name}</span> },
           { header: "Unit Keluar", render: (r) => formatNumber(r.qty) },
           { header: "Kontribusi Omzet", render: (r) => `${((r.share ?? 0) * 100).toFixed(1)}%` },
           { header: "Omzet Pesanan", render: (r) => formatRupiah(r.omzet) },

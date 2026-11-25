@@ -144,7 +144,7 @@ export default function OnProsesPage() {
             { header: "No. Pesanan", render: (r) => r.orderSn },
             { header: "Tanggal Dibuat", render: (r) => formatDate(r.orderCreatedAt) },
             { header: "Toko", render: (r) => r.storeCode },
-            { header: "Produk", render: (r) => <span className="block max-w-[220px] truncate">{r.productName}</span> },
+            { header: "Produk", render: (r) => <span className="cell-wrap">{r.productName}</span> },
             { header: "Status", render: (r) => STATUS_LABEL[r.group] ?? r.group },
             { header: "Umur", render: (r) => `${formatNumber(r.ageDays)} hari` },
             { header: "Omzet Pesanan", render: (r) => formatRupiah(r.omzet) },

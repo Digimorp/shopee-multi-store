@@ -217,7 +217,7 @@ export default function SettingsUsersPage() {
               <div className="mt-3">
                 <div className="mb-1 flex items-center justify-between">
                   <label className="text-xs font-medium text-gray-600">Assignment Toko ({edit.storeIds.length})</label>
-                  <div className="flex gap-2 text-[11px]">
+                  <div className="flex gap-2 text-xs">
                     <button
                       onClick={() => setEdit({ ...edit, storeIds: stores.map((s) => s.id) })}
                       className="text-brand-600 hover:underline"

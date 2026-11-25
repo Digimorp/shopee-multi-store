@@ -120,14 +120,14 @@ export default function AreaTrendCard({
               <XAxis
                 dataKey="label"
                 tickFormatter={(v) => axisLabel(v, bucket)}
-                tick={{ fontSize: 10, fill: "#a3a3a3" }}
+                tick={{ fontSize: 13, fill: "#a3a3a3" }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
                 minTickGap={28}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "#a3a3a3" }}
+                tick={{ fontSize: 13, fill: "#a3a3a3" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => formatAxisShort(v)}
@@ -135,7 +135,7 @@ export default function AreaTrendCard({
               />
               <Tooltip
                 formatter={(v: number) => formatRupiah(v)}
-                contentStyle={{ borderRadius: 12, border: "1px solid #e5e5e5", fontSize: 12, boxShadow: "none" }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #e5e5e5", fontSize: 13, boxShadow: "none" }}
               />
               <Area isAnimationActive={false} type="monotone" dataKey="omzet" name="Omzet" stroke="#0a0a0a" strokeWidth={2} fill="url(#gOmzet)" />
               <Area isAnimationActive={false} type="monotone" dataKey="profit" name="Profit HPP" stroke="#a3a3a3" strokeWidth={2} fill="url(#gProfit)" />

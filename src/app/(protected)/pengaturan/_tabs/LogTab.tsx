@@ -85,7 +85,7 @@ export default function AuditLogPage() {
         columns={[
           { header: "Waktu", render: (r) => formatDateTime(r.createdAt) },
           { header: "Aksi", render: (r) => (
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${r.action === "DELETE" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.action === "DELETE" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>
               {r.action === "DELETE" ? "Delete" : "Edit"}
             </span>
           ) },
@@ -113,13 +113,13 @@ export default function AuditLogPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <p className="mb-1 text-xs font-semibold text-gray-500">Sebelum</p>
-                  <pre className="max-h-60 overflow-auto rounded-xl bg-gray-50 p-3 text-[11px] text-gray-600">
+                  <pre className="max-h-60 overflow-auto rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
                     {r.before ? JSON.stringify(r.before, null, 2) : "-"}
                   </pre>
                 </div>
                 <div>
                   <p className="mb-1 text-xs font-semibold text-gray-500">Sesudah</p>
-                  <pre className="max-h-60 overflow-auto rounded-xl bg-gray-50 p-3 text-[11px] text-gray-600">
+                  <pre className="max-h-60 overflow-auto rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
                     {r.after ? JSON.stringify(r.after, null, 2) : "-"}
                   </pre>
                 </div>

@@ -80,7 +80,7 @@ export default function SettlementDetailModal({
         ) : (
           <div className="mt-4 overflow-x-auto rounded-xl border border-gray-100">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-50 text-left text-[11px] uppercase tracking-wider text-gray-400">
+              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-400">
                 <tr>
                   <th className="px-3 py-2 font-semibold">Produk</th>
                   <th className="px-3 py-2 text-right font-semibold">Qty</th>
@@ -95,8 +95,8 @@ export default function SettlementDetailModal({
                 {data.rows.map((r) => (
                   <tr key={r.id}>
                     <td className="px-3 py-2">
-                      <span className="block max-w-[200px] truncate">{r.productName}</span>
-                      {r.sku && <span className="text-[11px] text-gray-400">{r.sku}</span>}
+                      <span className="cell-wrap">{r.productName}</span>
+                      {r.sku && <span className="text-xs text-gray-400">{r.sku}</span>}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatNumber(r.qty)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatRupiah(r.grossOmzet)}</td>
@@ -123,7 +123,7 @@ export default function SettlementDetailModal({
           </div>
         )}
 
-        <p className="mt-3 text-[11px] text-gray-400">
+        <p className="mt-3 text-xs text-gray-400">
           Payout Shopee dicatat per No. Pesanan, jadi Uang Cair per SKU = porsi proporsional dari payout order. Profit HPP =
           Uang Cair − HPP × qty. Selisih = Profit Agen − Profit HPP (rumus sama dengan Laporan Profit).
         </p>
