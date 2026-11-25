@@ -10,10 +10,16 @@ const jar = new Map();
 const setC = (r) => { for (const c of r.headers.getSetCookie?.() ?? []) { const [kv] = c.split(";"); const i = kv.indexOf("="); jar.set(kv.slice(0, i).trim(), kv.slice(i + 1).trim()); } };
 const ck = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
 
+// Kredensial akun uji dibaca dari env (tidak ada nilai bawaan di file ini). Contoh pemakaian:
+//   VERIFY_EMAIL=<email-owner-lokal> VERIFY_PASSWORD=<password> node scripts/test/verify-upload-shopee.mjs
+const OWNER_EMAIL = process.env.VERIFY_EMAIL;
+const OWNER_PW = process.env.VERIFY_PASSWORD;
+if (!OWNER_EMAIL || !OWNER_PW) {
+  console.error("BERHENTI: isi variabel lingkungan VERIFY_EMAIL dan VERIFY_PASSWORD (akun Owner DB lokal).");
+  process.exit(1);
+}
 let r = await fetch(`${BASE}/api/auth/csrf`); setC(r);
 const { csrfToken } = await r.json();
-const OWNER_EMAIL = process.env.OWNER_EMAIL || "Ownergayabebas@login";
-const OWNER_PW = process.env.OWNER_PW || "@Ika12345";
 r = await fetch(`${BASE}/api/auth/callback/credentials`, { method: "POST", redirect: "manual", headers: { "content-type": "application/x-www-form-urlencoded", cookie: ck() }, body: new URLSearchParams({ csrfToken, email: OWNER_EMAIL, password: OWNER_PW, json: "true", callbackUrl: BASE }) });
 setC(r);
 const _s = await (await fetch(`${BASE}/api/auth/session`, { headers: { cookie: ck() } })).json();
