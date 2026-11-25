@@ -53,35 +53,13 @@ export default function InputPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Input & Import Data</h1>
+      <h1 className="text-xl font-bold text-gray-900">Upload Data</h1>
 
-      <UploadForm
-        stores={stores}
-        onDone={loadLogs}
-        endpoint="/api/upload"
-        title="1. Laporan Pesanan Shopee"
-        fileLabel="File export Pesanan (.xlsx / .csv)"
-        submitLabel="Upload & Proses Pesanan"
-        hint="Klasifikasi status (Batal / Retur / Transit / Belum Cair / Selesai) + hitung profit estimasi berdasarkan Master HPP."
-      />
-
-      <UploadForm
-        stores={stores}
-        onDone={loadLogs}
-        endpoint="/api/income/import"
-        title="2. Income Report / Laporan Pendapatan Shopee"
-        fileLabel="File Laporan Pendapatan / Rilis Dana (.xlsx / .csv)"
-        submitLabel="Upload & Proses Income Report"
-        hint="Sumber kebenaran uang cair AKTUAL (Keuangan > Saldo Penghasilan). 1 file = 1 toko. Import ulang periode yang sama = versi baru (data lama tidak ditimpa)."
-        formatResult={(d) =>
-          `Berhasil: ${d.orderRows} baris order + ${d.adjustmentRows} adjustment (v${d.version}).` +
-          (d.supersededCount > 0 ? ` ${d.supersededCount} import lama ditandai kadaluarsa.` : "") +
-          (d.parseErrors?.length ? ` ${d.parseErrors.length} baris error.` : "")
-        }
-      />
+      {/* T-013 batch 15 (bagian A): satu form, satu tombol; jenis file dideteksi otomatis. */}
+      <UploadForm stores={stores} onDone={loadLogs} />
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Import Pesanan</h2>
+        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Upload Laporan Pesanan</h2>
         <DataTable
           rowKey={(r: any) => r.id}
           rows={logs}
@@ -98,7 +76,7 @@ export default function InputPage() {
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Import Income Report</h2>
+        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Upload Income Report</h2>
         <DataTable
           rowKey={(r: any) => r.id}
           rows={incomeImports}
