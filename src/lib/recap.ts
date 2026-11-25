@@ -2,6 +2,7 @@ import { OrderStatus } from "@prisma/client";
 import { getPeriodForMonth, getPeriodMonthForDate, prevPeriodMonth, formatPeriodMonthLabel } from "@/lib/period";
 import { allocateActual } from "@/lib/reconciliation";
 import { emptyTally, addProfitLine, type ProfitTally } from "@/lib/profit";
+import { emptyRincian, sumRincian, pickRincian, type UangCairRincian, type RincianUangCairJson } from "@/lib/uangCairPeriode";
 
 /**
  * T-013 butir 10: Rekap Bulanan & Tahunan — satu sumber untuk API /api/reports/recap DAN
@@ -32,7 +33,11 @@ export type RecapMonthRow = {
   periodKey: string;
   label: string;
   omzet: number;
+  /** uang cair PESANAN periode ini (basis Profit HPP) */
   uangCair: number;
+  /** T-013 batch 13: kolom Uang Cair = semua saldo masuk periode ini (src/lib/uangCairPeriode.ts) */
+  uangCairTotal: number;
+  uangCairRincian: RincianUangCairJson;
   profitHpp: number;
   tanpaHpp: ProfitTally["tanpaHpp"];
   /** null = bulan tepat sebelumnya tidak ada data */
@@ -44,6 +49,8 @@ export type RecapYearRow = {
   year: string;
   omzet: number;
   uangCair: number;
+  uangCairTotal: number;
+  uangCairRincian: RincianUangCairJson;
   profitHpp: number;
   tanpaHpp: ProfitTally["tanpaHpp"];
 };
@@ -65,7 +72,9 @@ export function recapMonthLabel(month: string, cutoffDay: number): string {
 export function buildRecap(
   orders: RecapOrder[],
   lookup: ActualLookup,
-  cutoffDay: number
+  cutoffDay: number,
+  /** T-013 batch 13: Uang Cair (semua saldo masuk) per bulan periode -- getUangCairPerBulan(). */
+  uangCairByMonth: Map<string, UangCairRincian> = new Map()
 ): { months: RecapMonthRow[]; years: RecapYearRow[] } {
   const byMonth = new Map<string, { omzet: number; hpp: ProfitTally }>();
   const byYear = new Map<string, { omzet: number; hpp: ProfitTally }>();
@@ -88,6 +97,12 @@ export function buildRecap(
     byMonth.set(month, m);
     byYear.set(year, y);
   }
+  // Bulan yang hanya punya saldo masuk (tanpa pesanan) tetap tampil, omzet 0.
+  for (const month of uangCairByMonth.keys()) {
+    if (!byMonth.has(month)) byMonth.set(month, { omzet: 0, hpp: emptyTally() });
+    if (!byYear.has(month.slice(0, 4))) byYear.set(month.slice(0, 4), { omzet: 0, hpp: emptyTally() });
+  }
+  const cairOf = (month: string) => uangCairByMonth.get(month) ?? emptyRincian();
 
   const months = [...byMonth.entries()]
     .sort(([a], [b]) => (a < b ? 1 : -1))
@@ -101,6 +116,8 @@ export function buildRecap(
         label: recapMonthLabel(month, cutoffDay),
         omzet: r.omzet,
         uangCair: r.hpp.uangCair,
+        uangCairTotal: cairOf(month).total,
+        uangCairRincian: pickRincian(cairOf(month)),
         profitHpp: r.hpp.profitHpp,
         tanpaHpp: r.hpp.tanpaHpp,
         deltaOmzet,
@@ -110,13 +127,19 @@ export function buildRecap(
 
   const years = [...byYear.entries()]
     .sort(([a], [b]) => (a < b ? 1 : -1))
-    .map(([year, r]): RecapYearRow => ({
+    .map(([year, r]): RecapYearRow => {
+      // Tahunan = jumlah bulan-bulan periode tahun itu (sama seperti omzet).
+      const cair = sumRincian([...uangCairByMonth.entries()].filter(([m]) => m.slice(0, 4) === year).map(([, v]) => v));
+      return {
       year,
       omzet: r.omzet,
       uangCair: r.hpp.uangCair,
+      uangCairTotal: cair.total,
+      uangCairRincian: pickRincian(cair),
       profitHpp: r.hpp.profitHpp,
       tanpaHpp: r.hpp.tanpaHpp,
-    }));
+      };
+    });
 
   return { months, years };
 }

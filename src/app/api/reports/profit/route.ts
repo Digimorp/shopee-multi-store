@@ -15,6 +15,8 @@ import {
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { OrderStatus } from "@prisma/client";
 import { exportSku } from "@/lib/reports";
+import { getUangCairPeriode } from "@/lib/uangCairPeriodeDb";
+import { pickRincian } from "@/lib/uangCairPeriode";
 
 export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
@@ -118,6 +120,9 @@ export const GET = withPeriodError(async (req: NextRequest) => {
       selisih: totalProfitAgen - totalProfitHpp,
       tanpaHpp,
       tanpaHppAgen,
+      // T-013 batch 13 (tugas X): angka utama Uang Cair = semua saldo masuk periode ini. totalUangCair
+      // di atas = uang cair pesanan periode ini (jumlah kolom per SKU, basis Profit HPP).
+      uangCairPeriode: pickRincian(await getUangCairPeriode({ storeIds, from, to })),
     },
   });
 });

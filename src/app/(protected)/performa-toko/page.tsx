@@ -80,7 +80,8 @@ export default function PerformaTokoPage() {
           { header: "Order", render: (r) => formatNumber(r.order) },
           { header: "Unit Keluar", render: (r) => formatNumber(r.unitKeluar) },
           { header: "Omzet Bruto", render: (r) => formatRupiah(r.omzet) },
-          { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
+          // T-013 batch 13: per toko tetap berbasis pesanan periode ini (basis profit), label diperjelas.
+          { header: "Uang Cair Pesanan Periode Ini", render: (r) => formatRupiah(r.uangCair) },
           { header: "Mengambang", render: (r) => formatRupiah(r.uangMengambang) },
           // T-013 temuan QA 2: toko yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan "Rp 0").
           { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) },

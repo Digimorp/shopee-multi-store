@@ -169,7 +169,7 @@ describe("export Laporan Profit — sel tanpa HPP '-' (Excel teks, angka tetap n
       return found!;
     };
     expect(rowOf("Produk B").getCell(col("Profit HPP (Nett)")).value).toBe("-");
-    expect(rowOf("Produk B").getCell(col("Uang Cair")).value).toBe(50000);
+    expect(rowOf("Produk B").getCell(col("Uang Cair Pesanan Periode Ini")).value).toBe(50000);
     expect(typeof rowOf("Produk A").getCell(col("Profit HPP (Nett)")).value).toBe("number");
   });
 
@@ -178,7 +178,7 @@ describe("export Laporan Profit — sel tanpa HPP '-' (Excel teks, angka tetap n
     const ds = await datasetProfit(FILTER);
     const sum = Object.fromEntries(ds.summary!.map((s) => [s.label, s.value]));
     expect([sum["Total Profit HPP (Nett)"], sum["Total Profit Agen"], sum["Selisih Agen vs Riil"]]).toEqual(["-", "-", "-"]);
-    expect(sum["Total Uang Cair"]).toBe("Rp 70.000");
+    expect(sum["Uang Cair Pesanan Periode Ini"]).toBe("Rp 70.000");
   });
 });
 

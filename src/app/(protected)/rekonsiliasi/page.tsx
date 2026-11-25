@@ -8,6 +8,7 @@ import ExportButtons from "@/components/ExportButtons";
 import StageBadge, { ReconBadge, SettleBadge } from "@/components/StageBadge";
 import { formatRupiah, formatDate, formatNumber } from "@/lib/format";
 import { allocateLines, diffReconItems } from "@/lib/settlement";
+import { UANG_CAIR_LABEL, rincianUangCairSub } from "@/lib/uangCairPeriode";
 import Toast, { type ToastMessage } from "@/components/Toast";
 import SettlementDetailModal from "@/components/SettlementDetailModal";
 import { Icon } from "@/components/icons";
@@ -204,12 +205,19 @@ export default function RekonsiliasiPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+        {/* T-013 batch 13 (tugas X): semua saldo masuk periode ini + rincian (a)/(b)/(c). */}
+        <SummaryCard
+          tone="success"
+          label={UANG_CAIR_LABEL}
+          value={formatRupiah(recon?.uangCairPeriode?.total ?? 0)}
+          sub={rincianUangCairSub(recon?.uangCairPeriode)}
+        />
         <SummaryCard label="Total Estimasi (Pesanan)" value={formatRupiah(totals.estimasi)} />
         <SummaryCard
           tone="success"
           label="Total Aktual (Income Report)"
           value={formatRupiah(aktualPesanan)}
-          sub="Pesanan periode ini (MATCH + SELISIH)"
+          sub="Uang cair pesanan periode ini (MATCH + SELISIH), basis profit"
         />
         <SummaryCard
           label="Selisih Aktual − Estimasi"

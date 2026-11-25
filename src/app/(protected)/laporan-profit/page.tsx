@@ -8,6 +8,7 @@ import ExportButtons from "@/components/ExportButtons";
 import TanpaHppNote from "@/components/TanpaHppNote";
 import { formatRupiah, formatNumber } from "@/lib/format";
 import { formatRupiahOrDash, shownProfitHpp, shownProfitAgen, shownSelisih } from "@/lib/hppDisplay";
+import { UANG_CAIR_LABEL, UANG_CAIR_PESANAN_LABEL, PROFIT_BASIS_NOTE, rincianUangCairSub } from "@/lib/uangCairPeriode";
 
 type SortKey = "profitHpp" | "qty";
 
@@ -59,7 +60,13 @@ export default function LaporanProfitPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard label="Total Unit Keluar" value={formatNumber(data.summary?.totalQty ?? 0)} />
         <SummaryCard label="Jumlah SKU Terjual" value={formatNumber(data.summary?.skuCount ?? 0)} />
-        <SummaryCard tone="success" label="Total Uang Cair" value={formatRupiah(data.summary?.totalUangCair ?? 0)} />
+        {/* T-013 batch 13 (tugas X): semua saldo masuk periode ini + rincian (a)/(b)/(c). */}
+        <SummaryCard
+          tone="success"
+          label={UANG_CAIR_LABEL}
+          value={formatRupiah(data.summary?.uangCairPeriode?.total ?? 0)}
+          sub={rincianUangCairSub(data.summary?.uangCairPeriode)}
+        />
         <SummaryCard
           label="Total Profit HPP (Nett)"
           value={formatRupiahOrDash(shownProfitHpp(total))}
@@ -76,6 +83,10 @@ export default function LaporanProfitPage() {
           negative={(data.summary?.selisih ?? 0) < 0}
         />
       </div>
+      <p className="text-xs text-gray-500">
+        {PROFIT_BASIS_NOTE} {UANG_CAIR_PESANAN_LABEL}:{" "}
+        {formatRupiah(data.summary?.totalUangCair ?? 0)}.
+      </p>
       <TanpaHppNote tanpaHpp={data.summary?.tanpaHpp} />
 
       <div className="flex gap-2">
@@ -102,7 +113,7 @@ export default function LaporanProfitPage() {
           { header: "Unit Keluar", render: (r) => formatNumber(r.qty) },
           { header: "Kontribusi Omzet", render: (r) => `${((r.share ?? 0) * 100).toFixed(1)}%` },
           { header: "Omzet Bruto", render: (r) => formatRupiah(r.omzet) },
-          { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
+          { header: UANG_CAIR_PESANAN_LABEL, render: (r) => formatRupiah(r.uangCair) },
           // T-013 temuan QA 2: produk yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan "Rp 0").
           { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) },
           { header: "Profit Agen", render: (r) => formatRupiahOrDash(shownProfitAgen(r)) },

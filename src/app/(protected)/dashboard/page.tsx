@@ -20,6 +20,7 @@ import {
 } from "@/lib/period";
 import { formatRupiah } from "@/lib/format";
 import { formatRupiahOrDash, shownDashboardProfitHpp } from "@/lib/hppDisplay";
+import { UANG_CAIR_LABEL, rincianUangCairSub } from "@/lib/uangCairPeriode";
 
 const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -150,11 +151,12 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard label="Total Omzet Bruto" value={rp(summary?.totalOmzetBruto)} />
+        {/* T-013 batch 13 (tugas X): semua saldo masuk Income Report periode ini + rincian (a)/(b)/(c). */}
         <StatCard
-          label="Cair (Aktual Income Report)"
+          label={UANG_CAIR_LABEL}
           tone="success"
-          value={rp(summary?.cair)}
-          sub={summary ? `${summary.cairCount ?? 0} pesanan sudah cair` : undefined}
+          value={rp(summary?.uangCairPeriode?.total)}
+          sub={rincianUangCairSub(summary?.uangCairPeriode)}
         />
         <StatCard
           label="Belum Cair"

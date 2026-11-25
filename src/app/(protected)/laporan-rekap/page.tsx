@@ -7,6 +7,19 @@ import ExportButtons from "@/components/ExportButtons";
 import TanpaHppNote, { sumTanpaHpp } from "@/components/TanpaHppNote";
 import { formatRupiah } from "@/lib/format";
 import { formatRupiahOrDash, shownProfitHpp } from "@/lib/hppDisplay";
+import { PROFIT_BASIS_NOTE, rincianUangCairSub } from "@/lib/uangCairPeriode";
+
+/** T-013 batch 13 (tugas X): semua saldo masuk periode + rincian (a)/(b)/(c) kecil di bawahnya. */
+function UangCairCell({ r }: { r: any }) {
+  return (
+    <div>
+      <div>{formatRupiah(r.uangCairTotal ?? 0)}</div>
+      <div className="max-w-[260px] whitespace-normal text-[11px] leading-tight text-gray-400">
+        {rincianUangCairSub(r.uangCairRincian)}
+      </div>
+    </div>
+  );
+}
 
 export default function LaporanRekapPage() {
   const searchParams = useSearchParams();
@@ -58,7 +71,7 @@ export default function LaporanRekapPage() {
           columns={[
             { header: "Periode Cut-Off", render: (r) => r.label },
             { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
-            { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
+            { header: "Uang Cair (semua saldo masuk)", render: (r) => <UangCairCell r={r} /> },
             { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) }, // T-013 temuan QA 2
             {
               header: "Selisih Omzet vs Bulan Lalu",
@@ -82,11 +95,12 @@ export default function LaporanRekapPage() {
           columns={[
             { header: "Tahun", render: (r) => r.year },
             { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
-            { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
+            { header: "Uang Cair (semua saldo masuk)", render: (r) => <UangCairCell r={r} /> },
             { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) }, // T-013 temuan QA 2
           ]}
         />
       )}
+      <p className="text-xs text-gray-500">{PROFIT_BASIS_NOTE}</p>
       <TanpaHppNote tanpaHpp={sumTanpaHpp(rows)} />
     </div>
   );

@@ -107,7 +107,7 @@ describe("export datasetProfit / datasetBarangKeluar", () => {
   it("datasetProfit: total Profit HPP tanpa baris HPP 0 + baris ringkasan Tanpa HPP", async () => {
     const ds = await datasetProfit(FILTER);
     const sum = Object.fromEntries(ds.summary!.map((s) => [s.label, s.value]));
-    expect(sum["Total Uang Cair"]).toBe("Rp 116.000");
+    expect(sum["Uang Cair Pesanan Periode Ini"]).toBe("Rp 116.000");
     expect(sum["Total Profit HPP (Nett)"]).toBe("Rp 42.000");
     expect(sum["Total Profit Agen"]).toBe("Rp 13.500");
     expect(sum["Tanpa HPP (tidak dihitung ke profit)"]).toBe("1 baris, Rp 50.000");

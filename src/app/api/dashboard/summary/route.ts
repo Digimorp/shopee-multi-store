@@ -6,6 +6,8 @@ import { withPeriodError } from "@/lib/periodError";
 import { OrderStatus } from "@prisma/client";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { emptyTally, addProfitLine, emptyAgenTally, addAgenLine } from "@/lib/profit";
+import { getUangCairPeriode } from "@/lib/uangCairPeriodeDb";
+import { pickRincian } from "@/lib/uangCairPeriode";
 
 export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
@@ -16,7 +18,7 @@ export const GET = withPeriodError(async (req: NextRequest) => {
 
   const baseWhere = { storeId: { in: storeIds }, orderCreatedAt: { gte: from, lte: to }, deletedAt: null };
 
-  const [omzetBruto, uangMengambang, transit, profitLines, recon] = await Promise.all([
+  const [omzetBruto, uangMengambang, transit, profitLines, recon, uangCairPeriode] = await Promise.all([
     prisma.order.aggregate({
       where: { ...baseWhere, status: { not: OrderStatus.CANCEL } },
       _sum: { grossOmzet: true },
@@ -36,6 +38,8 @@ export const GET = withPeriodError(async (req: NextRequest) => {
       select: { orderSn: true, qty: true, netSettlement: true, hppSnapshot: true, profitAgen: true, status: true },
     }),
     reconcile({ storeIds, from, to }),
+    // T-013 batch 13 (tugas X): angka utama Uang Cair = semua saldo masuk periode ini (+ rincian).
+    getUangCairPeriode({ storeIds, from, to }),
   ]);
 
   // T-013: rumus SAMA dengan Laporan Profit (src/app/api/reports/profit/route.ts) -- uang cair
@@ -96,5 +100,8 @@ export const GET = withPeriodError(async (req: NextRequest) => {
     selisih: selisihCount,
     selisihCount,
     selisihAktual,
+    // T-013 batch 13: kartu "Uang Cair (semua saldo masuk periode ini)". `cair` di atas tetap = uang
+    // cair pesanan periode ini (basis Profit HPP).
+    uangCairPeriode: pickRincian(uangCairPeriode),
   });
 });

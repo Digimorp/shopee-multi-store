@@ -15,6 +15,14 @@ import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliati
 import { returLoss, sumReturLoss } from "@/lib/returLoss";
 import { buildRecap } from "@/lib/recap";
 import { shownProfitHpp, shownProfitAgen, shownSelisih } from "@/lib/hppDisplay";
+import { getUangCairPeriode, getUangCairPerBulan } from "@/lib/uangCairPeriodeDb";
+import {
+  UANG_CAIR_LABEL,
+  UANG_CAIR_PESANAN_LABEL,
+  PROFIT_BASIS_NOTE,
+  formatRincianUangCair,
+  formatSaldoKeluar,
+} from "@/lib/uangCairPeriode";
 
 export type ColKind = "text" | "int" | "money" | "pct";
 export type ReportColumn = { key: string; header: string; width: number; align?: "left" | "right"; kind?: ColKind };
@@ -47,6 +55,17 @@ const ymd = (d: Date) => d.toISOString().slice(0, 10);
 const rupiahOrDash = (v: number | string) => (typeof v === "string" ? v : rupiah(v));
 
 /** Format 1 sel untuk output PDF/teks berdasarkan kind kolom. */
+/** T-013 batch 13: baris ringkasan export untuk Uang Cair (semua saldo masuk) + rincian + saldo keluar. */
+function uangCairSummary(r: { total: number; pesananPeriodeIni: number; pesananLain: number; penyesuaian: number; saldoKeluar: number }) {
+  const out = [
+    { label: UANG_CAIR_LABEL, value: rupiah(r.total) },
+    { label: "Rincian", value: formatRincianUangCair(r) },
+  ];
+  const keluar = formatSaldoKeluar(r);
+  if (keluar) out.push({ label: "Catatan", value: keluar });
+  return out;
+}
+
 export function formatCell(value: any, kind: ColKind = "text"): string {
   if (value == null) return "";
   // Penanda teks di kolom angka (mis. "-" = tidak diketahui) tampil apa adanya, bukan "Rp 0".
@@ -193,7 +212,7 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
       { key: "qty", header: "Unit Keluar", width: 9, align: "right", kind: "int" },
       { key: "share", header: "Kontribusi Omzet", width: 9, align: "right", kind: "pct" },
       { key: "omzet", header: "Omzet Bruto", width: 13, align: "right", kind: "money" },
-      { key: "uangCair", header: "Uang Cair", width: 13, align: "right", kind: "money" },
+      { key: "uangCair", header: UANG_CAIR_PESANAN_LABEL, width: 13, align: "right", kind: "money" },
       { key: "profitHpp", header: "Profit HPP (Nett)", width: 13, align: "right", kind: "money" },
       { key: "profitAgen", header: "Profit Agen", width: 13, align: "right", kind: "money" },
       { key: "selisih", header: "Selisih", width: 13, align: "right", kind: "money" },
@@ -202,7 +221,10 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
     summary: [
       { label: "Total Unit Keluar", value: int(tQty) },
       { label: "Jumlah SKU Terjual", value: int(rows.length) },
-      { label: "Total Uang Cair", value: rupiah(tUangCair) },
+      // T-013 batch 13 (tugas X): angka utama Uang Cair = semua saldo masuk periode ini.
+      ...uangCairSummary(await getUangCairPeriode(f)),
+      { label: UANG_CAIR_PESANAN_LABEL, value: rupiah(tUangCair) },
+      { label: "Catatan", value: PROFIT_BASIS_NOTE },
       { label: "Total Profit HPP (Nett)", value: rupiahOrDash(shownProfitHpp(total)) },
       { label: "Total Profit Agen", value: rupiahOrDash(shownProfitAgen(total)) },
       { label: "Selisih Agen vs Riil", value: rupiahOrDash(shownSelisih(total)) },
@@ -249,14 +271,14 @@ export async function datasetBarangKeluar(f: ReportFilter): Promise<ReportDatase
       { key: "qty", header: "Unit Keluar", width: 9, align: "right", kind: "int" },
       { key: "share", header: "Kontribusi", width: 9, align: "right", kind: "pct" },
       { key: "omzet", header: "Omzet Bruto", width: 13, align: "right", kind: "money" },
-      { key: "uangCair", header: "Uang Cair", width: 13, align: "right", kind: "money" },
+      { key: "uangCair", header: UANG_CAIR_PESANAN_LABEL, width: 13, align: "right", kind: "money" },
       { key: "profitHpp", header: "Profit HPP", width: 13, align: "right", kind: "money" },
     ],
     rows,
     summary: [
       { label: "Total unit keluar", value: int(totalQty) },
       { label: "Jumlah SKU terjual", value: int(bySku.size) },
-      { label: "Total uang cair", value: rupiah(rows.reduce((s, r) => s + r.uangCair, 0)) },
+      { label: `Total ${UANG_CAIR_PESANAN_LABEL.toLowerCase()}`, value: rupiah(rows.reduce((s, r) => s + r.uangCair, 0)) },
       { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) },
     ],
   };
@@ -421,7 +443,7 @@ export async function datasetStorePerformance(f: ReportFilter): Promise<ReportDa
       { key: "order", header: "Order", width: 7, align: "right", kind: "int" },
       { key: "unitKeluar", header: "Unit Keluar", width: 9, align: "right", kind: "int" },
       { key: "omzet", header: "Omzet Bruto", width: 13, align: "right", kind: "money" },
-      { key: "uangCair", header: "Uang Cair", width: 13, align: "right", kind: "money" },
+      { key: "uangCair", header: UANG_CAIR_PESANAN_LABEL, width: 13, align: "right", kind: "money" },
       { key: "uangMengambang", header: "Mengambang", width: 13, align: "right", kind: "money" },
       { key: "profitHpp", header: "Profit HPP", width: 13, align: "right", kind: "money" },
       { key: "profitAgen", header: "Profit Agen", width: 13, align: "right", kind: "money" },
@@ -429,7 +451,7 @@ export async function datasetStorePerformance(f: ReportFilter): Promise<ReportDa
     rows,
     summary: [
       { label: "Total omzet bruto", value: rupiah(numRows.reduce((s, r) => s + r.omzet, 0)) },
-      { label: "Total uang cair", value: rupiah(totalPerforma.uangCair) },
+      { label: `Total ${UANG_CAIR_PESANAN_LABEL.toLowerCase()}`, value: rupiah(totalPerforma.uangCair) },
       { label: "Total profit HPP", value: rupiahOrDash(shownProfitHpp(totalPerforma)) },
       { label: TANPA_HPP_LABEL, value: tanpaHppValue(totalPerforma.tanpaHpp) },
     ],
@@ -447,28 +469,29 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
   // tanggal pesanan dibuat (WIB) + cut-off saat ini, tahun = tahun periode, selisih vs bulan tepat
   // sebelumnya. reconcile() rentang seluas mungkin supaya semua order ter-cover Income Report.
   const lookup = buildActualLookup(await reconcile({ storeIds: f.storeIds, from: new Date(0), to: new Date() }));
-  const { months, years } = buildRecap(orders, lookup, cutoffDay);
+  // T-013 batch 13 (tugas X): kolom Uang Cair = semua saldo masuk per bulan periode (sama dgn API rekap).
+  const { months, years } = buildRecap(orders, lookup, cutoffDay, await getUangCairPerBulan(f.storeIds, cutoffDay));
 
   if (type === "yearly") {
     // T-013 temuan QA 2: tahun yang HPP-nya seluruhnya tidak diketahui -> Profit HPP "-".
-    const rows = years.map((r) => ({ tahun: r.year, omzet: r.omzet, uangCair: r.uangCair, profitHpp: shownProfitHpp(r), tanpaHpp: r.tanpaHpp }));
+    const rows = years.map((r) => ({ tahun: r.year, omzet: r.omzet, uangCair: r.uangCairTotal, profitHpp: shownProfitHpp(r), tanpaHpp: r.tanpaHpp }));
     return {
       title: "Rekap Tahunan (Multi-Toko)",
       columns: [
         { key: "tahun", header: "Tahun", width: 10 },
         { key: "omzet", header: "Omzet", width: 18, align: "right", kind: "money" },
-        { key: "uangCair", header: "Uang Cair", width: 18, align: "right", kind: "money" },
+        { key: "uangCair", header: "Uang Cair (semua saldo masuk)", width: 18, align: "right", kind: "money" },
         { key: "profitHpp", header: "Profit HPP", width: 18, align: "right", kind: "money" },
       ],
       rows,
-      summary: [{ label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) }],
+      summary: [{ label: "Catatan", value: PROFIT_BASIS_NOTE }, { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) }],
     };
   }
 
   const rows = months.map((r) => ({
     periode: r.label,
     omzet: r.omzet,
-    uangCair: r.uangCair,
+    uangCair: r.uangCairTotal,
     // T-013 temuan QA 2: bulan yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan "Rp 0").
     profitHpp: shownProfitHpp(r),
     tanpaHpp: r.tanpaHpp,
@@ -481,13 +504,13 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
     columns: [
       { key: "periode", header: "Periode Cut-Off", width: 24 },
       { key: "omzet", header: "Omzet", width: 14, align: "right", kind: "money" },
-      { key: "uangCair", header: "Uang Cair", width: 14, align: "right", kind: "money" },
+      { key: "uangCair", header: "Uang Cair (semua saldo masuk)", width: 14, align: "right", kind: "money" },
       { key: "profitHpp", header: "Profit HPP", width: 14, align: "right", kind: "money" },
       { key: "selisih", header: "Selisih Omzet vs Bulan Lalu", width: 14, align: "right", kind: "money" },
       { key: "selisihPct", header: "%", width: 7, align: "right" },
     ],
     rows,
-    summary: [{ label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) }],
+    summary: [{ label: "Catatan", value: PROFIT_BASIS_NOTE }, { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) }],
   };
 }
 
@@ -544,13 +567,13 @@ export async function datasetOrders(f: ReportFilter): Promise<ReportDataset> {
       { key: "status", header: "Status", width: 8 },
       { key: "tanggal", header: "Tanggal", width: 9 },
       { key: "omzetBruto", header: "Omzet Bruto", width: 11, align: "right", kind: "money" },
-      { key: "uangCair", header: "Uang Cair", width: 11, align: "right", kind: "money" },
+      { key: "uangCair", header: UANG_CAIR_PESANAN_LABEL, width: 11, align: "right", kind: "money" },
       { key: "profitHpp", header: "Profit HPP", width: 11, align: "right", kind: "money" },
       { key: "profitAgen", header: "Profit Agen", width: 11, align: "right", kind: "money" },
     ],
     rows,
     summary: [
-      { label: "Total uang cair", value: rupiah(total.uangCair) },
+      { label: `Total ${UANG_CAIR_PESANAN_LABEL.toLowerCase()}`, value: rupiah(total.uangCair) },
       { label: "Total profit HPP", value: rupiah(total.profitHpp) },
       { label: TANPA_HPP_LABEL, value: tanpaHppValue(total.tanpaHpp) },
     ],

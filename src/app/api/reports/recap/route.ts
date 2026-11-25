@@ -4,6 +4,7 @@ import { getSessionUser, assertStoreAccess } from "@/lib/rbac";
 import { OrderStatus } from "@prisma/client";
 import { reconcile, buildActualLookup } from "@/lib/reconciliation";
 import { buildRecap } from "@/lib/recap";
+import { getUangCairPerBulan } from "@/lib/uangCairPeriodeDb";
 
 // type=monthly -> rekap per periode cut-off (26-25), semua bulan, + selisih vs bulan tepat sebelumnya
 // type=yearly  -> rekap per tahun (= jumlah 12 bulan periode), multi toko
@@ -31,7 +32,8 @@ export async function GET(req: NextRequest) {
   // ter-cover pencarian match Income Report. Uang Cair & Profit HPP = nilai AKTUAL (definisi
   // Uang Cair butir 9), sama seperti Laporan Profit & Rekonsiliasi.
   const lookup = buildActualLookup(await reconcile({ storeIds, from: new Date(0), to: new Date() }));
-  const { months, years } = buildRecap(orders, lookup, cutoffDay);
+  // T-013 batch 13 (tugas X): kolom Uang Cair = semua saldo masuk per bulan periode (uangCairTotal).
+  const { months, years } = buildRecap(orders, lookup, cutoffDay, await getUangCairPerBulan(storeIds, cutoffDay));
 
   return NextResponse.json({ rows: type === "yearly" ? years : months });
 }
