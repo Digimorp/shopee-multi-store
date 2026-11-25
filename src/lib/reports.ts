@@ -1,6 +1,6 @@
 import { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getPeriodForDate, formatPeriodLabel, parsePeriodKey } from "@/lib/period";
+import { formatPeriodLabel, parsePeriodKey } from "@/lib/period";
 import {
   productGroupKey,
   emptyTally,

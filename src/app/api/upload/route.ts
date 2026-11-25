@@ -4,7 +4,7 @@ import { getSessionUser, assertStoreAccess } from "@/lib/rbac";
 import { parseShopeeFile } from "@/lib/parseShopee";
 import { classifyStatus, DEFAULT_STATUS_RULES, type StatusRule } from "@/lib/classification";
 import { calcProfitHpp, calcProfitAgen } from "@/lib/profit";
-import { getPeriodForDate } from "@/lib/period";
+import { getPeriodForDateWib } from "@/lib/period";
 import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -90,8 +90,9 @@ export async function POST(req: NextRequest) {
       status = OrderStatus.PENDING_SETTLEMENT;
     }
 
-    // Skip baris di periode yang sudah dikunci
-    const periodInfo = getPeriodForDate(row.orderCreatedAt, cutoffDay);
+    // Skip baris di periode yang sudah dikunci. T-013 butir 19: periode dihitung dalam WIB (bukan jam
+    // server) — key yang SAMA dipakai untuk cek kunci dan untuk periodKey yang disimpan.
+    const periodInfo = getPeriodForDateWib(row.orderCreatedAt, cutoffDay);
     const lock = await prisma.periodLock.findUnique({ where: { periodKey: periodInfo.key } });
     if (lock?.locked) {
       skippedLocked++;

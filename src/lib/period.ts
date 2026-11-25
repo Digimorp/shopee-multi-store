@@ -25,6 +25,9 @@ export function getDefaultPeriod(cutoffDay = 25, now = new Date()): Period {
 }
 
 /**
+ * @deprecated T-013 butir 19: memakai zona jam SERVER (di Vercel = UTC), jadi pesanan 25/26 jam
+ * 00:00-06:59 WIB bisa masuk periode yang salah. Untuk periode pesanan pakai getPeriodForDateWib().
+ * Tidak dihapus (dipertahankan untuk referensi / kompatibilitas).
  * Tentukan periode cut-off untuk sebuah tanggal transaksi.
  * Kalau tanggal <= cutoffDay -> masuk periode (26 bulan sebelumnya s/d cutoffDay bulan ini).
  * Kalau tanggal > cutoffDay -> masuk periode (26 bulan ini s/d cutoffDay bulan depan).
@@ -138,6 +141,15 @@ export function getPeriodMonthForDate(date: Date, cutoffDay = 25): string {
     }
   }
   return `${y}-${pad2(m0 + 1)}`;
+}
+
+/**
+ * T-013 butir 19: periode cut-off (from/to/key) untuk sebuah tanggal, dalam WIB — SATU sumber untuk
+ * periodKey saat upload, cek kunci periode, Rekap, dan filter period=YYYY-MM (resolveFilters).
+ * Key formatnya sama dengan periodKey tersimpan: "YYYY-MM-DD_YYYY-MM-DD" (tanggal WIB).
+ */
+export function getPeriodForDateWib(date: Date, cutoffDay = 25): Period {
+  return getPeriodForMonth(getPeriodMonthForDate(date, cutoffDay), cutoffDay);
 }
 
 /** Bulan "YYYY-MM" sebelumnya, mis. "2027-01" -> "2026-12". */

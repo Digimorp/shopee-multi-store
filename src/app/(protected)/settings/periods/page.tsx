@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
-import { getDefaultPeriod, formatPeriodLabel } from "@/lib/period";
+import { getPeriodForMonth, getCurrentPeriodMonth, formatPeriodMonthLabel } from "@/lib/period";
 
 export default function SettingsPeriodsPage() {
   const [cutoffDay, setCutoffDay] = useState(25);
@@ -36,7 +36,9 @@ export default function SettingsPeriodsPage() {
     load();
   }
 
-  const currentPeriod = getDefaultPeriod(cutoffDay);
+  // T-013 butir 19: periode berjalan dalam WIB — key-nya sama dengan yang dihitung upload saat cek kunci.
+  // (getDefaultPeriod lama tidak pindah ke periode berikutnya sesudah tgl cut-off & pakai jam browser.)
+  const currentPeriod = getPeriodForMonth(getCurrentPeriodMonth(cutoffDay), cutoffDay);
 
   return (
     <div className="space-y-4">
@@ -55,7 +57,7 @@ export default function SettingsPeriodsPage() {
         <button type="submit" className="btn-primary">
           Simpan
         </button>
-        <span className="text-xs text-gray-500">Periode berjalan saat ini: {formatPeriodLabel(currentPeriod)}</span>
+        <span className="text-xs text-gray-500">Periode berjalan saat ini: {formatPeriodMonthLabel(currentPeriod)} ({currentPeriod.key.replace("_", " s/d ")})</span>
       </form>
 
       <div className="card p-6">
