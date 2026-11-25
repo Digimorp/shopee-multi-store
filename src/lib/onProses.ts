@@ -1,34 +1,43 @@
 /**
- * T-013 batch 15 (bagian D): menu On Proses -- pesanan yang BELUM FINAL (Transit dan Belum Cair /
- * PENDING_SETTLEMENT) dari SEMUA periode. Hanya tampilan: data = tabel orders apa adanya, tanpa
- * rumus baru. Omzet = Order.grossOmzet (nilai baris sejak batch 14). Pesanan ini estimasi: TIDAK
- * dihitung di Uang Cair & profit Bulanan sampai statusnya Selesai/cair (upload berikutnya menaikkan
- * statusnya lewat upsert batch 12, lalu pesanan hilang dari daftar ini).
+ * T-013 batch 15 (D) + batch 16 (B): menu On Proses -- pesanan yang uangnya BELUM masuk, dari SEMUA
+ * periode, dalam 2 kelompok:
+ *   1. "Dalam pengiriman"     = status TRANSIT.
+ *   2. "Selesai, belum cair"  = pesanan Selesai (atau PENDING_SETTLEMENT lama) yang BELUM punya entri
+ *      Income aktif. Penentuannya TIDAK ditulis ulang di sini: memakai hasil reconcile() Rekonsiliasi
+ *      (category BELUM_KETEMU sisi pesanan), jadi definisinya selalu sama dengan Rekonsiliasi.
+ * Pesanan keluar otomatis saat entri Income-nya masuk (reconcile jadi MATCH/SELISIH). Batal/Retur
+ * tidak pernah masuk. Hanya tampilan: tanpa rumus/schema baru. Omzet = Omzet Pesanan (grossOmzet).
  */
-export const ON_PROSES_STATUSES = ["TRANSIT", "PENDING_SETTLEMENT"] as const;
-export type OnProsesStatus = (typeof ON_PROSES_STATUSES)[number];
+export const ON_PROSES_GROUPS = ["DIKIRIM", "BELUM_CAIR"] as const;
+export type OnProsesGroupKey = (typeof ON_PROSES_GROUPS)[number];
+export const ON_PROSES_GROUP_LABEL: Record<OnProsesGroupKey, string> = {
+  DIKIRIM: "Dalam pengiriman",
+  BELUM_CAIR: "Selesai, belum cair",
+};
 export type AgeBucket = "0-3" | "4-7" | ">7";
 export const AGE_BUCKETS: AgeBucket[] = ["0-3", "4-7", ">7"];
 
-export type OnProsesLine = {
+/** Bagian ReconItem (src/lib/reconciliation.ts) yang dipakai di sini. */
+export type ReconLike = {
   orderSn: string;
-  orderCreatedAt: Date;
   storeCode: string;
   productName: string;
   status: string;
-  grossOmzet: number;
+  category: string;
+  side: string;
+  orderCreatedAt: string | null;
 };
 export type OnProsesRow = {
   orderSn: string;
   orderCreatedAt: string;
   storeCode: string;
   productName: string;
-  status: OnProsesStatus;
+  group: OnProsesGroupKey;
   ageDays: number;
   bucket: AgeBucket;
   omzet: number;
 };
-export type OnProsesGroup = { status: OnProsesStatus; bucket: AgeBucket; count: number; omzet: number };
+export type OnProsesGroup = { group: OnProsesGroupKey; bucket: AgeBucket; count: number; omzet: number };
 export type OnProsesResult = {
   summary: { count: number; omzet: number; oldestDays: number | null };
   groups: OnProsesGroup[];
@@ -40,44 +49,42 @@ const DAY = 86_400_000;
 export const ageDays = (created: Date, now: Date) => Math.max(0, Math.floor((now.getTime() - created.getTime()) / DAY));
 export const ageBucket = (days: number): AgeBucket => (days <= 3 ? "0-3" : days <= 7 ? "4-7" : ">7");
 
-// Pesanan multi-baris dengan status berbeda: tampilkan status yang paling belum selesai (Transit).
-const RANK: Record<OnProsesStatus, number> = { TRANSIT: 0, PENDING_SETTLEMENT: 1 };
+/** Kelompok On Proses untuk satu item Rekonsiliasi; null = bukan On Proses. */
+export function onProsesGroupOf(item: Pick<ReconLike, "status" | "category" | "side">): OnProsesGroupKey | null {
+  if (item.status === "TRANSIT") return "DIKIRIM";
+  // Selesai/PENDING_SETTLEMENT tanpa entri Income aktif (definisi Rekonsiliasi).
+  if (item.category === "BELUM_KETEMU" && item.side === "order") return "BELUM_CAIR";
+  return null;
+}
 
-export function buildOnProses(lines: OnProsesLine[], now = new Date()): OnProsesResult {
-  const byOrder = new Map<string, OnProsesLine[]>();
-  for (const l of lines) {
-    if (!(ON_PROSES_STATUSES as readonly string[]).includes(l.status)) continue;
-    const key = `${l.storeCode}|${l.orderSn}`;
-    const list = byOrder.get(key);
-    if (list) list.push(l);
-    else byOrder.set(key, [l]);
-  }
+/**
+ * @param items hasil reconcile() lintas semua periode
+ * @param omzetBySn Omzet Pesanan per `${storeCode}|${orderSn}` (jumlah grossOmzet baris pesanan)
+ */
+export function buildOnProses(items: ReconLike[], omzetBySn: Map<string, number>, now = new Date()): OnProsesResult {
   const rows: OnProsesRow[] = [];
-  for (const list of byOrder.values()) {
-    const created = list.reduce((d, l) => (l.orderCreatedAt < d ? l.orderCreatedAt : d), list[0].orderCreatedAt);
-    const status = list.reduce<OnProsesStatus>(
-      (s, l) => (RANK[l.status as OnProsesStatus] < RANK[s] ? (l.status as OnProsesStatus) : s),
-      list[0].status as OnProsesStatus
-    );
-    const days = ageDays(created, now);
+  for (const it of items) {
+    const group = onProsesGroupOf(it);
+    if (!group || !it.orderCreatedAt) continue;
+    const days = ageDays(new Date(it.orderCreatedAt), now);
     rows.push({
-      orderSn: list[0].orderSn,
-      orderCreatedAt: created.toISOString(),
-      storeCode: list[0].storeCode,
-      productName: list.length > 1 ? `${list[0].productName} +${list.length - 1} lainnya` : list[0].productName,
-      status,
+      orderSn: it.orderSn,
+      orderCreatedAt: it.orderCreatedAt,
+      storeCode: it.storeCode,
+      productName: it.productName,
+      group,
       ageDays: days,
       bucket: ageBucket(days),
-      omzet: list.reduce((s, l) => s + l.grossOmzet, 0),
+      omzet: omzetBySn.get(`${it.storeCode}|${it.orderSn}`) ?? 0,
     });
   }
   rows.sort((a, b) => b.ageDays - a.ageDays || a.orderSn.localeCompare(b.orderSn));
 
   const groups: OnProsesGroup[] = [];
-  for (const status of ON_PROSES_STATUSES) {
+  for (const group of ON_PROSES_GROUPS) {
     for (const bucket of AGE_BUCKETS) {
-      const hit = rows.filter((r) => r.status === status && r.bucket === bucket);
-      groups.push({ status, bucket, count: hit.length, omzet: hit.reduce((s, r) => s + r.omzet, 0) });
+      const hit = rows.filter((r) => r.group === group && r.bucket === bucket);
+      groups.push({ group, bucket, count: hit.length, omzet: hit.reduce((s, r) => s + r.omzet, 0) });
     }
   }
   return {

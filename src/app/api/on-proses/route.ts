@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, assertStoreAccess } from "@/lib/rbac";
-import { buildOnProses } from "@/lib/onProses";
+import { reconcile } from "@/lib/reconciliation";
+import { buildOnProses, onProsesGroupOf } from "@/lib/onProses";
 
-// T-013 batch 15 (bagian D): pesanan belum final (Transit + Belum Cair) dari SEMUA periode.
-// Hanya filter Toko (hak akses toko lewat assertStoreAccess: Admin Toko hanya tokonya); TIDAK ikut
-// filter Periode. Data = tabel orders apa adanya (tanpa schema baru, tanpa rumus baru).
+// T-013 batch 15 (D) + 16 (B): pesanan yang uangnya belum masuk, dari SEMUA periode, hanya filter
+// Toko (hak akses lewat assertStoreAccess: Admin Toko hanya tokonya). Kelompok "Selesai, belum cair"
+// memakai reconcile() Rekonsiliasi apa adanya (BELUM_KETEMU sisi pesanan) -- tidak ada logika cocok
+// baru. Rentang = semua waktu. Tanpa schema baru, tanpa rumus baru.
+const ALL_TIME = { from: new Date(Date.UTC(2000, 0, 1)), to: new Date(Date.UTC(2100, 0, 1)) };
+
 export async function GET(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,32 +17,21 @@ export async function GET(req: NextRequest) {
   const storeIds = await assertStoreAccess(user, new URL(req.url).searchParams.get("storeId"));
   if (storeIds.length === 0 && user.role !== "OWNER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const orders = await prisma.order.findMany({
-    where: {
-      storeId: { in: storeIds },
-      status: { in: [OrderStatus.TRANSIT, OrderStatus.PENDING_SETTLEMENT] },
-      deletedAt: null,
-    },
-    select: {
-      orderSn: true,
-      orderCreatedAt: true,
-      productName: true,
-      status: true,
-      grossOmzet: true,
-      store: { select: { code: true } },
-    },
-  });
+  const recon = await reconcile({ storeIds, ...ALL_TIME });
+  const items = recon.items.filter((i) => onProsesGroupOf(i) != null);
 
-  return NextResponse.json(
-    buildOnProses(
-      orders.map((o) => ({
-        orderSn: o.orderSn,
-        orderCreatedAt: o.orderCreatedAt,
-        storeCode: o.store?.code ?? "-",
-        productName: o.productName,
-        status: o.status,
-        grossOmzet: o.grossOmzet,
-      }))
-    )
-  );
+  // Omzet Pesanan per pesanan = jumlah grossOmzet baris pesanannya (nilai yang sama dengan laporan).
+  const lines = items.length
+    ? await prisma.order.findMany({
+        where: { storeId: { in: storeIds }, orderSn: { in: items.map((i) => i.orderSn) }, deletedAt: null },
+        select: { orderSn: true, grossOmzet: true, store: { select: { code: true } } },
+      })
+    : [];
+  const omzetBySn = new Map<string, number>();
+  for (const l of lines) {
+    const k = `${l.store?.code ?? "-"}|${l.orderSn}`;
+    omzetBySn.set(k, (omzetBySn.get(k) ?? 0) + l.grossOmzet);
+  }
+
+  return NextResponse.json(buildOnProses(items, omzetBySn));
 }
