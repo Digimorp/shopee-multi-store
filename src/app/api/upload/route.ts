@@ -157,6 +157,8 @@ export async function POST(req: NextRequest) {
   // Bentuknya tetap kompatibel dengan pembaca lama (anomalies/summary/aiCheckSkipped).
   const hppUnknown = {
     rows: hppUnknownRows,
+    // Batch4 I (butir 8): jumlah SKU/produk unik tanpa HPP dari baris file ini saja.
+    products: new Set([...hppUnknownNotInMaster.keys(), ...hppUnknownEmptyInMaster.keys()]).size,
     notInMaster: [...hppUnknownNotInMaster].map(([sku, rows]) => ({ sku, rows })),
     emptyInMaster: [...hppUnknownEmptyInMaster].map(([sku, rows]) => ({ sku, rows })),
   };

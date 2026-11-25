@@ -117,7 +117,7 @@ describe("POST /api/upload — HPP tidak diketahui (T-013)", () => {
     expect(data.hppSnapshot).toBe(0);
     expect(data.profitHpp).toBe(0); // dulu: 20000 - 0 = 20000 (profit palsu sebesar uang cair)
     expect(data.profitAgen).toBe(0);
-    expect(body.hppUnknown).toEqual({ rows: 1, notInMaster: [{ sku: "SKU-A", rows: 1 }], emptyInMaster: [] });
+    expect(body.hppUnknown).toEqual({ rows: 1, products: 1, notInMaster: [{ sku: "SKU-A", rows: 1 }], emptyInMaster: [] });
   });
 
   it("produk ada di master tapi HPP belum diisi (0) -> diperlakukan sama, masuk daftar emptyInMaster", async () => {
@@ -129,7 +129,7 @@ describe("POST /api/upload — HPP tidak diketahui (T-013)", () => {
     expect(data.productId).toBe("p1");
     expect(data.profitHpp).toBe(0);
     expect(data.profitAgen).toBe(0);
-    expect(body.hppUnknown).toEqual({ rows: 1, notInMaster: [], emptyInMaster: [{ sku: "SKU-A", rows: 1 }] });
+    expect(body.hppUnknown).toEqual({ rows: 1, products: 1, notInMaster: [], emptyInMaster: [{ sku: "SKU-A", rows: 1 }] });
   });
 
   it("daftar SKU HPP tidak diketahui ikut tersimpan ke UploadLog (aiCheckResult), bukan cuma di respons", async () => {
@@ -146,6 +146,7 @@ describe("POST /api/upload — HPP tidak diketahui (T-013)", () => {
     expect(saved.source).toBe("hpp-check");
     expect(saved.hppUnknown).toEqual({
       rows: 3,
+      products: 2,
       notInMaster: [{ sku: "SKU-A", rows: 2 }],
       emptyInMaster: [{ sku: "SKU-B", rows: 1 }],
     });
@@ -163,6 +164,37 @@ describe("POST /api/upload — HPP tidak diketahui (T-013)", () => {
     expect(data.hppSnapshot).toBe(5000);
     expect(data.profitHpp).toBeGreaterThan(0);
     expect(body.hppUnknown.rows).toBe(0);
+    expect(body.hppUnknown.products).toBe(0);
     expect(uploadLogUpdate.mock.calls[0][0].data.aiCheckResult.hppUnknown.rows).toBe(0);
+  });
+
+  it("batch4 I: file tanpa SKU -> produk unik tanpa HPP dihitung per nama produk, dari baris file ini saja", async () => {
+    productFindMany.mockResolvedValue([{ id: "p1", sku: "SKU-X", name: "Produk Ber-HPP", hpp: 5000, catalogPrice: 30000 }]);
+    const noSku = { ...sampleRow, sku: "", skuInduk: "" };
+    parseShopeeFile.mockReturnValue({
+      rows: [
+        { ...noSku, orderSn: "SN-1", productName: "Produk Satu" },
+        { ...noSku, orderSn: "SN-2", productName: "Produk Satu" },
+        { ...noSku, orderSn: "SN-3", productName: "Produk Dua" },
+        { ...noSku, orderSn: "SN-4", productName: "Produk Ber-HPP" },
+      ],
+      errors: [],
+      totalRows: 4,
+    });
+    const res = await POST(makeFakeRequest());
+    const body = await res.json();
+
+    expect(res.status).toBe(200); // upload tidak diblokir
+    expect(orderCreate).toHaveBeenCalledTimes(4);
+    expect(body.hppUnknown.rows).toBe(3);
+    expect(body.hppUnknown.products).toBe(2);
+    expect(body.hppUnknown.notInMaster).toEqual([
+      { sku: "Produk Satu", rows: 2 },
+      { sku: "Produk Dua", rows: 1 },
+    ]);
+    // arti HPP 0 tetap "tidak diketahui": profit baris itu 0
+    const tanpaHpp = orderCreate.mock.calls.map((c: any[]) => c[0].data).filter((d: any) => d.hppSnapshot === 0);
+    expect(tanpaHpp).toHaveLength(3);
+    expect(tanpaHpp.every((d: any) => d.profitHpp === 0 && d.profitAgen === 0)).toBe(true);
   });
 });
