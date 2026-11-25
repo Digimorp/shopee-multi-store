@@ -181,3 +181,35 @@ describe("export Laporan Profit — sel tanpa HPP '-' (Excel teks, angka tetap n
     expect(sum["Total Uang Cair"]).toBe("Rp 70.000");
   });
 });
+
+// ---- T-013 batch 11 (tugas V): kartu Profit HPP Dashboard & warna header Excel
+import { shownDashboardProfitHpp } from "@/lib/hppDisplay";
+import { XLSX_HEADER_FILL_ARGB } from "@/lib/export";
+
+describe("Dashboard — kartu Profit HPP", () => {
+  it('seluruh uang cair dari baris tanpa HPP -> "-" (bukan "Rp 0")', () => {
+    const s = { profitHpp: 0, cair: 56022026, tanpaHpp: { baris: 755, uangCair: 56022026 } };
+    expect(formatRupiahOrDash(shownDashboardProfitHpp(s))).toBe("-");
+  });
+
+  it("dengan HPP -> angka (termasuk campuran dan profit negatif)", () => {
+    expect(formatRupiahOrDash(shownDashboardProfitHpp({ profitHpp: 42000, cair: 66000, tanpaHpp: { baris: 0, uangCair: 0 } }))).toBe("Rp 42.000");
+    expect(shownDashboardProfitHpp({ profitHpp: 20000, cair: 116000, tanpaHpp: { baris: 1, uangCair: 50000 } })).toBe(20000);
+    expect(shownDashboardProfitHpp({ profitHpp: -3000, cair: 30000, tanpaHpp: null })).toBe(-3000);
+  });
+
+  it('tanpa ringkasan (gagal muat / akun tanpa toko) -> "-"', () => {
+    expect(shownDashboardProfitHpp(undefined)).toBe("-");
+  });
+});
+
+describe("Excel — header bukan pink", () => {
+  it("header memakai abu terang brand, bukan EC4899", async () => {
+    const xlsx = await buildXlsx("Uji", [{ header: "Kolom", key: "k" }], [{ k: 1 }]);
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(xlsx as any);
+    const fill = wb.worksheets[0].getRow(1).getCell(1).fill as any;
+    expect(fill.fgColor.argb).toBe(XLSX_HEADER_FILL_ARGB);
+    expect(fill.fgColor.argb.toUpperCase()).not.toContain("EC4899");
+  });
+});

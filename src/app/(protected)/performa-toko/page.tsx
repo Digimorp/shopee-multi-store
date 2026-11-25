@@ -66,7 +66,7 @@ export default function PerformaTokoPage() {
               />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
               <Bar isAnimationActive={false} dataKey="Omzet" fill="#0a0a0a" /* = --color-brand-600, sama dgn Omzet di AreaTrendCard */ radius={[6, 6, 0, 0]} />
-              <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#96789c" radius={[6, 6, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#a3a3a3" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

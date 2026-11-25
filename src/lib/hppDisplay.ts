@@ -56,6 +56,19 @@ export function shownSelisih(r: HppTallyLike & { selisih: number }): number | ty
   return isProfitHppUnknown(r) ? HPP_UNKNOWN_TEXT : r.selisih;
 }
 
+/**
+ * Kartu Profit HPP Dashboard (T-013 batch 11). API ringkasan dashboard tidak mengirim uang cair
+ * tally HPP, jadi dipakai `cair` (Uang Cair aktual Income Report -- sama dengan Uang Cair Laporan
+ * Profit). Aturannya tetap isProfitHppUnknown: "-" hanya bila seluruh uang cair dari baris tanpa
+ * HPP. Tanpa ringkasan (gagal muat / akun tanpa toko) -> "-".
+ */
+export function shownDashboardProfitHpp(
+  s: { profitHpp?: number; cair?: number; tanpaHpp?: { baris: number; uangCair: number } | null } | null | undefined
+): number | typeof HPP_UNKNOWN_TEXT {
+  if (!s) return HPP_UNKNOWN_TEXT;
+  return shownProfitHpp({ profitHpp: s.profitHpp ?? 0, uangCair: s.cair ?? 0, tanpaHpp: s.tanpaHpp });
+}
+
 /** Untuk sel di layar: "-" apa adanya, angka -> format rupiah. */
 export function formatRupiahOrDash(v: number | string | null | undefined): string {
   return typeof v === "string" ? v : formatRupiah(v ?? 0);

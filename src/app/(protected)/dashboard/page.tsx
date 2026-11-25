@@ -19,6 +19,7 @@ import {
   getPeriodForMonth,
 } from "@/lib/period";
 import { formatRupiah } from "@/lib/format";
+import { formatRupiahOrDash, shownDashboardProfitHpp } from "@/lib/hppDisplay";
 
 const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -169,7 +170,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Profit HPP (Nett)"
-          value={rp(summary?.profitHpp)}
+          value={formatRupiahOrDash(shownDashboardProfitHpp(summary))}
           negative={(summary?.profitHpp ?? 0) < 0}
         />
         <StatCard

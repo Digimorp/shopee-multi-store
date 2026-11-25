@@ -8,6 +8,10 @@ export type ExportColumn = { header: string; key: string; width?: number; kind?:
  * berisi subjudul, baris 2 kosong, header tabel di baris 3. Tanpa subtitle: header di baris 1
  * seperti sebelumnya. Kolom & nilai baris data tidak berubah, hanya bergeser ke bawah.
  */
+/** Warna header Excel (ARGB): brand-200 / brand-600 dari globals.css. */
+export const XLSX_HEADER_FILL_ARGB = "FFE5E5E5";
+export const XLSX_HEADER_FONT_ARGB = "FF0A0A0A";
+
 export async function buildXlsx(
   sheetName: string,
   columns: ExportColumn[],
@@ -25,8 +29,10 @@ export async function buildXlsx(
     ws.addRow([]);
   }
   const header = ws.addRow(columns.map((c) => c.header));
-  header.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEC4899" } };
+  // T-013 batch 11: header netral selaras monokrom -- latar brand-200 (#e5e5e5), teks brand-600
+  // (#0a0a0a), nilai dari src/app/globals.css. Dulu pink.
+  header.font = { bold: true, color: { argb: XLSX_HEADER_FONT_ARGB } };
+  header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XLSX_HEADER_FILL_ARGB } };
 
   for (const r of rows) ws.addRow(r);
 
