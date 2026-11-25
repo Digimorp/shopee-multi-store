@@ -50,7 +50,7 @@ export default function LaporanProfitPage() {
       </p>
 
       <p className="text-xs text-gray-500">
-        Unit Keluar/Omzet Bruto/Kontribusi Omzet dihitung dari pesanan <strong>berstatus Selesai</strong>. Uang Cair &amp;
+        Unit Keluar/Omzet Pesanan/Kontribusi Omzet dihitung dari pesanan <strong>berstatus Selesai</strong>. Uang Cair &amp;
         Profit HPP (Nett) pakai nilai <strong>AKTUAL dari Income Report yang sudah di-match</strong> (bukan estimasi nilai
         pesanan) — pesanan Selesai yang belum ketemu match-nya (lihat Menu Keuangan &amp; Rekonsiliasi) belum ikut dihitung
         di sini. Profit Agen = (Harga Katalog × 50%) − HPP, direalisasi juga saat Belum Cair, independen dari uang cair
@@ -112,7 +112,7 @@ export default function LaporanProfitPage() {
           { header: "Produk", render: (r) => <span className="block max-w-[200px] truncate">{r.name}</span> },
           { header: "Unit Keluar", render: (r) => formatNumber(r.qty) },
           { header: "Kontribusi Omzet", render: (r) => `${((r.share ?? 0) * 100).toFixed(1)}%` },
-          { header: "Omzet Bruto", render: (r) => formatRupiah(r.omzet) },
+          { header: "Omzet Pesanan", render: (r) => formatRupiah(r.omzet) },
           { header: UANG_CAIR_PESANAN_LABEL, render: (r) => formatRupiah(r.uangCair) },
           // T-013 temuan QA 2: produk yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan "Rp 0").
           { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) },

@@ -150,7 +150,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Total Omzet Bruto" value={rp(summary?.totalOmzetBruto)} />
+        <StatCard label="Total Omzet Pesanan" value={rp(summary?.totalOmzetBruto)} />
         {/* T-013 batch 13 (tugas X): semua saldo masuk Income Report periode ini + rincian (a)/(b)/(c). */}
         <StatCard
           label={UANG_CAIR_LABEL}

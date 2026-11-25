@@ -5,7 +5,7 @@ import { parseShopeeFile } from "@/lib/parseShopee";
 import { classifyStatus, DEFAULT_STATUS_RULES, type StatusRule } from "@/lib/classification";
 import { calcProfitHpp, calcProfitAgen } from "@/lib/profit";
 import { getPeriodForDateWib } from "@/lib/period";
-import { canApplyStatus, createLineMatcher, chunk } from "@/lib/uploadUpsert";
+import { canApplyStatus, createLineMatcher, chunk, lineOmzet } from "@/lib/uploadUpsert";
 import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -151,7 +151,10 @@ export async function POST(req: NextRequest) {
 
     // Penyesuaian nilai berdasarkan status
     const isCancel = status === OrderStatus.CANCEL;
-    const grossOmzet = isCancel ? 0 : row.totalPayment;
+    // T-013 batch 14: omzet BARIS = Subtotal Pesanan baris itu (cadangan Harga x Jumlah). BUKAN Total
+    // Pembayaran -- itu nilai seluruh pesanan yang diulang di tiap baris (pesanan 3 baris jadi 3x).
+    // Jalur update di bawah membandingkan & menulis nilai ini, jadi upload ulang memperbaiki baris lama.
+    const grossOmzet = isCancel ? 0 : lineOmzet(row);
     const netSettlement = isCancel ? 0 : row.netSettlementRaw;
 
     // HPP: snapshot yang sudah terisi (> 0) di baris lama TIDAK diganti; kalau masih 0 dan produk

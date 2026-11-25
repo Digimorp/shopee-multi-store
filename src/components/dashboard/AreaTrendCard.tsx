@@ -63,7 +63,7 @@ export default function AreaTrendCard({
     <div className="card p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-neutral-500">Total Omzet Bruto</p>
+          <p className="text-xs font-medium text-neutral-500">Total Omzet Pesanan</p>
           <p className="mt-1 text-3xl font-bold tabular-nums text-neutral-950">{summary ? formatRupiah(totalOmzet) : "-" /* T-013 temuan QA 8: tanpa data -> "-", bukan "Rp 0" */}</p>
           <p className="mt-0.5 text-xs text-neutral-400">Periode {periodLabel}</p>
         </div>

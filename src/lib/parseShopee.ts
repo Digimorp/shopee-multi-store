@@ -11,7 +11,7 @@ export type ParsedRow = {
   returnedQty: number;
   unitPrice: number; // Harga Setelah Diskon (fallback: Harga Awal)
   subtotal: number; // Subtotal Pesanan (nilai baris ini)
-  totalPayment: number; // Total Pembayaran (nilai pesanan; berulang di tiap baris utk multi-item)
+  totalPayment: number; // Total Pembayaran (nilai pesanan; berulang di tiap baris utk multi-item) -- BUKAN omzet baris
   netSettlementRaw: number; // estimasi uang cair — dari file kalau ada, else Subtotal
   adminFee: number;
   rawStatus: string; // teks "Status Pesanan" apa adanya — diklasifikasi di upload route
@@ -157,10 +157,14 @@ export function parseShopeeFile(buffer: Buffer): ParseResult {
       // Estimasi uang cair: kalau file punya kolom penghasilan (format lama) pakai itu;
       // kalau tidak (skema resmi baru) pakai Subtotal Pesanan sebagai estimasi kasar —
       // angka AKTUAL nanti datang dari Income Report lewat modul Rekonsiliasi.
+      // T-013 batch 14: Total Pembayaran = nilai SELURUH pesanan (diulang di tiap baris produk), jadi
+      // tidak boleh jadi nilai baris. Cadangan: Subtotal baris -> Harga x Jumlah -> baru Total Pembayaran.
       const netSettlementRaw = map.netSettlement
         ? parseIdNumber(row[map.netSettlement])
-        : subtotal || totalPayment || unitPrice * qty;
+        : subtotal || unitPrice * qty || totalPayment;
 
+      // Tanpa kolom biaya admin: dihitung per PESANAN lalu dialokasikan per baris (lihat
+      // allocateDerivedAdminFee di bawah); nilai sementara per baris diisi di sini.
       const adminFee = map.adminFee
         ? parseIdNumber(row[map.adminFee])
         : Math.max(0, totalPayment - netSettlementRaw);
@@ -199,5 +203,32 @@ export function parseShopeeFile(buffer: Buffer): ParseResult {
     }
   });
 
+  if (!map.adminFee) allocateDerivedAdminFee(rows);
   return { rows, errors, totalRows: json.length };
+}
+
+/**
+ * T-013 batch 14: biaya admin turunan (Total Pembayaran - estimasi cair) untuk pesanan multi-baris.
+ * Kalau Total Pembayaran SAMA di semua baris satu pesanan, itu nilai pesanan yang diulang -> biaya
+ * dihitung SEKALI per pesanan (Total Pembayaran - jumlah estimasi cair semua baris) lalu dibagi ke
+ * baris proporsional estimasi cairnya (rata kalau semuanya 0). Pesanan 1 baris, atau file yang
+ * Total Pembayaran-nya memang per baris (nilainya beda-beda), tidak diubah.
+ */
+export function allocateDerivedAdminFee(rows: ParsedRow[]): void {
+  const byOrder = new Map<string, ParsedRow[]>();
+  for (const r of rows) {
+    const list = byOrder.get(r.orderSn);
+    if (list) list.push(r);
+    else byOrder.set(r.orderSn, [r]);
+  }
+  for (const lines of byOrder.values()) {
+    if (lines.length < 2) continue;
+    const tp = lines[0].totalPayment;
+    if (!lines.every((l) => l.totalPayment === tp)) continue;
+    const net = lines.reduce((s, l) => s + l.netSettlementRaw, 0);
+    const orderFee = Math.max(0, tp - net);
+    for (const l of lines) {
+      l.adminFee = net > 0 ? (orderFee * l.netSettlementRaw) / net : orderFee / lines.length;
+    }
+  }
 }

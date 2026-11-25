@@ -254,7 +254,7 @@ export default function RekonsiliasiPage() {
           <>
             <div className="mb-4 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
               <SummaryCard label="Jumlah Transaksi" value={String(cashflow.summary?.count ?? 0)} />
-              <SummaryCard label="Total Omzet Bruto" value={formatRupiah(cashflow.summary?.totalGross ?? 0)} />
+              <SummaryCard label="Total Omzet Pesanan" value={formatRupiah(cashflow.summary?.totalGross ?? 0)} />
               <SummaryCard label="Total Nilai — ESTIMASI" value={formatRupiah(cashflow.summary?.totalNet ?? 0)} />
               <SummaryCard
                 tone="success"

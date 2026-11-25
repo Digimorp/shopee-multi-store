@@ -99,7 +99,7 @@ export default function OrderEditModal({
           </select>
           <input
             type="number"
-            placeholder="Omzet Bruto"
+            placeholder="Omzet Pesanan"
             value={form.grossOmzet}
             onChange={(e) => setForm({ ...form, grossOmzet: e.target.value })}
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm"

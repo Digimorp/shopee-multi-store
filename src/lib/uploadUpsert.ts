@@ -116,6 +116,14 @@ export function createLineMatcher<T extends ExistingLine>(existing: T[]) {
   };
 }
 
+/**
+ * T-013 batch 14: omzet satu BARIS pesanan = Subtotal Pesanan baris itu; kalau 0/tidak ada -> Harga x
+ * Jumlah. Total Pembayaran TIDAK dipakai (nilai seluruh pesanan, diulang di tiap baris produk).
+ */
+export function lineOmzet(row: { subtotal: number; unitPrice: number; qty: number }): number {
+  return row.subtotal > 0 ? row.subtotal : Math.max(0, row.unitPrice * row.qty);
+}
+
 /** Bagi daftar jadi potongan (untuk query `in` yang panjang). */
 export function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];

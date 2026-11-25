@@ -79,7 +79,7 @@ export default function PerformaTokoPage() {
           { header: "Toko", render: (r) => r.toko },
           { header: "Order", render: (r) => formatNumber(r.order) },
           { header: "Unit Keluar", render: (r) => formatNumber(r.unitKeluar) },
-          { header: "Omzet Bruto", render: (r) => formatRupiah(r.omzet) },
+          { header: "Omzet Pesanan", render: (r) => formatRupiah(r.omzet) },
           // T-013 batch 13: per toko tetap berbasis pesanan periode ini (basis profit), label diperjelas.
           { header: "Uang Cair Pesanan Periode Ini", render: (r) => formatRupiah(r.uangCair) },
           { header: "Mengambang", render: (r) => formatRupiah(r.uangMengambang) },

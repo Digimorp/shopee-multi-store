@@ -55,7 +55,7 @@ export const GET = withPeriodError(async (req: NextRequest) => {
   // payout-nya digabung -> dialokasikan proporsional per baris SKU lewat allocateActual().
   const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(await reconcile({ storeIds, from, to }));
 
-  // Unit Keluar/Omzet Bruto = HANYA status Selesai (barang benar-benar laku, sama seperti
+  // Unit Keluar/Omzet Pesanan = HANYA status Selesai (barang benar-benar laku, sama seperti
   // Analisis Barang Keluar dulu). Profit Agen tetap dari SELESAI + PENDING_SETTLEMENT dan
   // independen dari uang cair (benchmark harga agen, bukan payout riil — lihat src/lib/profit.ts).
   // Kunci grup pakai productGroupKey (productId -> sku -> nama produk), BUKAN sku mentah —

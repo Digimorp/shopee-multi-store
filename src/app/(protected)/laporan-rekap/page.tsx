@@ -70,7 +70,7 @@ export default function LaporanRekapPage() {
           rows={rows}
           columns={[
             { header: "Periode Cut-Off", render: (r) => r.label },
-            { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
+            { header: "Omzet Pesanan", render: (r) => formatRupiah(r.omzet) },
             { header: "Uang Cair (semua saldo masuk)", render: (r) => <UangCairCell r={r} /> },
             { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) }, // T-013 temuan QA 2
             {
@@ -94,7 +94,7 @@ export default function LaporanRekapPage() {
           rows={rows}
           columns={[
             { header: "Tahun", render: (r) => r.year },
-            { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
+            { header: "Omzet Pesanan", render: (r) => formatRupiah(r.omzet) },
             { header: "Uang Cair (semua saldo masuk)", render: (r) => <UangCairCell r={r} /> },
             { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) }, // T-013 temuan QA 2
           ]}

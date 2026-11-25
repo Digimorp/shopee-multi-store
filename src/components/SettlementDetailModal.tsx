@@ -84,7 +84,7 @@ export default function SettlementDetailModal({
                 <tr>
                   <th className="px-3 py-2 font-semibold">Produk</th>
                   <th className="px-3 py-2 text-right font-semibold">Qty</th>
-                  <th className="px-3 py-2 text-right font-semibold">Omzet Bruto</th>
+                  <th className="px-3 py-2 text-right font-semibold">Omzet Pesanan</th>
                   <th className="px-3 py-2 text-right font-semibold">Uang Cair</th>
                   <th className="px-3 py-2 text-right font-semibold">Profit HPP</th>
                   <th className="px-3 py-2 text-right font-semibold">Profit Agen</th>
