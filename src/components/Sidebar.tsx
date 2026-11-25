@@ -6,16 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/icons";
 import { useSidebar } from "@/components/SidebarContext";
-import { MENU, SETTINGS_MENU, isNavActive } from "@/components/navConfig";
-
-// Label pemisah grup — hanya tampil di drawer layar sempit. Di rail desktop diganti garis tipis.
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="px-3 pb-1.5 pt-7 text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-muted lg:hidden">
-      {children}
-    </p>
-  );
-}
+import { menuForRole, hrefWithFilter, isNavActive } from "@/components/navConfig";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -32,8 +23,10 @@ export default function Sidebar() {
     setOpen(false);
   }, [pathname, setOpen]);
 
-  const qs = searchParams.toString();
-  const withQs = (href: string) => (qs ? `${href}?${qs}` : href);
+  // T-013 batch 15: hanya filter Toko + Periode yang terbawa saat pindah menu.
+  const withQs = (href: string) => hrefWithFilter(href, searchParams);
+  // Menu Owner (Pengaturan) baru tampil setelah sesi diketahui -- cegah flash untuk Admin Toko.
+  const items = menuForRole(sessionReady ? role : undefined);
 
   // >= lg: kotak ikon 44px di tengah rail. < lg (drawer): baris penuh ikon + label.
   const itemClass = (href: string) =>
@@ -86,33 +79,12 @@ export default function Sidebar() {
         </div>
 
         <nav aria-label="Menu utama" className="flex-1 space-y-1 overflow-y-auto px-3 py-4 lg:space-y-2 lg:px-0 lg:py-5">
-          {MENU.map((m) => (
+          {items.map((m) => (
             <Link key={m.href} href={withQs(m.href)} onClick={close} title={m.label} className={itemClass(m.href)}>
               <Icon name={m.icon} size={20} className="shrink-0" />
               <span className="min-w-0 leading-snug lg:sr-only">{m.label}</span>
             </Link>
           ))}
-
-          {!sessionReady ? (
-            <div className="space-y-2 px-3 pt-6 lg:px-0">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="h-8 animate-pulse rounded-full bg-sidebar-hover lg:mx-auto lg:h-11 lg:w-11 lg:rounded-xl" />
-              ))}
-            </div>
-          ) : (
-            role === "OWNER" && (
-              <>
-                <SectionLabel>Pengaturan</SectionLabel>
-                <hr className="mx-auto my-3 hidden w-6 border-sidebar-border lg:block" />
-                {SETTINGS_MENU.map((m) => (
-                  <Link key={m.href} href={withQs(m.href)} onClick={close} title={m.label} className={itemClass(m.href)}>
-                    <Icon name={m.icon} size={20} className="shrink-0" />
-                    <span className="min-w-0 leading-snug lg:sr-only">{m.label}</span>
-                  </Link>
-                ))}
-              </>
-            )
-          )}
         </nav>
       </aside>
     </>

@@ -1,0 +1,203 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import DataTable from "@/components/DataTable";
+import SummaryCard from "@/components/SummaryCard";
+import StatusBadge from "@/components/StatusBadge";
+import ExportButtons from "@/components/ExportButtons";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import OrderEditModal, { type OrderEditRow } from "@/components/OrderEditModal";
+import { formatDate, formatRupiah, formatNumber } from "@/lib/format";
+import { returLoss } from "@/lib/returLoss";
+
+export default function ReturCancelPage() {
+  const searchParams = useSearchParams();
+  const qs = searchParams.toString();
+  const [tab, setTab] = useState<"cancel" | "retur">("retur");
+  const [orders, setOrders] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<any>(null);
+  const [editing, setEditing] = useState<OrderEditRow | null>(null);
+  const [deleting, setDeleting] = useState<any | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  const load = useCallback(() => {
+    const status = tab === "cancel" ? "CANCEL" : "RETUR";
+    fetch(`/api/orders?${qs}&status=${status}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setOrders(d.orders ?? []);
+        setTotal(d.total ?? 0);
+      });
+    fetch(`/api/reports/returns?${qs}`)
+      .then((r) => r.json())
+      .then((d) => setSummary(d.summary ?? null));
+  }, [qs, tab]);
+
+  useEffect(load, [load]);
+
+  async function handleAction(id: string, condition: "GOOD" | "DAMAGED") {
+    await fetch(`/api/orders/${id}/retur`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ condition }),
+    });
+    load();
+  }
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    const res = await fetch(`/api/orders/${deleting.id}`, { method: "DELETE" });
+    setDeleteBusy(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setDeleteError(d.error ?? "Gagal menghapus pesanan.");
+      return;
+    }
+    setDeleting(null);
+    load();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-bold text-gray-900">Analisis Retur & Pembatalan</h1>
+        <ExportButtons report="retur" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <SummaryCard tone="danger" label="Unit Batal" value={formatNumber(summary?.batal?.unit ?? 0)} />
+        <SummaryCard tone="warning" label="Unit Retur" value={formatNumber(summary?.retur?.unit ?? 0)} />
+        <SummaryCard tone="success" label="Retur Layak Restok (unit)" value={formatNumber(summary?.layakRestok?.unit ?? 0)} />
+        <SummaryCard tone="danger" label="Retur Rusak (unit)" value={formatNumber(summary?.rusak?.unit ?? 0)} />
+        <SummaryCard tone="danger" label="Beban Kerugian HPP" value={formatRupiah(summary?.rusak?.kerugianHpp ?? 0)} />
+      </div>
+      {summary?.rusak?.tanpaHpp?.baris > 0 && (
+        <p className="inline-block rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          {formatNumber(summary.rusak.tanpaHpp.baris)} baris retur rusak tanpa HPP (kerugian tidak dihitung)
+        </p>
+      )}
+      {summary?.belumDiklasifikasi?.unit > 0 && (
+        <p className="text-xs text-amber-700">
+          {formatNumber(summary.belumDiklasifikasi.unit)} unit retur belum diklasifikasi (Bagus/Rusak) — tandai di tabel
+          bawah agar kerugian HPP akurat.
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => setTab("retur")}
+          className={`tab-pill ${tab === "retur" ? "tab-pill-active" : "tab-pill-idle"}`}
+        >
+          Retur (Pengembalian)
+        </button>
+        <button
+          onClick={() => setTab("cancel")}
+          className={`tab-pill ${tab === "cancel" ? "tab-pill-active" : "tab-pill-idle"}`}
+        >
+          Cancel (Batal)
+        </button>
+      </div>
+
+      <p className="text-xs text-gray-500">
+        Menampilkan {orders.length} dari {total} transaksi {tab === "cancel" ? "batal" : "retur"} pada periode & toko terpilih.
+      </p>
+
+      <DataTable
+        rowKey={(r: any) => r.id}
+        rows={orders}
+        columns={[
+          { header: "Tanggal", render: (r) => formatDate(r.orderCreatedAt) },
+          { header: "Toko", render: (r) => r.store.code },
+          { header: "No. Pesanan", render: (r) => r.orderSn },
+          { header: "SKU", render: (r) => r.sku },
+          { header: "Produk", render: (r) => r.productName },
+          { header: "Qty", render: (r) => r.qty },
+          { header: "Status", render: (r) => <StatusBadge status={r.status} /> },
+          ...(tab === "retur"
+            ? [
+                {
+                  header: "Kondisi Barang",
+                  render: (r: any) =>
+                    r.returCondition ? (
+                      <span className={r.returCondition === "GOOD" ? "text-success-text" : "text-red-600"}>
+                        {r.returCondition === "GOOD" ? "Bagus - Restok" : "Rusak/Cacat"}
+                      </span>
+                    ) : (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => handleAction(r.id, "GOOD")}
+                          className="btn-chip btn-chip-success"
+                        >
+                          Restok Gudang
+                        </button>
+                        <button
+                          onClick={() => handleAction(r.id, "DAMAGED")}
+                          className="btn-chip btn-chip-danger"
+                        >
+                          Barang Rusak/Cacat
+                        </button>
+                      </div>
+                    ),
+                },
+                {
+                  header: "Beban Kerugian HPP",
+                  // T-013 butir 16: retur rusak tanpa HPP -> "-" (kerugian tidak diketahui), bukan Rp 0.
+                  render: (r: any) => {
+                    if (r.returCondition !== "DAMAGED") return "-";
+                    const v = returLoss(r);
+                    return v == null ? "-" : formatRupiah(v);
+                  },
+                },
+              ]
+            : []),
+          {
+            header: "Aksi",
+            render: (r: any) => (
+              <div className="flex gap-1.5">
+                <button onClick={() => setEditing(r)} className="btn-chip">
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    setDeleting(r);
+                    setDeleteError("");
+                  }}
+                  className="btn-chip btn-chip-danger"
+                >
+                  Hapus
+                </button>
+              </div>
+            ),
+          },
+        ]}
+      />
+
+      {editing && (
+        <OrderEditModal
+          order={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            load();
+          }}
+        />
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Hapus pesanan ${deleting.orderSn}?`}
+          message="Aksi ini bisa dibatalkan lewat log admin (data tidak dihapus permanen dari database, hanya disembunyikan dari laporan)."
+          strongWarning={deleteError || undefined}
+          busy={deleteBusy}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
+        />
+      )}
+    </div>
+  );
+}

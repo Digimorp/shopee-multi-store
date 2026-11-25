@@ -11,7 +11,8 @@ import { fitTabs } from "@/lib/fitTabs";
 const TAB_CLS = "whitespace-nowrap rounded-full text-center font-medium px-4 py-2 text-[13px]";
 const MORE_LABEL = "Lainnya";
 // T-013 butir 12b (keputusan Founder): tab ini selalu tampil di baris menu, tidak pernah masuk "Lainnya".
-const PINNED_KEYS = new Set(["/retur-cancel"]); // Retur & Pembatalan (navConfig)
+// T-013 batch 15: Retur & Batal kini tab di halaman Bulanan -> yang di-pin menu Bulanan.
+const PINNED_KEYS = new Set(["/bulanan"]);
 
 // useLayoutEffect di browser (ukur sebelum paint), useEffect saat SSR (hindari warning).
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;

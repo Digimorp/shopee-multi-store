@@ -8,7 +8,7 @@ import { formatPeriodMonthLabel, getCurrentPeriodMonth, getPeriodForMonth } from
 import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
 import TopNavTabs from "@/components/TopNavTabs";
-import { MENU, isNavActive } from "@/components/navConfig";
+import { menuForRole, hrefWithFilter, isNavActive } from "@/components/navConfig";
 import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
 
@@ -109,12 +109,12 @@ export default function TopBar() {
     .join("")
     .toUpperCase();
 
-  // Tab navigasi = menu utama yang sama dengan rail ikon (navConfig), filter toko/periode ikut terbawa.
-  const qs = searchParams.toString();
-  const withQs = (href: string) => (qs ? `${href}?${qs}` : href);
-  const tabItems = MENU.map((m) => ({ key: m.href, label: m.tabLabel, href: withQs(m.href) }));
-  // Halaman di luar menu utama (mis. /settings/*) -> tidak ada tab aktif, pill disembunyikan.
-  const activeTab = MENU.find((m) => isNavActive(pathname, m.href))?.href ?? null;
+  // Tab navigasi = menu utama yang sama dengan rail ikon (navConfig), per peran.
+  // T-013 batch 15: hanya filter Toko + Periode yang terbawa (bukan tab/param halaman lain).
+  const withQs = (href: string) => hrefWithFilter(href, searchParams);
+  const menu = menuForRole(sessionLoading ? undefined : role);
+  const tabItems = menu.map((m) => ({ key: m.href, label: m.label, href: withQs(m.href) }));
+  const activeTab = menu.find((m) => isNavActive(pathname, m.href))?.href ?? null;
 
   const fieldClass =
     "rounded-full border-0 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-300";
@@ -202,10 +202,10 @@ export default function TopBar() {
         ) : stores.length === 0 ? (
           role === "OWNER" ? (
             <a
-              href="/settings/stores"
+              href="/pengaturan?tab=toko"
               className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 hover:bg-amber-100"
             >
-              Belum ada toko, tambahkan di Master Data Toko
+              Belum ada toko, tambahkan di Pengaturan &gt; Toko
             </a>
           ) : (session?.user as any)?.invalid ? null : (
             <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">

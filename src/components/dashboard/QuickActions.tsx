@@ -24,12 +24,12 @@ export default function QuickActions({ selisihCount }: { selisihCount?: number }
   const items: { href: string; icon: IconName; title: string; description: string }[] = [
     { href: hrefTo("/input"), icon: "box", title: "Lihat Order", description: "Impor & kelola data pesanan" },
     {
-      href: hrefTo("/rekonsiliasi", { reconTab: "SELISIH" }),
+      href: hrefTo("/bulanan", { tab: "uang-cair", reconTab: "SELISIH" }),
       icon: "scale",
       title: "Butuh Perhatian",
       description: selisihText(selisihCount),
     },
-    { href: hrefTo("/laporan-profit"), icon: "fileText", title: "Laporan", description: "Profit & barang keluar" },
+    { href: hrefTo("/bulanan", { tab: "profit" }), icon: "fileText", title: "Laporan", description: "Profit & barang keluar" },
   ];
 
   return (

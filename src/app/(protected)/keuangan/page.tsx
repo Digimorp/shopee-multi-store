@@ -1,16 +1,12 @@
 import { redirect } from "next/navigation";
+import { legacyRedirectUrl } from "@/components/navConfig";
 
-// Halaman "Keuangan & Cashflow" sudah digabung ke /rekonsiliasi (Keuangan & Rekonsiliasi) —
-// redirect ini biar link lama/bookmark tidak 404, sambil mempertahankan query filter.
-export default function KeuanganRedirect({
+// T-013 batch 15: route lama tetap hidup sebagai redirect ke halaman bertab (query filter ikut).
+// Tujuan: lihat LEGACY_ROUTES["/keuangan"] di src/components/navConfig.ts.
+export default function LegacyRedirect({
   searchParams,
 }: {
   searchParams: Record<string, string | string[] | undefined>;
 }) {
-  const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(searchParams)) {
-    if (typeof v === "string") qs.set(k, v);
-  }
-  const suffix = qs.toString();
-  redirect(suffix ? `/rekonsiliasi?${suffix}` : "/rekonsiliasi");
+  redirect(legacyRedirectUrl("/keuangan", searchParams));
 }
