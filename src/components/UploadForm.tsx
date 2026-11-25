@@ -69,9 +69,15 @@ export default function UploadForm({
     }
   }
 
+  // T-013 batch 12: upload pesanan idempoten -> hitungan baru / diperbarui / tidak berubah /
+  // dilewati (periode terkunci). Respons lama tanpa `created` tetap memakai teks lama.
   const defaultResultText = (d: any) =>
-    `Berhasil: ${d.success ?? d.orderRows ?? 0} dari ${d.totalRows ?? 0} baris diproses.` +
-    (d.skippedOrFailed > 0 ? ` ${d.skippedOrFailed} baris dilewati/gagal.` : "");
+    typeof d.created === "number"
+      ? `Dari ${d.totalRows ?? 0} baris: ${d.created} baru, ${d.updated ?? 0} diperbarui, ${d.unchanged ?? 0} tidak berubah, ${d.skippedLocked ?? 0} dilewati (periode terkunci).` +
+        (d.statusKept > 0 ? ` ${d.statusKept} baris membawa status lebih lama dari data tersimpan; status tidak diturunkan.` : "") +
+        (d.parseErrors?.length ? ` ${d.parseErrors.length} baris tidak terbaca.` : "")
+      : `Berhasil: ${d.success ?? d.orderRows ?? 0} dari ${d.totalRows ?? 0} baris diproses.` +
+        (d.skippedOrFailed > 0 ? ` ${d.skippedOrFailed} baris dilewati/gagal.` : "");
 
   if (stores.length === 0) {
     return (

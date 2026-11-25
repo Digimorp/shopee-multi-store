@@ -5,6 +5,7 @@ import { parseShopeeFile } from "@/lib/parseShopee";
 import { classifyStatus, DEFAULT_STATUS_RULES, type StatusRule } from "@/lib/classification";
 import { calcProfitHpp, calcProfitAgen } from "@/lib/profit";
 import { getPeriodForDateWib } from "@/lib/period";
+import { canApplyStatus, createLineMatcher, chunk } from "@/lib/uploadUpsert";
 import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -76,7 +77,55 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  let success = 0;
+  // T-013 batch 12 (tugas W): upload IDEMPOTEN -- lihat src/lib/uploadUpsert.ts untuk identitas
+  // baris (storeId + orderSn + kunci baris produk) dan aturan status tidak boleh turun.
+  // Baris lama diambil SEKALI (per potongan 1000 No. Pesanan) lalu dicocokkan di memori.
+  const orderSns = [...new Set(rows.map((r) => r.orderSn))];
+  const existingLines = (
+    await Promise.all(
+      chunk(orderSns, 1000).map((part) =>
+        prisma.order.findMany({
+          where: { storeId, orderSn: { in: part }, deletedAt: null },
+          select: {
+            id: true,
+            orderSn: true,
+            sku: true,
+            productName: true,
+            rawRow: true,
+            qty: true,
+            status: true,
+            productId: true,
+            completedAt: true,
+            settlementDate: true,
+            grossOmzet: true,
+            netSettlement: true,
+            adminFee: true,
+            hppSnapshot: true,
+            catalogPriceSnapshot: true,
+            profitHpp: true,
+            profitAgen: true,
+          },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        })
+      )
+    )
+  ).flat();
+  const matcher = createLineMatcher(existingLines);
+
+  // Kunci periode: satu query per periode yang muncul di file (bukan per baris).
+  const lockCache = new Map<string, boolean>();
+  const isLocked = async (periodKey: string) => {
+    if (!lockCache.has(periodKey)) {
+      const lock = await prisma.periodLock.findUnique({ where: { periodKey } });
+      lockCache.set(periodKey, !!lock?.locked);
+    }
+    return lockCache.get(periodKey)!;
+  };
+
+  let created = 0;
+  let updated = 0;
+  let unchanged = 0;
+  let statusKept = 0; // bagian dari `unchanged`: file membawa status lebih rendah -> diabaikan
   let skippedLocked = 0;
 
   for (const row of rows) {
@@ -93,21 +142,29 @@ export async function POST(req: NextRequest) {
     // Skip baris di periode yang sudah dikunci. T-013 butir 19: periode dihitung dalam WIB (bukan jam
     // server) — key yang SAMA dipakai untuk cek kunci dan untuk periodKey yang disimpan.
     const periodInfo = getPeriodForDateWib(row.orderCreatedAt, cutoffDay);
-    const lock = await prisma.periodLock.findUnique({ where: { periodKey: periodInfo.key } });
-    if (lock?.locked) {
+    if (await isLocked(periodInfo.key)) {
       skippedLocked++;
       continue;
     }
+
+    const existing = matcher.match(row.orderSn, row.sku, row.productName, row.variationName);
 
     // Penyesuaian nilai berdasarkan status
     const isCancel = status === OrderStatus.CANCEL;
     const grossOmzet = isCancel ? 0 : row.totalPayment;
     const netSettlement = isCancel ? 0 : row.netSettlementRaw;
 
+    // HPP: snapshot yang sudah terisi (> 0) di baris lama TIDAK diganti; kalau masih 0 dan produk
+    // sekarang cocok dengan HPP > 0 di master, snapshot diisi dan profit dihitung ulang.
     const product = matchProduct(row);
-    const hppKnown = !!product && product.hpp > 0;
-    const hpp = hppKnown ? product!.hpp : 0; // 0 di sini = penanda "tidak diketahui", bukan HPP 0
-    const catalogPrice = product?.catalogPrice ?? 0;
+    const keepSnapshot = !!existing && existing.hppSnapshot > 0;
+    const hppKnown = keepSnapshot || (!!product && product.hpp > 0);
+    const hpp = keepSnapshot ? existing!.hppSnapshot : hppKnown ? product!.hpp : 0; // 0 = "tidak diketahui"
+    const catalogPrice = keepSnapshot
+      ? existing!.catalogPriceSnapshot
+      : product?.catalogPrice ?? existing?.catalogPriceSnapshot ?? 0;
+    const productId = keepSnapshot ? existing!.productId : product?.id ?? existing?.productId ?? null;
+    const qty = existing ? existing.qty : row.qty; // qty baris lama tidak diubah
     if (!hppKnown) {
       hppUnknownRows++;
       const key = product?.sku || row.sku || row.skuInduk || row.productName;
@@ -118,12 +175,54 @@ export async function POST(req: NextRequest) {
     // Profit HPP (Nett): butuh uang benar-benar cair -> SELESAI saja.
     // Profit Agen: benchmark harga agen, dianggap terealisasi saat barang sampai ke pembeli
     // -> SELESAI atau PENDING_SETTLEMENT. TRANSIT/RETUR/CANCEL = 0.
-    const profitHpp =
-      hppKnown && status === OrderStatus.SELESAI ? calcProfitHpp({ netSettlement, hpp, qty: row.qty }) : 0;
+    const profitHpp = hppKnown && status === OrderStatus.SELESAI ? calcProfitHpp({ netSettlement, hpp, qty }) : 0;
     const profitAgen =
       hppKnown && (status === OrderStatus.SELESAI || status === OrderStatus.PENDING_SETTLEMENT)
-        ? calcProfitAgen({ catalogPrice, hpp, qty: row.qty })
+        ? calcProfitAgen({ catalogPrice, hpp, qty })
         : 0;
+
+    if (existing) {
+      // Status tidak boleh turun (file lama tidak menimpa status yang lebih maju).
+      if (!canApplyStatus(existing.status, status)) {
+        unchanged++;
+        statusKept++;
+        continue;
+      }
+      const next = {
+        status,
+        completedAt: row.completedAt,
+        settlementDate: row.settlementDate,
+        grossOmzet,
+        netSettlement,
+        adminFee: row.adminFee,
+        hppSnapshot: hpp,
+        catalogPriceSnapshot: catalogPrice,
+        productId,
+        profitHpp,
+        profitAgen,
+      };
+      const t = (d: Date | null) => (d ? d.getTime() : null);
+      const same =
+        existing.status === next.status &&
+        t(existing.completedAt) === t(next.completedAt) &&
+        t(existing.settlementDate) === t(next.settlementDate) &&
+        existing.grossOmzet === next.grossOmzet &&
+        existing.netSettlement === next.netSettlement &&
+        existing.adminFee === next.adminFee &&
+        existing.hppSnapshot === next.hppSnapshot &&
+        existing.catalogPriceSnapshot === next.catalogPriceSnapshot &&
+        (existing.productId ?? null) === (next.productId ?? null) &&
+        existing.profitHpp === next.profitHpp &&
+        existing.profitAgen === next.profitAgen;
+      if (same) {
+        unchanged++;
+        continue;
+      }
+      // periodKey TIDAK diubah: tetap dari tanggal pesanan dibuat (WIB), sama seperti saat dibuat.
+      await prisma.order.update({ where: { id: existing.id }, data: { ...next, updatedById: user.id } });
+      updated++;
+      continue;
+    }
 
     await prisma.order.create({
       data: {
@@ -149,8 +248,10 @@ export async function POST(req: NextRequest) {
         rawRow: JSON.stringify(row.raw).slice(0, 4000),
       },
     });
-    success++;
+    created++;
   }
+  // successRows di UploadLog = baru + diperbarui.
+  const success = created + updated;
 
   // Peringatan HPP tidak diketahui — disimpan juga ke UploadLog supaya bisa dilihat lagi
   // setelah respons upload tertutup (GET /api/uploads). Pakai kolom aiCheckResult (Json) yang
@@ -187,6 +288,10 @@ export async function POST(req: NextRequest) {
     uploadLogId: uploadLog.id,
     totalRows,
     success,
+    created,
+    updated,
+    unchanged,
+    statusKept,
     skippedLocked,
     skippedOrFailed: totalRows - success,
     parseErrors: errors.slice(0, 20),

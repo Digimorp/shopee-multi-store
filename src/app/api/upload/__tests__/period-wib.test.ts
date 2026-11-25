@@ -40,7 +40,7 @@ vi.mock("@/lib/prisma", () => ({
     store: { findUnique: storeFindUnique },
     uploadLog: { create: uploadLogCreate, update: uploadLogUpdate },
     periodLock: { findUnique: periodLockFindUnique },
-    order: { create: orderCreate },
+    order: { create: orderCreate, findMany: async () => [] }, // batch 12: belum ada baris lama
   },
 }));
 
