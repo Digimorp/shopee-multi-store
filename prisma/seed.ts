@@ -1,6 +1,8 @@
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { DEFAULT_STATUS_RULES } from "../src/lib/classification";
+import { resolveSeedPassword } from "../src/lib/seedPassword";
+import path from "node:path";
 
 const prisma = new PrismaClient();
 
@@ -22,7 +24,15 @@ const STORE_NAMES = [
 ];
 
 async function main() {
-  const password = await bcrypt.hash("password123", 10);
+  // T-013 batch 11: password tidak literal -- SEED_OWNER_PASSWORD, atau seed_password di
+  // .akun-lokal.txt, atau acak baru yang ditulis ke file itu. Tidak pernah dicetak ke konsol.
+  const seedPw = resolveSeedPassword({ env: process.env, accountFile: path.join(process.cwd(), ".akun-lokal.txt") });
+  const password = await bcrypt.hash(seedPw.password, 10);
+  console.log(
+    seedPw.source === "env"
+      ? "Password akun seed: dari env SEED_OWNER_PASSWORD."
+      : "Password akun seed: lihat .akun-lokal.txt (kunci seed_password)."
+  );
 
   // 14 toko
   const stores = [];
