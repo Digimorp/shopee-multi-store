@@ -6,6 +6,7 @@ import DataTable from "@/components/DataTable";
 import ExportButtons from "@/components/ExportButtons";
 import TanpaHppNote, { sumTanpaHpp } from "@/components/TanpaHppNote";
 import { formatRupiah } from "@/lib/format";
+import { formatRupiahOrDash, shownProfitHpp } from "@/lib/hppDisplay";
 
 export default function LaporanRekapPage() {
   const searchParams = useSearchParams();
@@ -58,7 +59,7 @@ export default function LaporanRekapPage() {
             { header: "Periode Cut-Off", render: (r) => r.label },
             { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
             { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
-            { header: "Profit HPP", render: (r) => formatRupiah(r.profitHpp) },
+            { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) }, // T-013 temuan QA 2
             {
               header: "Selisih Omzet vs Bulan Lalu",
               // bulan tepat sebelumnya tidak ada data -> "-" (bukan 0%)
@@ -82,7 +83,7 @@ export default function LaporanRekapPage() {
             { header: "Tahun", render: (r) => r.year },
             { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
             { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
-            { header: "Profit HPP", render: (r) => formatRupiah(r.profitHpp) },
+            { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) }, // T-013 temuan QA 2
           ]}
         />
       )}

@@ -7,6 +7,7 @@ import SummaryCard from "@/components/SummaryCard";
 import ExportButtons from "@/components/ExportButtons";
 import TanpaHppNote from "@/components/TanpaHppNote";
 import { formatRupiah, formatNumber } from "@/lib/format";
+import { formatRupiahOrDash, shownProfitHpp, shownProfitAgen, shownSelisih } from "@/lib/hppDisplay";
 
 type SortKey = "profitHpp" | "qty";
 
@@ -25,6 +26,15 @@ export default function LaporanProfitPage() {
     () => [...rows].sort((a, b) => (sortKey === "profitHpp" ? b.profitHpp - a.profitHpp : b.qty - a.qty)),
     [rows, sortKey]
   );
+  // T-013 temuan QA 2: total yang HPP-nya seluruhnya tidak diketahui tampil "-" (bukan "Rp 0").
+  const s = data.summary ?? {};
+  const total = {
+    profitHpp: s.totalProfitHpp ?? 0,
+    uangCair: s.totalUangCair ?? 0,
+    tanpaHpp: s.tanpaHpp,
+    profitAgen: s.totalProfitAgen ?? 0,
+    selisih: s.selisih ?? 0,
+  };
 
   return (
     <div className="space-y-4">
@@ -52,17 +62,17 @@ export default function LaporanProfitPage() {
         <SummaryCard tone="success" label="Total Uang Cair" value={formatRupiah(data.summary?.totalUangCair ?? 0)} />
         <SummaryCard
           label="Total Profit HPP (Nett)"
-          value={formatRupiah(data.summary?.totalProfitHpp ?? 0)}
+          value={formatRupiahOrDash(shownProfitHpp(total))}
           negative={(data.summary?.totalProfitHpp ?? 0) < 0}
         />
         <SummaryCard
           label="Total Profit Agen"
-          value={formatRupiah(data.summary?.totalProfitAgen ?? 0)}
+          value={formatRupiahOrDash(shownProfitAgen(total))}
           negative={(data.summary?.totalProfitAgen ?? 0) < 0}
         />
         <SummaryCard
           label="Selisih Agen vs Riil"
-          value={formatRupiah(data.summary?.selisih ?? 0)}
+          value={formatRupiahOrDash(shownSelisih(total))}
           negative={(data.summary?.selisih ?? 0) < 0}
         />
       </div>
@@ -93,13 +103,16 @@ export default function LaporanProfitPage() {
           { header: "Kontribusi Omzet", render: (r) => `${((r.share ?? 0) * 100).toFixed(1)}%` },
           { header: "Omzet Bruto", render: (r) => formatRupiah(r.omzet) },
           { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
-          { header: "Profit HPP", render: (r) => formatRupiah(r.profitHpp) },
-          { header: "Profit Agen", render: (r) => formatRupiah(r.profitAgen) },
+          // T-013 temuan QA 2: produk yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan "Rp 0").
+          { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) },
+          { header: "Profit Agen", render: (r) => formatRupiahOrDash(shownProfitAgen(r)) },
           {
             header: "Selisih",
-            render: (r) => (
-              <span className={r.selisih >= 0 ? "text-success-text" : "text-red-600"}>{formatRupiah(r.selisih)}</span>
-            ),
+            render: (r) => {
+              const v = shownSelisih(r);
+              if (typeof v === "string") return <span className="text-gray-400">{v}</span>;
+              return <span className={v >= 0 ? "text-success-text" : "text-red-600"}>{formatRupiah(v)}</span>;
+            },
           },
         ]}
       />

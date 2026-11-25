@@ -14,6 +14,7 @@ import {
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { returLoss, sumReturLoss } from "@/lib/returLoss";
 import { buildRecap } from "@/lib/recap";
+import { shownProfitHpp, shownProfitAgen, shownSelisih } from "@/lib/hppDisplay";
 
 export type ColKind = "text" | "int" | "money" | "pct";
 export type ReportColumn = { key: string; header: string; width: number; align?: "left" | "right"; kind?: ColKind };
@@ -42,6 +43,8 @@ function tanpaHppValue(t: TanpaHpp): string {
 const rupiah = (n: number) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const int = (n: number) => Math.round(n || 0).toLocaleString("id-ID");
 const ymd = (d: Date) => d.toISOString().slice(0, 10);
+/** T-013 temuan QA 2: nilai ringkasan "-" (HPP tidak diketahui) tetap teks, angka -> rupiah. */
+const rupiahOrDash = (v: number | string) => (typeof v === "string" ? v : rupiah(v));
 
 /** Format 1 sel untuk output PDF/teks berdasarkan kind kolom. */
 export function formatCell(value: any, kind: ColKind = "text"): string {
@@ -157,7 +160,7 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
     bySku.set(key, cur);
   }
   const totalOmzet = Array.from(bySku.values()).reduce((s, r) => s + r.omzet, 0);
-  const rows = Array.from(bySku.values())
+  const numRows = Array.from(bySku.values())
     .map(({ hpp, agen, ...r }) => ({
       ...r,
       uangCair: hpp.uangCair,
@@ -168,10 +171,19 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
       share: totalOmzet ? r.omzet / totalOmzet : 0,
     }))
     .sort((a, b) => b.profitHpp - a.profitHpp);
-  const tQty = rows.reduce((s, r) => s + r.qty, 0);
-  const tUangCair = rows.reduce((s, r) => s + r.uangCair, 0);
-  const tHpp = rows.reduce((s, r) => s + r.profitHpp, 0);
-  const tAgen = rows.reduce((s, r) => s + r.profitAgen, 0);
+  const tQty = numRows.reduce((s, r) => s + r.qty, 0);
+  const tUangCair = numRows.reduce((s, r) => s + r.uangCair, 0);
+  const tHpp = numRows.reduce((s, r) => s + r.profitHpp, 0);
+  const tAgen = numRows.reduce((s, r) => s + r.profitAgen, 0);
+  // T-013 temuan QA 2: angka & urutan dihitung dari numRows; yang dikirim ke Excel/PDF memakai
+  // nilai tampilan -- produk yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan 0 / "Rp 0").
+  const rows = numRows.map((r) => ({
+    ...r,
+    profitHpp: shownProfitHpp(r),
+    profitAgen: shownProfitAgen(r),
+    selisih: shownSelisih(r),
+  }));
+  const total = { profitHpp: tHpp, uangCair: tUangCair, tanpaHpp: sumTanpaHpp(numRows), profitAgen: tAgen, selisih: tAgen - tHpp };
 
   return {
     title: "Laporan Profit & Barang Keluar per SKU",
@@ -191,10 +203,10 @@ export async function datasetProfit(f: ReportFilter): Promise<ReportDataset> {
       { label: "Total Unit Keluar", value: int(tQty) },
       { label: "Jumlah SKU Terjual", value: int(rows.length) },
       { label: "Total Uang Cair", value: rupiah(tUangCair) },
-      { label: "Total Profit HPP (Nett)", value: rupiah(tHpp) },
-      { label: "Total Profit Agen", value: rupiah(tAgen) },
-      { label: "Selisih Agen vs Riil", value: rupiah(tAgen - tHpp) },
-      { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) },
+      { label: "Total Profit HPP (Nett)", value: rupiahOrDash(shownProfitHpp(total)) },
+      { label: "Total Profit Agen", value: rupiahOrDash(shownProfitAgen(total)) },
+      { label: "Selisih Agen vs Riil", value: rupiahOrDash(shownSelisih(total)) },
+      { label: TANPA_HPP_LABEL, value: tanpaHppValue(total.tanpaHpp) },
     ],
   };
 }
@@ -394,7 +406,14 @@ export async function storePerformanceRows(f: ReportFilter) {
 }
 
 export async function datasetStorePerformance(f: ReportFilter): Promise<ReportDataset> {
-  const rows = await storePerformanceRows(f);
+  const numRows = await storePerformanceRows(f);
+  // T-013 temuan QA 2: toko yang HPP-nya seluruhnya tidak diketahui -> "-" di Profit HPP/Agen.
+  const rows = numRows.map((r) => ({ ...r, profitHpp: shownProfitHpp(r), profitAgen: shownProfitAgen(r) }));
+  const totalPerforma = {
+    profitHpp: numRows.reduce((s, r) => s + r.profitHpp, 0),
+    uangCair: numRows.reduce((s, r) => s + r.uangCair, 0),
+    tanpaHpp: sumTanpaHpp(numRows),
+  };
   return {
     title: "Performa Toko",
     columns: [
@@ -409,10 +428,10 @@ export async function datasetStorePerformance(f: ReportFilter): Promise<ReportDa
     ],
     rows,
     summary: [
-      { label: "Total omzet bruto", value: rupiah(rows.reduce((s, r) => s + r.omzet, 0)) },
-      { label: "Total uang cair", value: rupiah(rows.reduce((s, r) => s + r.uangCair, 0)) },
-      { label: "Total profit HPP", value: rupiah(rows.reduce((s, r) => s + r.profitHpp, 0)) },
-      { label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) },
+      { label: "Total omzet bruto", value: rupiah(numRows.reduce((s, r) => s + r.omzet, 0)) },
+      { label: "Total uang cair", value: rupiah(totalPerforma.uangCair) },
+      { label: "Total profit HPP", value: rupiahOrDash(shownProfitHpp(totalPerforma)) },
+      { label: TANPA_HPP_LABEL, value: tanpaHppValue(totalPerforma.tanpaHpp) },
     ],
   };
 }
@@ -431,7 +450,8 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
   const { months, years } = buildRecap(orders, lookup, cutoffDay);
 
   if (type === "yearly") {
-    const rows = years.map((r) => ({ tahun: r.year, omzet: r.omzet, uangCair: r.uangCair, profitHpp: r.profitHpp, tanpaHpp: r.tanpaHpp }));
+    // T-013 temuan QA 2: tahun yang HPP-nya seluruhnya tidak diketahui -> Profit HPP "-".
+    const rows = years.map((r) => ({ tahun: r.year, omzet: r.omzet, uangCair: r.uangCair, profitHpp: shownProfitHpp(r), tanpaHpp: r.tanpaHpp }));
     return {
       title: "Rekap Tahunan (Multi-Toko)",
       columns: [
@@ -449,7 +469,8 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
     periode: r.label,
     omzet: r.omzet,
     uangCair: r.uangCair,
-    profitHpp: r.profitHpp,
+    // T-013 temuan QA 2: bulan yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan "Rp 0").
+    profitHpp: shownProfitHpp(r),
     tanpaHpp: r.tanpaHpp,
     // bulan tepat sebelumnya tidak ada data -> "-" (bukan 0 / 0%)
     selisih: r.deltaOmzet ?? "-",

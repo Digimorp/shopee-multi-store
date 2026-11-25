@@ -8,6 +8,7 @@ import ExportButtons from "@/components/ExportButtons";
 import LeaderboardToko from "@/components/LeaderboardToko";
 import TanpaHppNote, { sumTanpaHpp } from "@/components/TanpaHppNote";
 import { formatAxisShort, formatRupiah, formatNumber } from "@/lib/format";
+import { formatRupiahOrDash, shownProfitHpp, shownProfitAgen } from "@/lib/hppDisplay";
 
 export default function PerformaTokoPage() {
   const searchParams = useSearchParams();
@@ -23,7 +24,11 @@ export default function PerformaTokoPage() {
   const chartData = rows.slice(0, 14).map((r) => ({
     toko: r.toko.split(" - ")[0],
     Omzet: Math.round(r.omzet),
-    "Profit HPP": Math.round(r.profitHpp),
+    // T-013 temuan QA 2: profit tidak diketahui -> tanpa batang (null), tooltip "-".
+    "Profit HPP": (() => {
+      const v = shownProfitHpp(r);
+      return typeof v === "string" ? null : Math.round(v);
+    })(),
   }));
 
   return (
@@ -55,7 +60,7 @@ export default function PerformaTokoPage() {
                 tickFormatter={(v) => formatAxisShort(v)}
               />
               <Tooltip
-                formatter={(v: number) => formatRupiah(v)}
+                formatter={(v: unknown) => (typeof v === "number" ? formatRupiah(v) : "-")}
                 contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 12 }}
                 cursor={{ fill: "#dceed0" }}
               />
@@ -77,8 +82,9 @@ export default function PerformaTokoPage() {
           { header: "Omzet Bruto", render: (r) => formatRupiah(r.omzet) },
           { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
           { header: "Mengambang", render: (r) => formatRupiah(r.uangMengambang) },
-          { header: "Profit HPP", render: (r) => formatRupiah(r.profitHpp) },
-          { header: "Profit Agen", render: (r) => formatRupiah(r.profitAgen) },
+          // T-013 temuan QA 2: toko yang HPP-nya seluruhnya tidak diketahui -> "-" (bukan "Rp 0").
+          { header: "Profit HPP", render: (r) => formatRupiahOrDash(shownProfitHpp(r)) },
+          { header: "Profit Agen", render: (r) => formatRupiahOrDash(shownProfitAgen(r)) },
         ]}
       />
       <TanpaHppNote tanpaHpp={sumTanpaHpp(rows)} />
