@@ -45,7 +45,9 @@ export const GET = withPeriodError(async (req: NextRequest) => {
   if (format === "pdf") {
     const pdf = await buildTablePdf({
       title: ds.title,
-      subtitle,
+      // T-013 temuan QA 4: Rekap tanpa subjudul periode (sama dengan Excel, batch4 H) -- isinya
+      // memuat banyak bulan, jadi "Periode <bulan>" menyesatkan.
+      subtitle: report === "recap" ? undefined : subtitle,
       columns: ds.columns.map((c) => ({ header: c.header, width: c.width, align: c.align })),
       rows: datasetToPdfRows(ds),
       summary: ds.summary,

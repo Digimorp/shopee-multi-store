@@ -14,6 +14,7 @@ import {
 } from "@/lib/profit";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { OrderStatus } from "@prisma/client";
+import { exportSku } from "@/lib/reports";
 
 export const GET = withPeriodError(async (req: NextRequest) => {
   const user = await getSessionUser();
@@ -41,6 +42,7 @@ export const GET = withPeriodError(async (req: NextRequest) => {
       profitAgen: true,
       status: true,
       store: { select: { code: true, name: true } },
+      product: { select: { sku: true } },
     },
   });
 
@@ -67,7 +69,8 @@ export const GET = withPeriodError(async (req: NextRequest) => {
   for (const o of orders) {
     const key = productGroupKey(o);
     const cur =
-      bySku.get(key) ?? { sku: o.sku, name: o.productName, qty: 0, omzet: 0, hpp: emptyTally(), agen: emptyAgenTally() };
+      // T-013 temuan QA 7: SKU = logika exportSku (pesanan -> Master Produk -> "-"), sama dengan export.
+      bySku.get(key) ?? { sku: exportSku(o), name: o.productName, qty: 0, omzet: 0, hpp: emptyTally(), agen: emptyAgenTally() };
     if (o.status === OrderStatus.SELESAI) {
       cur.qty += o.qty;
       cur.omzet += o.grossOmzet;

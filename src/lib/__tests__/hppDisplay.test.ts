@@ -157,7 +157,7 @@ describe("export Laporan Profit — sel tanpa HPP '-' (Excel teks, angka tetap n
     expect(formatCell(b.profitHpp, "money")).toBe("-");
     const xlsx = await buildXlsx(ds.title, ds.columns.map((c) => ({ header: c.header, key: c.key, kind: c.kind })), ds.rows);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(xlsx);
+    await wb.xlsx.load(xlsx as any); // pola sama dengan exportXlsx.test.ts (tipe Buffer exceljs)
     const ws = wb.worksheets[0];
     const header = (ws.getRow(1).values as any[]).slice(1);
     const col = (h: string) => header.indexOf(h) + 1;

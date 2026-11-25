@@ -54,6 +54,9 @@ export default function DashboardPage() {
   const sessionUser = session?.user as any;
   const noStore = !!sessionUser && sessionUser.role !== "OWNER" && Array.isArray(sessionUser.storeIds) && sessionUser.storeIds.length === 0;
   const shownError = error && !noStore;
+  // T-013 temuan QA 8: tanpa data ringkasan (akun tanpa toko -> 403, atau gagal muat) kartu tampil
+  // "-", bukan "Rp 0" yang terlihat seperti angka sungguhan.
+  const rp = (v: number | undefined) => (summary ? formatRupiah(v ?? 0) : "-");
 
   useEffect(() => {
     let alive = true;
@@ -127,12 +130,7 @@ export default function DashboardPage() {
 
       <QuickActions selisihCount={summary?.selisihCount} />
 
-      {noStore && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Akun kamu belum dihubungkan ke toko. Hubungi Owner.
-        </div>
-      )}
-
+      {/* T-013 temuan QA 8: pesan "Akun kamu belum dihubungkan ke toko" cukup sekali -- sudah tampil di TopBar. */}
       {shownError && !loading && (
         <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span>Sebagian data gagal dimuat. Angka di bawah mungkin tidak lengkap.</span>
@@ -150,33 +148,33 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Total Omzet Bruto" value={formatRupiah(summary?.totalOmzetBruto ?? 0)} />
+        <StatCard label="Total Omzet Bruto" value={rp(summary?.totalOmzetBruto)} />
         <StatCard
           label="Cair (Aktual Income Report)"
           tone="success"
-          value={formatRupiah(summary?.cair ?? 0)}
-          sub={`${summary?.cairCount ?? 0} pesanan sudah cair`}
+          value={rp(summary?.cair)}
+          sub={summary ? `${summary.cairCount ?? 0} pesanan sudah cair` : undefined}
         />
         <StatCard
           label="Belum Cair"
           tone="warning"
-          value={formatRupiah(summary?.belumCair ?? 0)}
-          sub={`${summary?.belumCairCount ?? 0} pesanan menunggu pencairan`}
+          value={rp(summary?.belumCair)}
+          sub={summary ? `${summary.belumCairCount ?? 0} pesanan menunggu pencairan` : undefined}
         />
         <StatCard
           label="Selisih (perlu dicek)"
-          value={`${summary?.selisihCount ?? 0} pesanan`}
+          value={summary ? `${summary.selisihCount ?? 0} pesanan` : "-"}
           tone="danger"
           sub="sudah termasuk di Cair"
         />
         <StatCard
           label="Profit HPP (Nett)"
-          value={formatRupiah(summary?.profitHpp ?? 0)}
+          value={rp(summary?.profitHpp)}
           negative={(summary?.profitHpp ?? 0) < 0}
         />
         <StatCard
           label="Profit Agen"
-          value={formatRupiah(summary?.profitAgen ?? 0)}
+          value={rp(summary?.profitAgen)}
           negative={(summary?.profitAgen ?? 0) < 0}
         />
       </div>

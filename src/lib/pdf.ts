@@ -42,8 +42,14 @@ export function buildTablePdf(input: PdfTableInput): Promise<Buffer> {
   }
 
   const CELL_PAD = 4;
-  const HEADER_H = 20;
   const FONT = 8;
+  // T-013 temuan QA 10: judul kolom panjang (mis. "Kontribusi Omzet") dibungkus ke baris berikut;
+  // tinggi header mengikuti judul tertinggi supaya tidak menimpa baris pertama. Min. 20 seperti dulu.
+  doc.font("Helvetica-Bold").fontSize(FONT);
+  const HEADER_H = Math.max(
+    20,
+    Math.ceil(Math.max(...input.columns.map((c, i) => doc.heightOfString(c.header, { width: colW[i] - CELL_PAD * 2 })))) + 12
+  );
 
   const drawColumnHeader = (y: number): number => {
     doc.rect(left, y, tableWidth, HEADER_H).fill(BRAND);
@@ -52,8 +58,6 @@ export function buildTablePdf(input: PdfTableInput): Promise<Buffer> {
       doc.text(c.header, colX[i] + CELL_PAD, y + 6, {
         width: colW[i] - CELL_PAD * 2,
         align: c.align ?? "left",
-        lineBreak: false,
-        ellipsis: true,
       });
     });
     doc.fillColor("#000000");

@@ -44,8 +44,8 @@ export default function LaporanProfitPage() {
       </div>
 
       <p className="inline-block rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-800">
-        <strong>Dasar tanggal: tanggal pesanan dibuat.</strong> Bulan cut-off (26–25) berdasarkan tanggal pesanan dibuat.
-        Laporan Rekapan memakai kode periode yang tersimpan saat upload, jadi angkanya bisa sedikit berbeda.
+        <strong>Dasar tanggal: tanggal pesanan dibuat.</strong> Bulan cut-off (26–25) dihitung dari tanggal pesanan dibuat,
+        dalam WIB. Laporan Rekapan memakai dasar yang sama (tanggal pesanan, cut-off 26–25, WIB).
       </p>
 
       <p className="text-xs text-gray-500">
@@ -94,7 +94,7 @@ export default function LaporanProfitPage() {
       </div>
 
       <DataTable
-        rowKey={(r: any) => r.sku}
+        rowKey={(r: any) => `${r.sku}|${r.name}`}
         rows={sorted}
         columns={[
           { header: "SKU", render: (r) => r.sku },

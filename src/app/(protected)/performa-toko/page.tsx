@@ -62,10 +62,10 @@ export default function PerformaTokoPage() {
               <Tooltip
                 formatter={(v: unknown) => (typeof v === "number" ? formatRupiah(v) : "-")}
                 contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 12 }}
-                cursor={{ fill: "#dceed0" }}
+                cursor={{ fill: "#f5f5f5" /* = --color-brand-100 (globals.css) */ }}
               />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-              <Bar isAnimationActive={false} dataKey="Omzet" fill="#468a30" radius={[6, 6, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Omzet" fill="#0a0a0a" /* = --color-brand-600, sama dgn Omzet di AreaTrendCard */ radius={[6, 6, 0, 0]} />
               <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#96789c" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
