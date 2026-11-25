@@ -66,7 +66,7 @@ export default function LaporanRekapPage() {
                 r.deltaOmzet == null ? (
                   <span className="text-gray-400">-</span>
                 ) : (
-                  <span className={r.deltaOmzet >= 0 ? "text-green-600" : "text-red-600"}>
+                  <span className={r.deltaOmzet >= 0 ? "text-success-text" : "text-red-600"}>
                     {r.deltaOmzet >= 0 ? "▲" : "▼"} {formatRupiah(Math.abs(r.deltaOmzet))}
                     {r.deltaPct == null ? "" : ` (${r.deltaPct.toFixed(1)}%)`}
                   </span>

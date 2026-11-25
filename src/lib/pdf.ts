@@ -11,7 +11,7 @@ export type PdfTableInput = {
   summary?: { label: string; value: string }[];
 };
 
-const BRAND = "#26591a";
+const BRAND = "#0a0a0a"; // = --color-brand-600 di globals.css (brand monokrom hitam)
 const GREY = "#6b7280";
 const LINE = "#e5e7eb";
 const ZEBRA = "#f9fafb";

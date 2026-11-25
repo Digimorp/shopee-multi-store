@@ -124,7 +124,7 @@ export default function ReturCancelPage() {
                   header: "Kondisi Barang",
                   render: (r: any) =>
                     r.returCondition ? (
-                      <span className={r.returCondition === "GOOD" ? "text-green-600" : "text-red-600"}>
+                      <span className={r.returCondition === "GOOD" ? "text-success-text" : "text-red-600"}>
                         {r.returCondition === "GOOD" ? "Bagus - Restok" : "Rusak/Cacat"}
                       </span>
                     ) : (

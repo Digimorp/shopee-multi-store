@@ -135,7 +135,7 @@ export default function SettingsProductsPage() {
         <button type="submit" className="btn-ghost">
           Import
         </button>
-        {importMsg && <span className="text-sm text-emerald-700">{importMsg}</span>}
+        {importMsg && <span className="text-sm text-success-text">{importMsg}</span>}
       </form>
 
       {importResult && (

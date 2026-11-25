@@ -133,7 +133,7 @@ export default function UploadForm({
         <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
       )}
       {result && (
-        <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
+        <div className="mt-3 rounded-xl bg-success-bg p-3 text-sm text-success-text">
           {(formatResult ?? defaultResultText)(result)}
         </div>
       )}

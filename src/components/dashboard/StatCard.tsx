@@ -7,7 +7,7 @@
 // masuk scope redesign. Tampilan card (border/shadow) ikut tema lewat class `theme-mono` di induknya.
 const DOT = {
   neutral: null,
-  success: "bg-emerald-500",
+  success: "bg-success",
   warning: "bg-orange-500",
   danger: "bg-rose-500",
 } as const;

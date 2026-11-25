@@ -98,7 +98,7 @@ export default function LaporanProfitPage() {
           {
             header: "Selisih",
             render: (r) => (
-              <span className={r.selisih >= 0 ? "text-green-600" : "text-red-600"}>{formatRupiah(r.selisih)}</span>
+              <span className={r.selisih >= 0 ? "text-success-text" : "text-red-600"}>{formatRupiah(r.selisih)}</span>
             ),
           },
         ]}

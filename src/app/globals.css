@@ -92,7 +92,7 @@ body {
       text-xs font-medium text-gray-600 transition hover:border-brand-300 hover:text-brand-600;
   }
   .btn-chip-success {
-    @apply border-emerald-200 text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700;
+    @apply border-success/25 text-success-text hover:border-success/40 hover:bg-success-bg hover:text-success-text;
   }
   .btn-chip-danger {
     @apply border-rose-200 text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700;

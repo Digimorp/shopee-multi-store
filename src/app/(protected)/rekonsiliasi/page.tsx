@@ -183,13 +183,13 @@ export default function RekonsiliasiPage() {
           </p>
         </div>
         <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
-          <div className="bg-emerald-500" style={{ width: `${pct(rate.match)}%` }} />
+          <div className="bg-success" style={{ width: `${pct(rate.match)}%` }} />
           <div className="bg-amber-500" style={{ width: `${pct(rate.selisih)}%` }} />
           <div className="bg-rose-500" style={{ width: `${pct(rate.belumKetemu)}%` }} />
         </div>
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           <div>
-            <p className="text-lg font-bold text-emerald-600">{formatNumber(rate.match)}</p>
+            <p className="text-lg font-bold text-success-text">{formatNumber(rate.match)}</p>
             <p className="text-[11px] text-gray-400">CAIR ({pct(rate.match)}%)</p>
           </div>
           <div>
@@ -356,7 +356,7 @@ export default function RekonsiliasiPage() {
                   r.selisih == null ? (
                     <span className="text-gray-300">—</span>
                   ) : (
-                    <span className={r.selisih < 0 ? "text-rose-600" : r.selisih > 0 ? "text-emerald-600" : "text-gray-500"}>
+                    <span className={r.selisih < 0 ? "text-rose-600" : r.selisih > 0 ? "text-success-text" : "text-gray-500"}>
                       {formatRupiah(r.selisih)}
                     </span>
                   ),
@@ -395,7 +395,7 @@ export default function RekonsiliasiPage() {
             {
               header: "Jumlah",
               render: (r) => (
-                <span className={r.amount < 0 ? "text-rose-600" : "text-emerald-600"}>{formatRupiah(r.amount)}</span>
+                <span className={r.amount < 0 ? "text-rose-600" : "text-success-text"}>{formatRupiah(r.amount)}</span>
               ),
             },
           ]}

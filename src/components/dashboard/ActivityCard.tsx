@@ -65,7 +65,7 @@ export default function ActivityCard({
                       className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${
                         failed
                           ? "bg-amber-50 text-amber-700 ring-amber-600/15"
-                          : "bg-emerald-50 text-emerald-700 ring-emerald-600/15"
+                          : "bg-success-bg text-success-text ring-success/15"
                       }`}
                     >
                       {failed ? "Ada dilewati" : "Berhasil"}

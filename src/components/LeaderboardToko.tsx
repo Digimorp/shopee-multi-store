@@ -27,7 +27,7 @@ function List({
               <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">{r.toko}</span>
               <span
                 className={`shrink-0 text-sm font-bold ${
-                  r.profitHpp > 0 ? "text-emerald-600" : r.profitHpp < 0 ? "text-rose-600" : "text-gray-400"
+                  r.profitHpp > 0 ? "text-success-text" : r.profitHpp < 0 ? "text-rose-600" : "text-gray-400"
                 }`}
               >
                 {formatRupiah(r.profitHpp)}

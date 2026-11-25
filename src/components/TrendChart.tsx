@@ -28,7 +28,7 @@ export default function TrendChart({ data }: { data: TrendPoint[] }) {
         <Tooltip formatter={(v: number) => formatRupiah(v)} />
         <Legend />
         <Line type="monotone" dataKey="omzet" name="Omzet" stroke="#ee4d2d" strokeWidth={2} dot={false} />
-        <Line type="monotone" dataKey="profit" name="Profit HPP" stroke="#16a34a" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="profit" name="Profit HPP" stroke="#176552" /* = token success (tailwind.config) */ strokeWidth={2} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );
