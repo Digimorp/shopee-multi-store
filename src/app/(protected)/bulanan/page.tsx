@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import SlidingTabs from "@/components/SlidingTabs";
-import { BULANAN_TABS, hrefWithFilter, pickTab } from "@/components/navConfig";
+import { BULANAN_TABS, filterQuery, hrefWithFilter, pickTab } from "@/components/navConfig";
 import RekapTab from "./_tabs/RekapTab";
 import UangCairTab from "./_tabs/UangCairTab";
 import PerTokoTab from "./_tabs/PerTokoTab";
@@ -23,14 +23,25 @@ const CONTENT: Record<string, () => JSX.Element> = {
 export default function BulananPage() {
   const searchParams = useSearchParams();
   const tab = pickTab(BULANAN_TABS, searchParams.get("tab"));
-  // Tab Profit diberi catatan selama belum ada produk ber-HPP di Master Produk.
+  // Tab Profit diberi catatan selama HPP kosong: di periode/toko terpilih belum ada satu pun baris
+  // berstatus Selesai yang SKU-nya punya HPP di Master Produk (semua masuk "tanpa HPP" -> profit "-").
+  // Sumber: ringkasan API profit yang sama dengan isi tab (tanpa rumus baru).
+  const filterQs = filterQuery(searchParams).toString();
   const [hppKosong, setHppKosong] = useState(false);
   useEffect(() => {
-    fetch("/api/products")
+    let alive = true;
+    fetch(`/api/reports/profit?${filterQs}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setHppKosong(!(d.products ?? []).some((p: any) => (p.hpp ?? 0) > 0)))
+      .then((d) => {
+        const s = d?.summary;
+        if (!alive || !s?.tanpaHpp) return;
+        setHppKosong(s.tanpaHpp.baris > 0 && Math.abs(s.tanpaHpp.uangCair - s.totalUangCair) < 1);
+      })
       .catch(() => {});
-  }, []);
+    return () => {
+      alive = false;
+    };
+  }, [filterQs]);
 
   const items = BULANAN_TABS.map((t) => ({
     key: t.key,

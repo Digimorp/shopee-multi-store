@@ -52,7 +52,7 @@ export default function LaporanProfitPage() {
       <p className="text-xs text-gray-500">
         Unit Keluar/Omzet Pesanan/Kontribusi Omzet dihitung dari pesanan <strong>berstatus Selesai</strong>. Uang Cair &amp;
         Profit HPP (Nett) pakai nilai <strong>AKTUAL dari Income Report yang sudah di-match</strong> (bukan estimasi nilai
-        pesanan) — pesanan Selesai yang belum ketemu match-nya (lihat Menu Keuangan &amp; Rekonsiliasi) belum ikut dihitung
+        pesanan) — pesanan Selesai yang belum ketemu match-nya (lihat tab Uang Cair) belum ikut dihitung
         di sini. Profit Agen = (Harga Katalog × 50%) − HPP, direalisasi juga saat Belum Cair, independen dari uang cair
         aktual. Selisih menunjukkan potensi gap antara harga jual ke agen dan penerimaan riil dari Shopee.
       </p>

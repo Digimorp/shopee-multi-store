@@ -120,7 +120,7 @@ export default function SettingsUsersPage() {
               <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                 Belum ada toko,{" "}
                 <a href="/pengaturan?tab=toko" className="font-medium underline hover:no-underline">
-                  tambahkan di Master Data Toko
+                  tambahkan di Pengaturan &gt; Toko
                 </a>{" "}
                 dulu.
               </p>
@@ -233,7 +233,7 @@ export default function SettingsUsersPage() {
                   <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                     Belum ada toko,{" "}
                     <a href="/pengaturan?tab=toko" className="font-medium underline hover:no-underline">
-                      tambahkan di Master Data Toko
+                      tambahkan di Pengaturan &gt; Toko
                     </a>{" "}
                     dulu.
                   </p>

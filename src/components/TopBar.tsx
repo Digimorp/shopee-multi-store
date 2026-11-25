@@ -11,10 +11,10 @@ import TopNavTabs from "@/components/TopNavTabs";
 import { menuForRole, hrefWithFilter, isNavActive } from "@/components/navConfig";
 import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
+import { PERIOD_BASIS_NOTE, convertLegacyRange, formatPeriodRange } from "@/lib/periodPicker";
 
 const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 const MONTH_OPTIONS = 24; // bulan berjalan + 23 bulan sebelumnya
-const LEGACY_RANGE = "__legacy-range";
 const INVALID_PERIOD = "__invalid-period";
 
 /** "2027-01" mundur n bulan -> "2026-11" dst. */
@@ -62,14 +62,25 @@ export default function TopBar() {
   // Bulan periode berjalan WIB — dihitung dengan fungsi yang sama persis dengan server (resolveFilters).
   const currentMonth = cutoffDay != null ? getCurrentPeriodMonth(cutoffDay) : null;
 
-  // Nilai pilihan aktif: period di URL > link lama from/to > default bulan berjalan.
+  // T-013 batch 15 (bagian C): link lama ?from=&to= diterima lalu diganti jadi ?period=YYYY-MM
+  // (periode yang memuat tanggal `to`) -- tanpa entri riwayat baru. Tidak ada input tanggal lagi.
+  const hasLegacyRange = fromParam != null || toParam != null;
+  useEffect(() => {
+    if (cutoffDay == null || !hasLegacyRange) return;
+    const next = convertLegacyRange(new URLSearchParams(searchParams.toString()), cutoffDay);
+    if (next) router.replace(next.toString() ? `${pathname}?${next.toString()}` : pathname);
+  }, [cutoffDay, hasLegacyRange, searchParams, pathname, router]);
+
+  // Nilai pilihan aktif: period di URL > default bulan berjalan. Selama link lama dikonversi -> skeleton.
   const selectedPeriod = periodParam
     ? PERIOD_PARAM.test(periodParam)
       ? periodParam
       : INVALID_PERIOD
-    : fromParam || toParam
-      ? LEGACY_RANGE
+    : hasLegacyRange
+      ? null
       : currentMonth;
+  // On Proses memakai semua periode (hanya filter Toko) -> pemilih Periode disembunyikan di sana.
+  const periodApplies = !isNavActive(pathname, "/on-proses");
 
   const monthOptions = currentMonth ? Array.from({ length: MONTH_OPTIONS }, (_, i) => shiftMonth(currentMonth, i)) : [];
   // Link ke bulan di luar 24 bulan terakhir tetap tampil sebagai pilihan, tidak dipaksa ganti.
@@ -84,8 +95,8 @@ export default function TopBar() {
   function updateParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
-    // Belum ada filter waktu sama sekali -> tulis eksplisit bulan berjalan (dulu: from/to default).
-    if (!params.get("period") && !params.get("from") && !params.get("to") && currentMonth) {
+    // Belum ada filter periode -> tulis eksplisit bulan berjalan supaya ikut terbawa antar menu.
+    if (!params.get("period") && currentMonth) {
       params.set("period", currentMonth);
     }
     pushParams(params);
@@ -195,7 +206,7 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* Baris 2: filter toko, pencarian, rentang tanggal (sama persis fungsinya dengan sebelumnya). */}
+      {/* Baris 2: filter Toko + satu pemilih Periode (bulan) beserta rentang aslinya. */}
       <div className="flex flex-wrap items-center gap-2 border-t border-neutral-100 px-4 py-2 sm:px-6">
         {!filterReady ? (
           <Skeleton className="h-9 w-40 rounded-full" />
@@ -222,31 +233,19 @@ export default function TopBar() {
             ))}
           </select>
         )}
-        {/* Tampilan saja: belum ada logic pencarian, sama seperti tombol ikon sebelumnya. */}
-        <label className="flex min-w-[12rem] flex-1 items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-gray-400 focus-within:ring-2 focus-within:ring-brand-300">
-          <Icon name="search" size={16} />
-          <input
-            type="search"
-            placeholder="Cari…"
-            aria-label="Cari"
-            className="w-full min-w-0 border-0 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
-          />
-        </label>
-        {selectedPeriod == null ? (
+        {!periodApplies ? (
+          <span className="text-xs text-gray-500">Semua periode (On Proses tidak mengikuti filter Periode)</span>
+        ) : selectedPeriod == null ? (
           <Skeleton className="h-9 w-40 rounded-full" />
         ) : (
+          <>
           <select
             value={selectedPeriod}
             onChange={(e) => selectMonth(e.target.value)}
-            aria-label="Periode cut-off"
+            aria-label="Periode"
             title={`Periode cut-off tgl ${(cutoffDay ?? 25) + 1}–${cutoffDay ?? 25} (WIB)`}
             className={`${fieldClass} max-w-full`}
           >
-            {selectedPeriod === LEGACY_RANGE && (
-              <option value={LEGACY_RANGE} disabled>
-                {fromParam ?? "…"} s/d {toParam ?? "…"}
-              </option>
-            )}
             {selectedPeriod === INVALID_PERIOD && (
               <option value={INVALID_PERIOD} disabled>
                 Periode tidak valid: {periodParam}
@@ -254,10 +253,17 @@ export default function TopBar() {
             )}
             {monthOptions.map((m) => (
               <option key={m} value={m}>
-                {monthLabel(m)}
+                Periode {monthLabel(m)}
               </option>
             ))}
           </select>
+          {selectedPeriod !== INVALID_PERIOD && (
+            <span className="flex flex-col leading-tight">
+              <span className="text-sm font-medium text-gray-800">{formatPeriodRange(selectedPeriod, cutoffDay ?? 25)}</span>
+              <span className="text-[11px] text-gray-400">{PERIOD_BASIS_NOTE}</span>
+            </span>
+          )}
+          </>
         )}
       </div>
     </header>
