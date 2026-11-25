@@ -4,17 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { formatPeriodMonthLabel, getCurrentPeriodMonth, getPeriodForMonth } from "@/lib/period";
+import { getCurrentPeriodMonth } from "@/lib/period";
 import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
 import TopNavTabs from "@/components/TopNavTabs";
 import { menuForRole, hrefWithFilter, isNavActive } from "@/components/navConfig";
 import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
-import { PERIOD_BASIS_NOTE, convertLegacyRange, formatPeriodRange } from "@/lib/periodPicker";
+import { PERIOD_BASIS_NOTE, PERIOD_OPTIONS, convertLegacyRange, formatPeriodRange } from "@/lib/periodPicker";
 
 const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
-const MONTH_OPTIONS = 24; // bulan berjalan + 23 bulan sebelumnya
 const INVALID_PERIOD = "__invalid-period";
 
 /** "2027-01" mundur n bulan -> "2026-11" dst. */
@@ -82,10 +81,11 @@ export default function TopBar() {
   // On Proses memakai semua periode (hanya filter Toko) -> pemilih Periode disembunyikan di sana.
   const periodApplies = !isNavActive(pathname, "/on-proses");
 
-  const monthOptions = currentMonth ? Array.from({ length: MONTH_OPTIONS }, (_, i) => shiftMonth(currentMonth, i)) : [];
-  // Link ke bulan di luar 24 bulan terakhir tetap tampil sebagai pilihan, tidak dipaksa ganti.
+  const monthOptions = currentMonth ? Array.from({ length: PERIOD_OPTIONS }, (_, i) => shiftMonth(currentMonth, i)) : [];
+  // T-013 batch 16: 12 periode terakhir, terbaru di atas. Link ke periode yang lebih lama tetap tampil sebagai pilihan, tidak dipaksa ganti.
   if (periodParam && PERIOD_PARAM.test(periodParam) && !monthOptions.includes(periodParam)) monthOptions.push(periodParam);
-  const monthLabel = (m: string) => formatPeriodMonthLabel(getPeriodForMonth(m, cutoffDay ?? 25));
+  // Nama periode = rentang tanggal (bukan nama bulan); periode yang sedang berjalan diberi "(berjalan)".
+  const monthLabel = (m: string) => `${formatPeriodRange(m, cutoffDay ?? 25)}${m === currentMonth ? " (berjalan)" : ""}`;
 
   function pushParams(params: URLSearchParams) {
     if (!params.get("storeId")) params.set("storeId", storeId);
@@ -253,16 +253,12 @@ export default function TopBar() {
             )}
             {monthOptions.map((m) => (
               <option key={m} value={m}>
-                Periode {monthLabel(m)}
+                {monthLabel(m)}
               </option>
             ))}
           </select>
-          {selectedPeriod !== INVALID_PERIOD && (
-            <span className="flex flex-col leading-tight">
-              <span className="text-sm font-medium text-gray-800">{formatPeriodRange(selectedPeriod, cutoffDay ?? 25)}</span>
-              <span className="text-[11px] text-gray-400">{PERIOD_BASIS_NOTE}</span>
-            </span>
-          )}
+          {/* Rentang sudah jadi nama opsi -> tidak ditulis dobel; cukup keterangan dasar tanggalnya. */}
+          <span className="text-[11px] leading-tight text-gray-400">{PERIOD_BASIS_NOTE}</span>
           </>
         )}
       </div>

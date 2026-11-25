@@ -13,7 +13,7 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import TanpaHppNote from "@/components/TanpaHppNote";
 import type { TrendPoint } from "@/components/TrendChart";
 import {
-  formatPeriodMonthLabel,
+  formatPeriodRangeLabel,
   getCurrentPeriodMonth,
   getDefaultPeriod,
   getPeriodForMonth,
@@ -108,26 +108,24 @@ export default function DashboardPage() {
     const period = searchParams.get("period");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    // T-013 batch 16: nama periode = rentang tanggal ("26 Jun - 25 Jul 2026"), bukan nama bulan.
     if (period && PERIOD_PARAM.test(period)) {
-      const month = formatPeriodMonthLabel(getPeriodForMonth(period)); // label bulan tidak bergantung cutoff
-      if (cutoffDay == null) return month;
-      const p = getPeriodForMonth(period, cutoffDay);
-      return `${month} (${fmtWib(p.from)} – ${fmtWib(p.to)})`;
+      if (cutoffDay == null) return "…";
+      return formatPeriodRangeLabel(getPeriodForMonth(period, cutoffDay));
     }
     if (from || to) {
       const def = getDefaultPeriod();
       return `${fmtShort(from ? new Date(from) : def.from)} – ${fmtShort(to ? new Date(to) : def.to)}`;
     }
     if (cutoffDay == null) return "…";
-    const p = getPeriodForMonth(getCurrentPeriodMonth(cutoffDay), cutoffDay);
-    return `${formatPeriodMonthLabel(p)} (${fmtWib(p.from)} – ${fmtWib(p.to)})`;
+    return formatPeriodRangeLabel(getPeriodForMonth(getCurrentPeriodMonth(cutoffDay), cutoffDay));
   }, [searchParams, cutoffDay]);
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-neutral-950">Dashboard Utama</h1>
-        <p className="text-sm text-neutral-500">Ringkasan performa penjualan multi-toko Shopee</p>
+        <p className="text-sm text-neutral-500">Ringkasan {periodLabel}</p>
       </div>
 
       <QuickActions selisihCount={summary?.selisihCount} />

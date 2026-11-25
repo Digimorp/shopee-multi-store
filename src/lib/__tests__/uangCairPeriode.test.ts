@@ -25,7 +25,7 @@ function matchOrder(o: any, w: any = {}) {
 }
 
 vi.mock("@/lib/rbac", () => ({ getSessionUser, assertStoreAccess, getAccessibleStoreIds: vi.fn() }));
-vi.mock("@/lib/queryFilters", () => ({ resolveFilters }));
+vi.mock("@/lib/queryFilters", () => ({ resolveFilters, getCutoffDay: async () => 25 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     periodSetting: { findFirst: async () => ({ cutoffDay: 25 }) },
@@ -158,6 +158,6 @@ describe("Uang Cair periode = semua saldo masuk", () => {
     expect(sum["Uang Cair (semua saldo masuk periode ini)"]).toBe("Rp 169.500");
     expect(sum["Uang Cair Pesanan Periode Ini"]).toBe("Rp 85.000");
     const rekap = await buildReportDataset("recap" as any, f, { type: "monthly" } as any);
-    expect(rekap.rows.find((r) => String(r.periode).startsWith("September 2026"))?.uangCair).toBe(SEP_S1.total);
+    expect(rekap.rows.find((r) => r.periode === "26 Agu - 25 Sep 2026")?.uangCair).toBe(SEP_S1.total);
   });
 });

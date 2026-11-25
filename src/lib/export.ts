@@ -4,7 +4,7 @@ export type ExportColumn = { header: string; key: string; width?: number; kind?:
 
 /**
  * Bangun file .xlsx dari kolom + baris (nilai numerik tetap numerik agar bisa disum di Excel).
- * T-013 butir 14: `subtitle` (mis. "Periode Agustus 2026  -  2 toko", sama dengan PDF) -> baris 1
+ * T-013 butir 14: `subtitle` (mis. "Periode 26 Jul - 25 Agu 2026  -  2 toko", sama dengan PDF) -> baris 1
  * berisi subjudul, baris 2 kosong, header tabel di baris 3. Tanpa subtitle: header di baris 1
  * seperti sebelumnya. Kolom & nilai baris data tidak berubah, hanya bergeser ke bawah.
  */

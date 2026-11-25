@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
-import { getPeriodForMonth, getCurrentPeriodMonth, formatPeriodMonthLabel } from "@/lib/period";
+import { getPeriodForMonth, getCurrentPeriodMonth, formatPeriodRangeLabel } from "@/lib/period";
 
 export default function SettingsPeriodsPage() {
   const [cutoffDay, setCutoffDay] = useState(25);
@@ -57,7 +57,7 @@ export default function SettingsPeriodsPage() {
         <button type="submit" className="btn-primary">
           Simpan
         </button>
-        <span className="text-xs text-gray-500">Periode berjalan saat ini: {formatPeriodMonthLabel(currentPeriod)} ({currentPeriod.key.replace("_", " s/d ")})</span>
+        <span className="text-xs text-gray-500">Periode berjalan saat ini: {formatPeriodRangeLabel(currentPeriod)}</span>
       </form>
 
       <div className="card p-6">
@@ -85,7 +85,7 @@ export default function SettingsPeriodsPage() {
           rowKey={(r: any) => r.id}
           rows={locks}
           columns={[
-            { header: "Periode", render: (r) => r.periodKey },
+            { header: "Periode", render: (r) => formatPeriodRangeLabel({ key: r.periodKey }) },
             { header: "Status", render: (r) => (r.locked ? "Terkunci" : "Terbuka") },
             {
               header: "Aksi",

@@ -121,3 +121,29 @@ describe("fungsi lama tidak berubah perilakunya", () => {
     expect(makePeriod(new Date(2027, 0, 1), new Date(2027, 0, 31)).key).toBe("2027-01-01_2027-01-31");
   });
 });
+
+// T-013 batch 16: nama periode = rentang tanggal (bukan nama bulan saja). Dijalankan di WIB & UTC.
+describe("formatPeriodRangeLabel — nama periode = rentang tanggal", () => {
+  it("26 Jun - 25 Jul 2026 dan lintas tahun", async () => {
+    const { formatPeriodRangeLabel, formatDateRangeLabel } = await import("@/lib/period");
+    expect(formatPeriodRangeLabel(getPeriodForMonth("2026-07", 25))).toBe("26 Jun - 25 Jul 2026");
+    expect(formatPeriodRangeLabel(getPeriodForMonth("2027-01", 25))).toBe("26 Des 2026 - 25 Jan 2027");
+    expect(formatPeriodRangeLabel(parsePeriodKey("2026-12-26_2027-01-25"))).toBe("26 Des 2026 - 25 Jan 2027");
+    expect(formatPeriodRangeLabel({ key: "2026-07-26_2026-08-25" })).toBe("26 Jul - 25 Agu 2026");
+    expect(formatDateRangeLabel(new Date("2026-07-25T17:00:00Z"), new Date("2026-08-25T16:59:59Z"))).toBe("26 Jul - 25 Agu 2026");
+  });
+  it("cutoff lain (20) memberi rentang yang benar", async () => {
+    const { formatPeriodRangeLabel } = await import("@/lib/period");
+    expect(formatPeriodRangeLabel(getPeriodForMonth("2026-07", 20))).toBe("21 Jun - 20 Jul 2026");
+    expect(formatPeriodRangeLabel(getPeriodForMonth("2026-03", 30))).toBe("1 Mar - 30 Mar 2026");
+  });
+  it("4 periode di dropdown", async () => {
+    const { formatPeriodRange } = await import("@/lib/periodPicker");
+    expect(["2026-07", "2026-08", "2026-09", "2026-10"].map((m) => formatPeriodRange(m, 25))).toEqual([
+      "26 Jun - 25 Jul 2026",
+      "26 Jul - 25 Agu 2026",
+      "26 Agu - 25 Sep 2026",
+      "26 Sep - 25 Okt 2026",
+    ]);
+  });
+});

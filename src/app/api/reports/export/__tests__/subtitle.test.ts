@@ -10,7 +10,7 @@ const { getSessionUser, resolveFilters, buildReportDataset } = vi.hoisted(() => 
   buildReportDataset: vi.fn(),
 }));
 vi.mock("@/lib/rbac", () => ({ getSessionUser }));
-vi.mock("@/lib/queryFilters", () => ({ resolveFilters }));
+vi.mock("@/lib/queryFilters", () => ({ resolveFilters, getCutoffDay: async () => 25 }));
 vi.mock("@/lib/reports", () => ({ buildReportDataset, datasetToPdfRows: () => [] }));
 
 import { GET } from "@/app/api/reports/export/route";
@@ -56,7 +56,7 @@ describe("export Excel: subjudul periode per laporan", () => {
     "%s: tetap bersubjudul, header di baris 3",
     async (report) => {
       const rows = await firstRows(`report=${report}&format=xlsx&period=2026-08`);
-      expect(rows[0]).toEqual(["Periode Agustus 2026  -  2 toko"]);
+      expect(rows[0]).toEqual(["Periode 26 Jul - 25 Agu 2026  -  2 toko"]);
       expect(rows[1]).toEqual([]);
       expect(rows[2]).toEqual(["Kolom A", "Nilai"]);
     }

@@ -74,7 +74,7 @@ describe("buildRecap", () => {
       ["2026-08", 100000],
     ]);
     expect(months[1].periodKey).toBe("2026-07-26_2026-08-25");
-    expect(months[1].label).toBe("Agustus 2026 (26 Jul 2026 - 25 Agu 2026)");
+    expect(months[1].label).toBe("26 Jul - 25 Agu 2026");
   });
 
   it("tahunan: 31 Des 23:30 WIB (= 16:30 UTC) masuk tahun yang benar, apa pun TZ server", () => {

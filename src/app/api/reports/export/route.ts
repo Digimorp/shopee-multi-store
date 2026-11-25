@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/rbac";
-import { resolveFilters } from "@/lib/queryFilters";
+import { getCutoffDay, resolveFilters } from "@/lib/queryFilters";
 import { withPeriodError } from "@/lib/periodError";
 import { buildReportDataset, datasetToPdfRows, type ReportKey } from "@/lib/reports";
 import { buildXlsx } from "@/lib/export";
 import { buildTablePdf } from "@/lib/pdf";
-import { formatPeriodLabel, formatPeriodMonthLabel, getPeriodForMonth, makePeriod } from "@/lib/period";
+import { formatPeriodRangeLabel, getPeriodForMonth, getPeriodMonthForDate } from "@/lib/period";
 
 // Endpoint export tunggal untuk semua laporan.
 // GET /api/reports/export?report=<key>&format=xlsx|pdf&storeId&from&to&tab&type
@@ -30,14 +30,15 @@ export const GET = withPeriodError(async (req: NextRequest) => {
   }
 
   const scope = storeIds.length === 1 ? "1 toko" : `${storeIds.length} toko`;
-  // Ada period=YYYY-MM -> label bulan ("Agustus 2026"). Link lama from/to -> tetap rentang tanggal.
-  // (period yang salah format sudah ditolak resolveFilters di atas.) Label bulan tidak bergantung
-  // cutoffDay — bulan akhir periode selalu = bulan di parameter — jadi cutoff default cukup di sini.
+  // T-013 batch 16: nama periode = rentang tanggal ("26 Jun - 25 Jul 2026") dengan cutoff yang sama
+  // dengan server. (period yang salah format sudah ditolak resolveFilters di atas.) Link lama from/to
+  // -> periode yang memuat tanggal `to` (sama dengan konversi di TopBar).
   const periodParam = searchParams.get("period");
   const hasPeriod = !!periodParam && /^\d{4}-(0[1-9]|1[0-2])$/.test(periodParam);
-  const periodText = hasPeriod
-    ? formatPeriodMonthLabel(getPeriodForMonth(periodParam!))
-    : formatPeriodLabel(makePeriod(from, to));
+  const cutoffDay = await getCutoffDay();
+  const periodText = formatPeriodRangeLabel(
+    getPeriodForMonth(hasPeriod ? periodParam! : getPeriodMonthForDate(to, cutoffDay), cutoffDay)
+  );
   const subtitle = `Periode ${periodText}  -  ${scope}`;
   const stamp = Date.now();
   const safe = report.replace(/[^a-z0-9-]/gi, "");

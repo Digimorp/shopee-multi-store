@@ -21,7 +21,7 @@ const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 // Tetap diekspor ulang dari sini untuk pemanggil lama.
 export { getCurrentPeriodMonth };
 
-async function getCutoffDay(): Promise<number> {
+export async function getCutoffDay(): Promise<number> {
   const setting = await prisma.periodSetting.findFirst();
   return setting?.cutoffDay ?? 25;
 }

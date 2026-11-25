@@ -1,5 +1,5 @@
 import { OrderStatus } from "@prisma/client";
-import { getPeriodForMonth, getPeriodMonthForDate, prevPeriodMonth, formatPeriodMonthLabel } from "@/lib/period";
+import { getPeriodForMonth, getPeriodMonthForDate, prevPeriodMonth, formatPeriodRangeLabel } from "@/lib/period";
 import { allocateActual } from "@/lib/reconciliation";
 import { emptyTally, addProfitLine, type ProfitTally } from "@/lib/profit";
 import { emptyRincian, sumRincian, pickRincian, type UangCairRincian, type RincianUangCairJson } from "@/lib/uangCairPeriode";
@@ -62,11 +62,9 @@ const fmtYmd = (s: string) => {
   return `${d} ${BLN[m - 1]} ${y}`;
 };
 
-/** Label bulan rekap, mis. "Agustus 2026 (26 Jul 2026 - 25 Agu 2026)". */
+/** Label periode rekap = rentang tanggal (batch 16), mis. "26 Jul - 25 Agu 2026". */
 export function recapMonthLabel(month: string, cutoffDay: number): string {
-  const p = getPeriodForMonth(month, cutoffDay);
-  const [from, to] = p.key.split("_");
-  return `${formatPeriodMonthLabel(p)} (${fmtYmd(from)} - ${fmtYmd(to)})`;
+  return formatPeriodRangeLabel(getPeriodForMonth(month, cutoffDay));
 }
 
 export function buildRecap(

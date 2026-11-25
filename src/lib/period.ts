@@ -178,7 +178,36 @@ export function getCurrentPeriodMonth(cutoffDay = 25, now = new Date()): string 
   return ym();
 }
 
+const BULAN_PENDEK = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
 /**
+ * T-013 batch 16: NAMA periode = rentang tanggal, mis. "26 Jun - 25 Jul 2026"; kalau tahun beda
+ * "26 Des 2026 - 25 Jan 2027". Dibaca dari period.key ("YYYY-MM-DD_YYYY-MM-DD", tanggal WIB), jadi
+ * tidak bergeser karena zona waktu server. Dipakai SEMUA tampilan & export (bukan nama bulan saja).
+ */
+export function formatPeriodRangeLabel(period: Pick<Period, "key">): string {
+  const parts = period.key.split("_");
+  const parse = (ymd: string | undefined) => {
+    const m = ymd ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd) : null;
+    if (!m) throw new Error(`Key periode tidak valid: "${period.key}"`);
+    return { y: Number(m[1]), label: `${Number(m[3])} ${BULAN_PENDEK[Number(m[2]) - 1]}` };
+  };
+  const a = parse(parts[0]);
+  const b = parse(parts[1]);
+  return a.y === b.y ? `${a.label} - ${b.label} ${b.y}` : `${a.label} ${a.y} - ${b.label} ${b.y}`;
+}
+
+/** Rentang dua tanggal (Date) dengan format nama periode, dibaca dalam WIB. */
+export function formatDateRangeLabel(from: Date | string, to: Date | string): string {
+  const ymdWib = (d: Date | string) =>
+    new Date(new Date(d).getTime() + WIB_OFFSET_HOURS * 3_600_000).toISOString().slice(0, 10);
+  return formatPeriodRangeLabel({ key: `${ymdWib(from)}_${ymdWib(to)}` });
+}
+
+/**
+ * @deprecated T-013 batch 16: nama bulan saja membingungkan (26 Jun-25 Jul jadi "Juli 2026").
+ * Pakai formatPeriodRangeLabel. Dibiarkan hanya untuk test lama.
+ *
  * Label periode = nama bulan AKHIR periode dalam bahasa Indonesia, mis. "Januari 2027".
  * Dibaca dari bagian akhir key ("..._YYYY-MM-DD"), bukan dari Date, supaya tidak bergeser
  * karena zona waktu server — berlaku untuk Period dari getPeriodForMonth maupun periodKey tersimpan.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDateRangeLabel } from "@/lib/period";
 import UploadForm from "@/components/UploadForm";
 import DataTable from "@/components/DataTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -85,7 +86,7 @@ export default function InputPage() {
             { header: "Tanggal", render: (r) => formatDate(r.createdAt) },
             { header: "Toko", render: (r) => r.store },
             { header: "Nama File", render: (r) => r.fileName },
-            { header: "Periode", render: (r) => (r.periodStart ? `${formatDate(r.periodStart)} – ${formatDate(r.periodEnd)}` : "—") },
+            { header: "Periode", render: (r) => (r.periodStart ? formatDateRangeLabel(r.periodStart, r.periodEnd) : "—") },
             { header: "Baris Order", render: (r) => formatNumber(r.orderRows) },
             { header: "Adjustment", render: (r) => formatNumber(r.adjustmentRows) },
             { header: "Versi", render: (r) => `v${r.version}` },
