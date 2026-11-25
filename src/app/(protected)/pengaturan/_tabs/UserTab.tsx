@@ -98,7 +98,7 @@ export default function SettingsUsersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">User Management</h1>
+      <h1 className="text-xl font-bold text-gray-900">User</h1>
       <p className="text-sm text-gray-500">
         Owner menambah Admin Toko dan mengatur pembagian toko. Klik <strong>Edit</strong> di tabel untuk mengubah nama,
         role, assignment toko, atau reset password admin yang sudah ada.

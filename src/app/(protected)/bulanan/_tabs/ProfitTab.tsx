@@ -40,7 +40,7 @@ export default function LaporanProfitPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-gray-900">Laporan Profit & Barang Keluar</h1>
+        <h1 className="text-xl font-bold text-gray-900">Profit & Barang Keluar</h1>
         <ExportButtons report="profit" />
       </div>
 

@@ -24,16 +24,32 @@ export default function OnProsesPage() {
   const storeId = searchParams.get("storeId") ?? "all";
   const [data, setData] = useState<OnProsesResult | null>(null);
   const [error, setError] = useState(false);
+  // T-013 batch 16: akun tanpa toko -> keadaan kosong yang jelas, API On Proses tidak dipanggil.
+  const [noStore, setNoStore] = useState(false);
   const [q, setQ] = useState("");
   const [pick, setPick] = useState<Pick>(null);
 
   useEffect(() => {
+    let alive = true;
     setData(null);
     setError(false);
-    fetch(`/api/on-proses?storeId=${encodeURIComponent(storeId)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then(setData)
-      .catch(() => setError(true));
+    fetch("/api/stores")
+      .then((r) => (r.ok ? r.json() : { stores: [] }))
+      .then((d) => {
+        if (!alive) return;
+        if ((d.stores ?? []).length === 0) {
+          setNoStore(true);
+          return;
+        }
+        setNoStore(false);
+        return fetch(`/api/on-proses?storeId=${encodeURIComponent(storeId)}`)
+          .then((r) => (r.ok ? r.json() : Promise.reject()))
+          .then((x) => alive && setData(x));
+      })
+      .catch(() => alive && setError(true));
+    return () => {
+      alive = false;
+    };
   }, [storeId]);
 
   const rows = useMemo(() => {
@@ -113,7 +129,11 @@ export default function OnProsesPage() {
         )}
       </div>
 
-      {error ? (
+      {noStore ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Akun ini belum dihubungkan ke toko. Hubungi Owner.
+        </p>
+      ) : error ? (
         <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">Data On Proses gagal dimuat.</p>
       ) : (
         <DataTable<OnProsesRow>

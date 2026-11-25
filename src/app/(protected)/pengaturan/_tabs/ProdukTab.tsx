@@ -112,7 +112,7 @@ export default function SettingsProductsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Master Produk & HPP</h1>
+      <h1 className="text-xl font-bold text-gray-900">Produk & HPP</h1>
       <p className="text-sm text-gray-500">
         Master SKU <strong>global</strong> — 1 SKU = 1 HPP (Modal) + 1 Harga Katalog Agen (sebelum diskon 50%),
         berlaku untuk semua toko. Hanya Owner yang bisa mengubah.

@@ -143,7 +143,7 @@ export default function RekonsiliasiPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Keuangan & Rekonsiliasi</h1>
+          <h1 className="text-xl font-bold text-gray-900">Uang Cair</h1>
           {/* T-013: ditulis sesuai perilaku kode saat ini — reconcile() memfilter Order.orderCreatedAt,
               bukan tanggal dana dilepas. Lihat src/lib/reconciliation.ts. */}
           <p className="my-1 inline-block rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-800">

@@ -29,3 +29,6 @@ tsconfig.tsbuildinfo
 screenshots-t013/
 # T-013 batch4: file backup lokal (nama-asli.backup-YYYYMMDD...) tidak ikut Git
 *.backup-*
+
+# T-013 batch 16: folder keluaran Claude di root repo (bukan bagian aplikasi)
+Claude outputs/

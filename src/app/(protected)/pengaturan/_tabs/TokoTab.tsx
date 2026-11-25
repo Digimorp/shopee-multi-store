@@ -74,7 +74,7 @@ export default function SettingsStoresPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Master Data Toko</h1>
+      <h1 className="text-xl font-bold text-gray-900">Toko</h1>
       <p className="text-sm text-gray-500">Kelola daftar toko Shopee yang dikelola perusahaan.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 card p-6">

@@ -35,7 +35,7 @@ export default function LaporanRekapPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Laporan Rekapan & Cut-Off Period</h1>
+      <h1 className="text-xl font-bold text-gray-900">Rekap</h1>
       <p className="text-sm text-gray-500">
         Rekap bulanan mengikuti siklus cut-off (tgl 26 s/d tgl 25). Komparasi menunjukkan selisih omzet vs bulan
         tepat sebelumnya.

@@ -36,7 +36,7 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Log Aktivitas Admin</h1>
+      <h1 className="text-xl font-bold text-gray-900">Log Aktivitas</h1>
       <p className="text-sm text-gray-500">
         Riwayat semua aksi Edit &amp; Delete pada data Pesanan, Income Report, Master Produk, User, Toko, dan Mapping
         Status — siapa mengubah apa, kapan, dan alasannya (kalau ada). Data yang dihapus tetap ada di database, hanya

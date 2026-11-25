@@ -65,7 +65,7 @@ export default function ReturCancelPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-gray-900">Analisis Retur & Pembatalan</h1>
+        <h1 className="text-xl font-bold text-gray-900">Retur & Batal</h1>
         <ExportButtons report="retur" />
       </div>
 

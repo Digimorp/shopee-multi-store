@@ -15,6 +15,7 @@ import LogTab from "./LogTab";
 function AturanTab() {
   return (
     <div className="space-y-8">
+      <h1 className="text-xl font-bold text-gray-900">Aturan</h1>
       <StatusMappingSection />
       <PeriodSection />
     </div>

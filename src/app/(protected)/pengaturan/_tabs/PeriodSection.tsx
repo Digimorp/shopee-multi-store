@@ -42,7 +42,7 @@ export default function SettingsPeriodsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Settings Period & Cut-Off</h1>
+      <h2 className="text-base font-semibold text-gray-900">Periode & Cut-Off</h2>
 
       <form onSubmit={saveCutoff} className="flex flex-wrap items-center gap-2 card p-6">
         <label className="text-sm text-gray-600">Tanggal Cut-Off tiap bulan:</label>

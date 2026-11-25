@@ -34,7 +34,7 @@ export default function PerformaTokoPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-gray-900">Performa Toko</h1>
+        <h1 className="text-xl font-bold text-gray-900">Per Toko</h1>
         <ExportButtons report="performa-toko" />
       </div>
       <p className="text-sm text-gray-500">

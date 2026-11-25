@@ -11,7 +11,13 @@ import TopNavTabs from "@/components/TopNavTabs";
 import { menuForRole, hrefWithFilter, isNavActive } from "@/components/navConfig";
 import { useSidebar } from "@/components/SidebarContext";
 import type { StoreOption } from "@/types";
-import { PERIOD_BASIS_NOTE, PERIOD_OPTIONS, convertLegacyRange, formatPeriodRange } from "@/lib/periodPicker";
+import {
+  PERIOD_BASIS_NOTE,
+  PERIOD_BASIS_NOTE_UANG_CAIR,
+  PERIOD_OPTIONS,
+  convertLegacyRange,
+  formatPeriodRange,
+} from "@/lib/periodPicker";
 
 const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 const INVALID_PERIOD = "__invalid-period";
@@ -80,6 +86,11 @@ export default function TopBar() {
       : currentMonth;
   // On Proses memakai semua periode (hanya filter Toko) -> pemilih Periode disembunyikan di sana.
   const periodApplies = !isNavActive(pathname, "/on-proses");
+  // T-013 batch 16: total tab Uang Cair memakai tanggal uang masuk (batch 13), tab lain tanggal pesanan.
+  const basisNote =
+    isNavActive(pathname, "/bulanan") && searchParams.get("tab") === "uang-cair"
+      ? PERIOD_BASIS_NOTE_UANG_CAIR
+      : PERIOD_BASIS_NOTE;
 
   const monthOptions = currentMonth ? Array.from({ length: PERIOD_OPTIONS }, (_, i) => shiftMonth(currentMonth, i)) : [];
   // T-013 batch 16: 12 periode terakhir, terbaru di atas. Link ke periode yang lebih lama tetap tampil sebagai pilihan, tidak dipaksa ganti.
@@ -258,7 +269,7 @@ export default function TopBar() {
             ))}
           </select>
           {/* Rentang sudah jadi nama opsi -> tidak ditulis dobel; cukup keterangan dasar tanggalnya. */}
-          <span className="text-[11px] leading-tight text-gray-400">{PERIOD_BASIS_NOTE}</span>
+          <span className="text-[11px] leading-tight text-gray-400">{basisNote}</span>
           </>
         )}
       </div>
