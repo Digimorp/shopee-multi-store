@@ -13,6 +13,7 @@ import {
 } from "@/lib/profit";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
 import { returLoss, sumReturLoss } from "@/lib/returLoss";
+import { buildRecap } from "@/lib/recap";
 
 export type ColKind = "text" | "int" | "money" | "pct";
 export type ReportColumn = { key: string; header: string; width: number; align?: "left" | "right"; kind?: ColKind };
@@ -421,80 +422,48 @@ export async function datasetRecap(f: ReportFilter, type: string): Promise<Repor
   const cutoffDay = setting?.cutoffDay ?? 25;
   const orders = await prisma.order.findMany({
     where: { storeId: { in: f.storeIds }, status: { not: OrderStatus.CANCEL }, deletedAt: null },
-    select: { orderSn: true, orderCreatedAt: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, qty: true, status: true, periodKey: true },
+    select: { orderSn: true, orderCreatedAt: true, grossOmzet: true, netSettlement: true, hppSnapshot: true, qty: true, status: true },
   });
-
-  // Rekap mencakup SEMUA periode order toko ini sekaligus (tanpa filter tanggal dari UI,
-  // sama seperti sebelumnya) -- reconcile() dipanggil dengan rentang tanggal seluas mungkin
-  // supaya semua order (lintas periode) ikut ter-cover pencarian match Income Report. Profit
-  // HPP HARUS pakai nilai AKTUAL, BUKAN Order.profitHpp yang cuma estimasi — lihat
-  // datasetProfit() di atas & src/app/api/reports/profit/route.ts.
-  const { estimasiByOrderSn, aktualByOrderSn } = buildActualLookup(
-    await reconcile({ storeIds: f.storeIds, from: new Date(0), to: new Date() })
-  );
-  // Profit HPP per baris lewat addProfitLine: belum cair diabaikan, HPP tidak diketahui -> tanpaHpp.
-  const addActual = (t: ProfitTally, o: (typeof orders)[number]): void => {
-    const groupEstimasi = estimasiByOrderSn.get(o.orderSn) ?? o.netSettlement;
-    const groupAktual = aktualByOrderSn.get(o.orderSn);
-    const lineAktual = allocateActual(o.netSettlement, groupEstimasi, groupAktual);
-    addProfitLine(t, { qty: o.qty, hppSnapshot: o.hppSnapshot, uangCair: lineAktual });
-  };
+  // Sama persis dengan /api/reports/recap (src/lib/recap.ts): semua bulan, bulan dihitung dari
+  // tanggal pesanan dibuat (WIB) + cut-off saat ini, tahun = tahun periode, selisih vs bulan tepat
+  // sebelumnya. reconcile() rentang seluas mungkin supaya semua order ter-cover Income Report.
+  const lookup = buildActualLookup(await reconcile({ storeIds: f.storeIds, from: new Date(0), to: new Date() }));
+  const { months, years } = buildRecap(orders, lookup, cutoffDay);
 
   if (type === "yearly") {
-    const byYear = new Map<string, { tahun: string; omzet: number; hpp: ProfitTally }>();
-    for (const o of orders) {
-      const yr = String(o.orderCreatedAt.getFullYear());
-      const cur = byYear.get(yr) ?? { tahun: yr, omzet: 0, hpp: emptyTally() };
-      cur.omzet += o.grossOmzet;
-      if (o.status === OrderStatus.SELESAI) addActual(cur.hpp, o);
-      byYear.set(yr, cur);
-    }
-    const yearRows = Array.from(byYear.values())
-      .sort((a, b) => (a.tahun < b.tahun ? 1 : -1))
-      .map((r) => ({ tahun: r.tahun, omzet: r.omzet, profitHpp: r.hpp.profitHpp, tanpaHpp: r.hpp.tanpaHpp }));
+    const rows = years.map((r) => ({ tahun: r.year, omzet: r.omzet, uangCair: r.uangCair, profitHpp: r.profitHpp, tanpaHpp: r.tanpaHpp }));
     return {
       title: "Rekap Tahunan (Multi-Toko)",
       columns: [
         { key: "tahun", header: "Tahun", width: 10 },
-        { key: "omzet", header: "Omzet", width: 20, align: "right", kind: "money" },
-        { key: "profitHpp", header: "Profit HPP", width: 20, align: "right", kind: "money" },
+        { key: "omzet", header: "Omzet", width: 18, align: "right", kind: "money" },
+        { key: "uangCair", header: "Uang Cair", width: 18, align: "right", kind: "money" },
+        { key: "profitHpp", header: "Profit HPP", width: 18, align: "right", kind: "money" },
       ],
-      rows: yearRows,
-      summary: [{ label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(yearRows)) }],
+      rows,
+      summary: [{ label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) }],
     };
   }
 
-  const byPeriod = new Map<string, { periodKey: string; periode: string; omzet: number; hpp: ProfitTally }>();
-  for (const o of orders) {
-    const key = o.periodKey || getPeriodForDate(o.orderCreatedAt, cutoffDay).key;
-    const cur =
-      byPeriod.get(key) ?? { periodKey: key, periode: formatPeriodLabel(parsePeriodKey(key)), omzet: 0, hpp: emptyTally() };
-    cur.omzet += o.grossOmzet;
-    if (o.status === OrderStatus.SELESAI) addActual(cur.hpp, o);
-    byPeriod.set(key, cur);
-  }
-  const sorted = Array.from(byPeriod.values()).sort((a, b) => (a.periodKey < b.periodKey ? 1 : -1));
-  const rows = sorted.map((r, i) => {
-    const prev = sorted[i + 1];
-    const deltaOmzet = prev ? r.omzet - prev.omzet : 0;
-    const deltaPct = prev && prev.omzet !== 0 ? (deltaOmzet / prev.omzet) * 100 : 0;
-    return {
-      periode: r.periode,
-      omzet: r.omzet,
-      profitHpp: r.hpp.profitHpp,
-      tanpaHpp: r.hpp.tanpaHpp,
-      selisih: deltaOmzet,
-      selisihPct: `${deltaPct.toFixed(1)}%`,
-    };
-  });
+  const rows = months.map((r) => ({
+    periode: r.label,
+    omzet: r.omzet,
+    uangCair: r.uangCair,
+    profitHpp: r.profitHpp,
+    tanpaHpp: r.tanpaHpp,
+    // bulan tepat sebelumnya tidak ada data -> "-" (bukan 0 / 0%)
+    selisih: r.deltaOmzet ?? "-",
+    selisihPct: r.deltaPct == null ? "-" : `${r.deltaPct.toFixed(1)}%`,
+  }));
   return {
     title: "Rekap Bulanan (Cut-Off 26-25) & Komparasi",
     columns: [
-      { key: "periode", header: "Periode Cut-Off", width: 20 },
-      { key: "omzet", header: "Omzet", width: 16, align: "right", kind: "money" },
-      { key: "profitHpp", header: "Profit HPP", width: 16, align: "right", kind: "money" },
-      { key: "selisih", header: "Selisih vs Lalu", width: 16, align: "right", kind: "money" },
-      { key: "selisihPct", header: "%", width: 8, align: "right" },
+      { key: "periode", header: "Periode Cut-Off", width: 24 },
+      { key: "omzet", header: "Omzet", width: 14, align: "right", kind: "money" },
+      { key: "uangCair", header: "Uang Cair", width: 14, align: "right", kind: "money" },
+      { key: "profitHpp", header: "Profit HPP", width: 14, align: "right", kind: "money" },
+      { key: "selisih", header: "Selisih Omzet vs Bulan Lalu", width: 14, align: "right", kind: "money" },
+      { key: "selisihPct", header: "%", width: 7, align: "right" },
     ],
     rows,
     summary: [{ label: TANPA_HPP_LABEL, value: tanpaHppValue(sumTanpaHpp(rows)) }],

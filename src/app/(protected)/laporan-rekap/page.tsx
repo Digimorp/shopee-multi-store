@@ -23,13 +23,13 @@ export default function LaporanRekapPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Laporan Rekapan & Cut-Off Period</h1>
       <p className="text-sm text-gray-500">
-        Rekap bulanan mengikuti siklus cut-off (tgl 26 s/d tgl 25). Komparasi menunjukkan selisih omzet vs periode
-        sebelumnya.
+        Rekap bulanan mengikuti siklus cut-off (tgl 26 s/d tgl 25). Komparasi menunjukkan selisih omzet vs bulan
+        tepat sebelumnya.
       </p>
       <p className="inline-block rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-800">
-        <strong>Dasar tanggal: kode periode cut-off yang ditetapkan saat file diupload</strong> (dari tanggal pesanan
-        dibuat, dengan aturan cut-off yang berlaku waktu upload). Tidak terpengaruh filter tanggal — angkanya tidak bisa
-        dibandingkan langsung dengan Laporan Profit atau Rekonsiliasi.
+        <strong>Dasar tanggal: tanggal pesanan dibuat (WIB)</strong>, dikelompokkan per periode cut-off yang berlaku
+        sekarang — sama dengan Laporan Profit dan Rekonsiliasi. Rekap selalu menampilkan semua bulan; Tahunan = jumlah
+        12 bulan periodenya.
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -57,14 +57,20 @@ export default function LaporanRekapPage() {
           columns={[
             { header: "Periode Cut-Off", render: (r) => r.label },
             { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
+            { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
             { header: "Profit HPP", render: (r) => formatRupiah(r.profitHpp) },
             {
-              header: "Selisih vs Periode Lalu",
-              render: (r) => (
-                <span className={r.deltaOmzet >= 0 ? "text-green-600" : "text-red-600"}>
-                  {r.deltaOmzet >= 0 ? "▲" : "▼"} {formatRupiah(Math.abs(r.deltaOmzet))} ({r.deltaPct.toFixed(1)}%)
-                </span>
-              ),
+              header: "Selisih Omzet vs Bulan Lalu",
+              // bulan tepat sebelumnya tidak ada data -> "-" (bukan 0%)
+              render: (r) =>
+                r.deltaOmzet == null ? (
+                  <span className="text-gray-400">-</span>
+                ) : (
+                  <span className={r.deltaOmzet >= 0 ? "text-green-600" : "text-red-600"}>
+                    {r.deltaOmzet >= 0 ? "▲" : "▼"} {formatRupiah(Math.abs(r.deltaOmzet))}
+                    {r.deltaPct == null ? "" : ` (${r.deltaPct.toFixed(1)}%)`}
+                  </span>
+                ),
             },
           ]}
         />
@@ -75,6 +81,7 @@ export default function LaporanRekapPage() {
           columns={[
             { header: "Tahun", render: (r) => r.year },
             { header: "Omzet", render: (r) => formatRupiah(r.omzet) },
+            { header: "Uang Cair", render: (r) => formatRupiah(r.uangCair) },
             { header: "Profit HPP", render: (r) => formatRupiah(r.profitHpp) },
           ]}
         />

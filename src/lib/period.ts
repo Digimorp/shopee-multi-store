@@ -121,6 +121,32 @@ export function getPeriodForMonth(month: string, cutoffDay = 25): Period {
 }
 
 /**
+ * Bulan periode cut-off (format "YYYY-MM", = bulan AKHIR periode) untuk sebuah tanggal, dalam WIB.
+ * Kebalikan getPeriodForMonth: tanggal d selalu ada di dalam getPeriodForMonth(hasil, cutoffDay).
+ * Mis. cutoff 25: 25 Agu 23:59 WIB -> "2026-08", 26 Agu 00:00 WIB -> "2026-09";
+ * 31 Des 2026 23:30 WIB -> "2027-01". Tidak bergantung zona waktu server.
+ */
+export function getPeriodMonthForDate(date: Date, cutoffDay = 25): string {
+  const wib = new Date(date.getTime() + WIB_OFFSET_HOURS * 3_600_000); // komponen UTC = jam dinding WIB
+  let y = wib.getUTCFullYear();
+  let m0 = wib.getUTCMonth();
+  if (wib.getUTCDate() > Math.min(cutoffDay, daysInMonth(y, m0))) {
+    m0++;
+    if (m0 > 11) {
+      m0 = 0;
+      y++;
+    }
+  }
+  return `${y}-${pad2(m0 + 1)}`;
+}
+
+/** Bulan "YYYY-MM" sebelumnya, mis. "2027-01" -> "2026-12". */
+export function prevPeriodMonth(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${pad2(m - 1)}`;
+}
+
+/**
  * Bulan periode cut-off yang sedang berjalan menurut WIB, format "YYYY-MM"
  * (bulan AKHIR periode). Mis. cutoff 25: 25 Jan 23:59 WIB -> "2027-01", 26 Jan 00:00 WIB -> "2027-02".
  * Dipakai server (resolveFilters) DAN browser (TopBar) supaya default periodenya selalu sama.
