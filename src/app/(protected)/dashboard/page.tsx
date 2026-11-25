@@ -11,6 +11,8 @@ import ActivityCard from "@/components/dashboard/ActivityCard";
 import RecentOrdersCard from "@/components/dashboard/RecentOrdersCard";
 import QuickActions from "@/components/dashboard/QuickActions";
 import TanpaHppNote from "@/components/TanpaHppNote";
+import PageHeader from "@/components/PageHeader";
+import { PERIOD_BASIS_NOTE } from "@/lib/periodPicker";
 import type { TrendPoint } from "@/components/TrendChart";
 import {
   formatPeriodRangeLabel,
@@ -123,10 +125,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-neutral-950">Dashboard Utama</h1>
-        <p className="text-sm text-neutral-500">Ringkasan {periodLabel}</p>
-      </div>
+      <PageHeader title="Dashboard" sub={`Ringkasan ${periodLabel}, ${PERIOD_BASIS_NOTE}.`} storeFilter />
 
       <QuickActions selisihCount={summary?.selisihCount} />
 

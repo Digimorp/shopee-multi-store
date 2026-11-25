@@ -15,6 +15,13 @@ type Props = {
   onSelect?: (key: string) => void;
   ariaLabel: string;
   size?: "md" | "sm";
+  /**
+   * T-013 batch 18 (Kaca Lembut):
+   *  - nav     = menu utama: jalur kaca, pil aktif hitam teks putih.
+   *  - tab     = tab halaman (Bulanan / Pengaturan): pil kecil, aktif latar teal 12% teks teal.
+   *  - segment = segmented control: kapsul abu tipis, aktif putih bertepi.
+   */
+  variant?: "nav" | "tab" | "segment";
   /** true = di layar < sm tab melebar penuh & dibagi rata (dipakai toggle periode). */
   stretch?: boolean;
   className?: string;
@@ -23,8 +30,16 @@ type Props = {
 // Pill "disembunyikan" = clip-path tanpa luas.
 const HIDDEN = "inset(50% 50% 50% 50% round 999px)";
 
-const ITEM_BASE = "whitespace-nowrap rounded-full text-center font-medium";
-const SIZE = { md: "px-4 py-2 text-[13px]", sm: "px-2 py-1 text-xs sm:px-3" } as const;
+const ITEM_BASE = "inline-flex items-center justify-center whitespace-nowrap rounded-full text-center font-semibold";
+// Target sentuh >= 44px (min-h-11) di semua ukuran.
+const SIZE = { md: "min-h-11 px-4 py-2.5 text-sm", sm: "min-h-11 px-3.5 py-2.5 text-sm" } as const;
+
+const VARIANT = {
+  nav: { track: "glass rounded-full p-1", idle: "text-muted hover:text-ink", pill: "bg-pill text-white", pillItem: "" },
+  tab: { track: "rounded-full bg-white/50 p-1", idle: "text-muted hover:text-ink", pill: "bg-accent-soft text-accent-text", pillItem: "" },
+  // Tepi tab aktif digambar di salinan label overlay (ring dalam), jadi ikut terpotong tepat di tab aktif.
+  segment: { track: "rounded-full bg-ink/[0.06] p-1", idle: "text-muted hover:text-ink", pill: "bg-white text-ink", pillItem: "ring-1 ring-inset ring-ink/15" },
+} as const;
 
 /**
  * Tab/pill-toggle dengan indikator aktif yang geser + resize halus (slidePill, GSAP).
@@ -40,6 +55,7 @@ export default function SlidingTabs({
   onSelect,
   ariaLabel,
   size = "md",
+  variant = "nav",
   stretch = false,
   className = "",
 }: Props) {
@@ -104,22 +120,23 @@ export default function SlidingTabs({
     return () => ro.disconnect();
   }, []);
 
+  const v = VARIANT[variant];
   const containerCls = stretch
-    ? "relative flex w-full rounded-full bg-neutral-100 p-1 sm:inline-flex sm:w-auto"
-    : "relative inline-flex w-max rounded-full bg-neutral-100 p-1";
+    ? `relative flex w-full sm:inline-flex sm:w-auto ${v.track}`
+    : `relative inline-flex w-max ${v.track}`;
   const itemCls = `${ITEM_BASE} ${SIZE[size]} ${stretch ? "flex-1 sm:flex-none" : "shrink-0"}`;
 
   return (
     <div
       ref={wrapRef}
-      className={`${stretch ? "" : "overflow-x-auto"} [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+      // Menu utama (nav) hanya perlu digeser di HP (< 820px). Di desktop tidak dijadikan wadah gulir:
+      // blur kaca di dalam wadah gulir kehilangan sudut bulatnya di Chrome.
+      className={`${stretch ? "" : variant === "nav" ? "max-[819px]:overflow-x-auto" : "overflow-x-auto"} [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
     >
       <div ref={containerRef} role={onSelect ? "group" : undefined} aria-label={ariaLabel} className={containerCls}>
         {items.map((it) => {
           const active = it.key === activeKey;
-          const cls = `relative z-0 ${itemCls} outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-            !ready && active ? "bg-neutral-950 text-white" : "text-neutral-500 hover:text-neutral-900"
-          }`;
+          const cls = `relative z-0 ${itemCls} ${!ready && active ? v.pill : v.idle}`;
           const setRef = (el: HTMLElement | null) => {
             if (el) itemRefs.current.set(it.key, el);
             else itemRefs.current.delete(it.key);
@@ -139,12 +156,12 @@ export default function SlidingTabs({
         <div
           ref={pillRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-10 rounded-full bg-neutral-950 p-1 text-white"
+          className={`pointer-events-none absolute inset-0 z-10 rounded-full p-1 ${v.pill}`}
           style={{ clipPath: HIDDEN }}
         >
           <div className="flex">
             {items.map((it) => (
-              <span key={it.key} className={itemCls}>
+              <span key={it.key} className={`${itemCls} ${v.pillItem}`}>
                 {it.label}
               </span>
             ))}

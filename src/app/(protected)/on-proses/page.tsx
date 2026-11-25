@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import SummaryCard from "@/components/SummaryCard";
+import PageHeader from "@/components/PageHeader";
 import { formatDate, formatNumber, formatRupiah } from "@/lib/format";
 import {
   AGE_BUCKETS,
@@ -64,9 +65,9 @@ export default function OnProsesPage() {
   const s = data?.summary;
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">On Proses</h1>
-        <p className="mt-1 inline-block rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
+      <div className="space-y-4">
+        <PageHeader title="On Proses" sub="Uang yang belum masuk, dari semua periode." storeFilter />
+        <p className="inline-block rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
           <strong>Estimasi - belum masuk Uang Cair.</strong> Pesanan dalam pengiriman dan pesanan Selesai yang uangnya
           belum ada di Income Report, dari semua periode (tidak mengikuti filter Periode). Pesanan keluar dari sini
           otomatis setelah Income Report yang memuatnya diunggah.

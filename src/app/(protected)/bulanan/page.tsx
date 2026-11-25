@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import SlidingTabs from "@/components/SlidingTabs";
+import PageHeader from "@/components/PageHeader";
+import { PERIOD_BASIS_NOTE, PERIOD_BASIS_NOTE_UANG_CAIR } from "@/lib/periodPicker";
 import { BULANAN_TABS, filterQuery, hrefWithFilter, pickTab } from "@/components/navConfig";
 import RekapTab from "./_tabs/RekapTab";
 import UangCairTab from "./_tabs/UangCairTab";
@@ -51,10 +53,18 @@ export default function BulananPage() {
   const Content = CONTENT[tab];
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto">
-        <SlidingTabs ariaLabel="Laporan bulanan" items={items} activeKey={tab} size="sm" />
-      </div>
+    <div className="space-y-5">
+      {/* T-013 batch 16: total tab Uang Cair memakai tanggal uang masuk (batch 13), tab lain tanggal pesanan. */}
+      <PageHeader
+        title="Bulanan"
+        sub={`Angka ${tab === "uang-cair" ? PERIOD_BASIS_NOTE_UANG_CAIR : PERIOD_BASIS_NOTE}.`}
+        storeFilter
+        controls={
+          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <SlidingTabs ariaLabel="Laporan bulanan" items={items} activeKey={tab} size="sm" variant="tab" />
+          </div>
+        }
+      />
       <Content />
     </div>
   );

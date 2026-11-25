@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatDateRangeLabel } from "@/lib/period";
+import PageHeader from "@/components/PageHeader";
 import UploadForm from "@/components/UploadForm";
 import DataTable from "@/components/DataTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -54,7 +55,7 @@ export default function InputPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Upload Data</h1>
+      <PageHeader title="Upload Data" sub="Unggah file pesanan atau Income Report. Jenis file dideteksi otomatis." />
 
       {/* T-013 batch 15 (bagian A): satu form, satu tombol; jenis file dideteksi otomatis. */}
       <UploadForm stores={stores} onDone={loadLogs} />

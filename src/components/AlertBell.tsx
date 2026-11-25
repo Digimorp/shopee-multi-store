@@ -47,26 +47,28 @@ export default function AlertBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         title="Notifikasi"
-        className="relative grid h-9 w-9 place-items-center rounded-full bg-gray-100 text-gray-500 transition hover:text-brand-500"
+        aria-label={count > 0 ? `Notifikasi (${count})` : "Notifikasi"}
+        aria-expanded={open}
+        className="relative grid h-11 w-11 place-items-center rounded-full border border-white bg-white/70 text-ink transition hover:bg-white"
       >
         <Icon name="bell" size={18} />
         {/* Badge jumlah = warning (mustard); teks gelap karena putih di atas mustard hanya ~1,8:1. */}
         {count > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-warning px-1 text-xs font-bold text-neutral-900">
+          <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-warning px-1 text-xs font-bold text-ink">
             {count}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-card-lg">
-          <div className="border-b border-gray-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+        <div className="absolute right-0 z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-white bg-white shadow-glass">
+          <div className="border-b border-ink/5 px-4 py-2.5 text-xs font-semibold text-muted">
             Notifikasi
           </div>
           {items.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-gray-400">Tidak ada notifikasi.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted">Tidak ada notifikasi.</p>
           ) : (
-            <ul className="max-h-80 divide-y divide-gray-50 overflow-y-auto">
+            <ul className="max-h-80 divide-y divide-ink/5 overflow-y-auto">
               {items.map((it, i) => (
                 <li key={i} className="flex gap-3 px-4 py-3">
                   <span
@@ -77,8 +79,8 @@ export default function AlertBell() {
                     <Icon name={it.level === "warning" ? "bell" : "check"} size={14} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">{it.title}</p>
-                    <p className="text-xs leading-snug text-gray-400">{it.detail}</p>
+                    <p className="text-sm font-medium text-ink">{it.title}</p>
+                    <p className="text-xs leading-snug text-muted">{it.detail}</p>
                   </div>
                 </li>
               ))}

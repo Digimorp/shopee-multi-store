@@ -8,7 +8,10 @@ import { Icon } from "@/components/icons";
 import { fitTabs } from "@/lib/fitTabs";
 
 // Class ukuran tab SAMA dengan SlidingTabs size "md" (ITEM_BASE + SIZE.md) supaya hasil ukur = lebar asli.
-const TAB_CLS = "whitespace-nowrap rounded-full text-center font-medium px-4 py-2 text-[13px]";
+const TAB_CLS =
+  "inline-flex items-center justify-center whitespace-nowrap rounded-full text-center font-semibold min-h-11 px-4 py-2.5 text-sm";
+// T-013 batch 18: di bawah 820px (HP) semua pil tampil dan bisa digeser horizontal -- tanpa "Lainnya".
+const SCROLL_BELOW = 820;
 const MORE_LABEL = "Lainnya";
 // T-013 butir 12b (keputusan Founder): tab ini selalu tampil di baris menu, tidak pernah masuk "Lainnya".
 // T-013 batch 15: Retur & Batal kini tab di halaman Bulanan -> yang di-pin menu Bulanan.
@@ -52,7 +55,8 @@ export default function TopNavTabs({
       const widths = nodes.slice(0, items.length).map((n) => n.getBoundingClientRect().width);
       const moreWidth = nodes[items.length]?.getBoundingClientRect().width ?? 0;
       const pinned = items.map((it) => PINNED_KEYS.has(it.key));
-      const next = fitTabs(widths, box.clientWidth, moreWidth, pinned);
+      const next =
+        window.innerWidth < SCROLL_BELOW ? items.map(() => true) : fitTabs(widths, box.clientWidth, moreWidth, pinned);
       setVisible((prev) => (prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next));
     };
     recompute();
@@ -96,7 +100,7 @@ export default function TopNavTabs({
             {it.label}
           </span>
         ))}
-        <span className={`${TAB_CLS} inline-flex items-center gap-1`}>
+        <span className={`${TAB_CLS} gap-1`}>
           {MORE_LABEL}
           <Icon name="chevronDown" size={14} />
         </span>
@@ -107,6 +111,7 @@ export default function TopNavTabs({
         ariaLabel="Navigasi utama"
         items={shown}
         activeKey={overflowActive ? null : activeKey}
+        variant="nav"
         className="min-w-0"
       />
 
@@ -118,9 +123,7 @@ export default function TopNavTabs({
             aria-haspopup="menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className={`${TAB_CLS} inline-flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              overflowActive ? "bg-neutral-950 text-white" : "bg-neutral-100 text-neutral-500 hover:text-neutral-900"
-            }`}
+            className={`${TAB_CLS} gap-1 ${overflowActive ? "bg-pill text-white" : "glass text-muted hover:text-ink"}`}
           >
             {MORE_LABEL}
             <Icon name="chevronDown" size={14} />
@@ -129,7 +132,7 @@ export default function TopNavTabs({
             <div
               role="menu"
               aria-label="Menu lainnya"
-              className="absolute right-0 top-full z-50 mt-2 min-w-[200px] rounded-2xl border border-neutral-200 bg-white p-1 shadow-lg"
+              className="absolute right-0 top-full z-50 mt-2 min-w-[200px] rounded-2xl border border-white bg-white p-1 shadow-glass"
             >
               {overflow.map((it) => {
                 const active = it.key === activeKey;
@@ -140,8 +143,8 @@ export default function TopNavTabs({
                     role="menuitem"
                     aria-current={active ? "page" : undefined}
                     onClick={() => setOpen(false)}
-                    className={`block whitespace-nowrap rounded-xl px-3 py-2 text-[13px] font-medium ${
-                      active ? "bg-neutral-950 text-white" : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                    className={`flex min-h-11 items-center whitespace-nowrap rounded-xl px-3 text-sm font-semibold ${
+                      active ? "bg-pill text-white" : "text-muted hover:bg-ink/5 hover:text-ink"
                     }`}
                   >
                     {it.label}

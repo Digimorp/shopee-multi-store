@@ -2,40 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design tokens — aksen (brand) monokrom HITAM di atas canvas sage. Ubah di sini, bukan hardcode per komponen. */
+/* Design tokens. T-013 batch 18: gaya "Kaca Lembut" (Desain 5). Ubah di sini, bukan hardcode per komponen. */
 :root {
-  /* Background utama: hijau mint/sage pucat (dipakai body + halaman login) */
-  --color-canvas: #f7f8fa;
+  /* Teks utama / sekunder (sama dengan tailwind ink / muted). */
+  --ink: #10141a;
+  --muted: #667180;
+  /* Aksen teal + aksen kedua ungu. */
+  --accent: #17a398;
+  --accent-2: #8b7cf6;
+  /* Kartu kaca: putih 72% + garis putih + bayangan lembut + blur 14px. */
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-line: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 8px 30px rgba(40, 60, 90, 0.08);
+  /* Latar halaman: gradasi tetap (fixed). */
+  --page-bg: linear-gradient(135deg, #e6f5ef 0%, #eceefb 52%, #f7ecf2 100%);
+
   --color-card: #ffffff;
   --color-card-border: #e5e5e5;
 
-  /* Latar area konten di dalam shell (redesign monokrom). Token --color-canvas di atas
-     sengaja TIDAK diubah: dipakai halaman login yang di luar scope redesign ini. */
-  --color-canvas-mono: #f7f7f8;
-
-  /* Rail ikon kiri: monokrom gelap (dipakai HANYA oleh Sidebar.tsx) */
-  --color-sidebar-bg: #0a0a0a;
-  --color-sidebar-hover: #1c1c1c;
-  --color-sidebar-border: #262626;
-  --color-sidebar-text: #a3a3a3;
-  --color-sidebar-muted: #737373;
-  /* Item menu aktif = mustard, diambil dari token `warning` di tailwind.config.ts (#E8B84A) supaya satu sumber.
-     Teks aktif di bawah tetap gelap (kontras ~9,7:1 di atas mustard). */
+  /* Rel ikon kiri: kapsul hitam, ikon putih (dipakai HANYA oleh Sidebar.tsx). */
+  --color-sidebar-bg: #0b0d10;
+  --color-sidebar-hover: #1f232a;
+  --color-sidebar-text: #ffffff;
+  /* Item aktif = kuning (token `warning`, #E8B84A) -- warna aksen yang sudah dipakai. Teks gelap 10:1. */
   --color-sidebar-active: theme("colors.warning.DEFAULT");
-  --color-sidebar-active-text: #0a0a0a;
+  --color-sidebar-active-text: #0b0d10;
 
-  /* Aksen utama (brand): HITAM monokrom — tombol, link, focus, hover. Sebelumnya hijau forest; nilai
-     monokrom ini dulu di-scope lewat `.theme-mono` (Dashboard + shell saja), kini jadi default seluruh app. */
+  /* Tombol utama / menu aktif: pil hitam. */
   --color-brand-50: #fafafa;
   --color-brand-100: #f5f5f5;
   --color-brand-200: #e5e5e5;
   --color-brand-300: #d4d4d4;
-  --color-brand-400: #a3a3a3;
+  --color-brand-400: #667180;
   --color-brand-500: #404040;
-  --color-brand-600: #0a0a0a;
+  --color-brand-600: #0b0d10;
   --color-brand-700: #000000;
 
-  /* Aksen kedua (muted plum) — variasi kecil di icon badge/chart */
+  /* Aksen kedua lama (muted plum) -- dipakai seperlunya di grafik. */
   --color-grape-400: #b49ab8;
   --color-grape-500: #96789c;
   --color-grape-600: #785f7d;
@@ -47,8 +50,9 @@ body {
 }
 
 body {
-  background-color: var(--color-canvas);
-  color: #1f2937;
+  background: var(--page-bg) fixed;
+  background-color: #eceefb;
+  color: var(--ink);
   /* T-013 batch 17: dasar 16px, line-height 1.5 (fitur glyph khusus font lama dihapus). */
   font-size: 1rem;
   line-height: 1.5;
@@ -86,53 +90,110 @@ table,
   border-radius: 9999px;
 }
 
+/* Fokus keyboard terlihat di semua kontrol (cincin teal), tidak muncul saat klik mouse. */
+:where(a, button, select, input, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
 @layer components {
-  /* Kartu standar — putih, border tipis 1px + shadow lg (kerasa "mengambang", bukan flat) */
+  /* T-013 batch 18: kartu "kaca" -- SATU sumber gaya untuk semua kartu (.glass / .card).
+     Blur dipasang di ::before, bukan di kartu itu sendiri: backdrop-filter pada kartu akan membuat
+     modal `position: fixed` di dalamnya ikut terkurung di kartu. Isi kartu (tabel, teks) tidak di-blur. */
+  .glass,
   .card {
-    @apply rounded-2xl border border-card-border bg-card shadow-lg;
+    position: relative;
+    isolation: isolate;
+    border-radius: 22px;
+    border: 1px solid var(--glass-line);
+    background: var(--glass);
+    box-shadow: var(--glass-shadow);
+  }
+  .glass::before,
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
   }
 
-  /* Tombol primer — solid hitam (bukan gradient), bentuk pill. Shadow netral (bukan hijau lagi). */
+  /* Wadah tabel: putih hampir penuh, TANPA blur (tabel tidak ikut kaca). */
+  .panel {
+    border-radius: 22px;
+    border: 1px solid var(--glass-line);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Tabel baku: header 13px abu sekunder, baris dipisah garis tipis. */
+  .table-base thead th {
+    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold text-muted;
+  }
+  .table-base tbody tr + tr {
+    border-top: 1px solid rgba(16, 20, 26, 0.06);
+  }
+
+  /* Tombol utama: pil hitam teks putih. Target sentuh >= 44px. */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white
-      shadow-[0_4px_12px_rgba(10,10,10,0.25)] transition
-      hover:bg-brand-700 active:brightness-95 disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-pill px-5 py-2 text-sm font-bold text-white
+      transition hover:bg-black active:brightness-95 disabled:opacity-60;
   }
 
-  /* Tombol sekunder / outline */
+  /* Tombol sekunder: chip kaca bertepi putih. */
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2
-      text-sm font-medium text-gray-600 transition hover:border-brand-300 hover:text-brand-600;
+    @apply inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-white bg-white/70 px-4 py-2
+      text-sm font-semibold text-ink transition hover:bg-white;
   }
 
-  /* Tombol aksi kecil di dalam tabel (Edit / Nonaktifkan / Hapus / dsb.) */
+  /* Tombol aksi di dalam tabel (Edit / Nonaktifkan / Hapus / dsb.). Target sentuh >= 44px. */
   .btn-chip {
-    @apply inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1
-      text-xs font-medium text-gray-600 transition hover:border-brand-300 hover:text-brand-600;
+    @apply inline-flex min-h-11 items-center justify-center gap-1 rounded-full border border-ink/10 bg-white px-3.5 py-1
+      text-xs font-semibold text-ink transition hover:border-ink/25;
   }
   .btn-chip-success {
-    @apply border-success/25 text-success-text hover:border-success/40 hover:bg-success-bg hover:text-success-text;
+    @apply border-success/30 text-success-text hover:border-success/50 hover:bg-success-bg;
   }
+  /* Tombol hapus/proses berbahaya: dipisah dari tombol biasa (jarak + garis), tidak berdampingan. */
   .btn-chip-danger {
-    @apply border-rose-200 text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700;
+    @apply border-danger/30 text-danger-text hover:border-danger/50 hover:bg-danger-bg;
+  }
+  .btn-chip + .btn-chip-danger,
+  .btn-chip-danger + .btn-chip {
+    @apply ml-4;
   }
 
-  /* Link aksi di baris list/tabel — underline polos, bukan tombol */
+  /* Link aksi di baris tabel -- garis bawah polos, area sentuh 44px. */
   .link-action {
-    @apply text-xs font-medium text-gray-600 underline underline-offset-2 transition hover:text-brand-600;
+    @apply inline-flex min-h-11 items-center text-xs font-semibold text-ink underline underline-offset-2 transition hover:text-accent-text;
   }
   .link-action-danger {
-    @apply text-rose-600 hover:text-rose-700;
+    @apply text-danger-text hover:text-danger-text;
   }
 
-  /* Pill tab (aktif dikendalikan lewat class tambahan) */
+  /* Segmented control (kapsul): aktif = putih bertepi. Dipakai toggle kecil di halaman. */
+  .seg {
+    @apply inline-flex flex-wrap gap-1 rounded-full bg-ink/[0.06] p-1;
+  }
   .tab-pill {
-    @apply rounded-full px-4 py-1.5 text-sm font-medium transition;
+    @apply min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition;
   }
   .tab-pill-active {
-    @apply bg-brand-600 text-white;
+    @apply bg-white text-ink shadow-sm ring-1 ring-inset ring-ink/15;
   }
   .tab-pill-idle {
-    @apply bg-gray-100 text-gray-500 hover:bg-gray-200;
+    @apply text-muted hover:text-ink;
+  }
+
+  /* Chip kaca (pemilih toko, periode). Aktif = pil hitam. */
+  .chip {
+    @apply inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white bg-white/70 px-4
+      text-sm font-bold text-ink transition hover:bg-white;
+  }
+  .chip-active {
+    @apply border-pill bg-pill text-white hover:bg-pill;
   }
 }

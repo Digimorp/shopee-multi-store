@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -9,15 +9,8 @@ import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
 import TopNavTabs from "@/components/TopNavTabs";
 import { menuForRole, hrefWithFilter, isNavActive } from "@/components/navConfig";
-import { useSidebar } from "@/components/SidebarContext";
-import type { StoreOption } from "@/types";
-import {
-  PERIOD_BASIS_NOTE,
-  PERIOD_BASIS_NOTE_UANG_CAIR,
-  PERIOD_OPTIONS,
-  convertLegacyRange,
-  formatPeriodRange,
-} from "@/lib/periodPicker";
+import { useCutoffDay } from "@/components/StoreChips";
+import { PERIOD_OPTIONS, convertLegacyRange, formatPeriodRange } from "@/lib/periodPicker";
 
 const PERIOD_PARAM = /^\d{4}-(0[1-9]|1[0-2])$/;
 const INVALID_PERIOD = "__invalid-period";
@@ -30,7 +23,7 @@ function shiftMonth(ym: string, n: number): string {
 }
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <span className={`inline-block animate-pulse rounded-md bg-gray-100 ${className}`} />;
+  return <span className={`inline-block animate-pulse rounded-full bg-white/60 ${className}`} />;
 }
 
 export default function TopBar() {
@@ -38,31 +31,13 @@ export default function TopBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
-  const { open: sidebarOpen, toggle } = useSidebar();
-
-  const [stores, setStores] = useState<StoreOption[]>([]);
-  const [storesLoaded, setStoresLoaded] = useState(false);
   // cutoffDay dari /api/periods (sumber yang sama dengan server). null = belum dimuat.
-  const [cutoffDay, setCutoffDay] = useState<number | null>(null);
+  const cutoffDay = useCutoffDay();
 
   const storeId = searchParams.get("storeId") ?? "all";
   const periodParam = searchParams.get("period") || null; // period= kosong = tidak ada (sama seperti server)
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
-
-  useEffect(() => {
-    fetch("/api/stores")
-      .then((r) => r.json())
-      .then((d) => setStores(d.stores ?? []))
-      .finally(() => setStoresLoaded(true));
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/periods")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => setCutoffDay(Number.isInteger(d.cutoffDay) ? d.cutoffDay : 25))
-      .catch(() => setCutoffDay(25)); // sama dengan default server kalau PeriodSetting kosong
-  }, []);
 
   // Bulan periode berjalan WIB — dihitung dengan fungsi yang sama persis dengan server (resolveFilters).
   const currentMonth = cutoffDay != null ? getCurrentPeriodMonth(cutoffDay) : null;
@@ -85,12 +60,8 @@ export default function TopBar() {
       ? null
       : currentMonth;
   // On Proses memakai semua periode (hanya filter Toko) -> pemilih Periode disembunyikan di sana.
+  // Keterangan dasar tanggal periode kini ada di bawah judul halaman (PageHeader), bukan di sini.
   const periodApplies = !isNavActive(pathname, "/on-proses");
-  // T-013 batch 16: total tab Uang Cair memakai tanggal uang masuk (batch 13), tab lain tanggal pesanan.
-  const basisNote =
-    isNavActive(pathname, "/bulanan") && searchParams.get("tab") === "uang-cair"
-      ? PERIOD_BASIS_NOTE_UANG_CAIR
-      : PERIOD_BASIS_NOTE;
 
   const monthOptions = currentMonth ? Array.from({ length: PERIOD_OPTIONS }, (_, i) => shiftMonth(currentMonth, i)) : [];
   // T-013 batch 16: 12 periode terakhir, terbaru di atas. Link ke periode yang lebih lama tetap tampil sebagai pilihan, tidak dipaksa ganti.
@@ -101,16 +72,6 @@ export default function TopBar() {
   function pushParams(params: URLSearchParams) {
     if (!params.get("storeId")) params.set("storeId", storeId);
     router.push(`${pathname}?${params.toString()}`);
-  }
-
-  function updateParam(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(key, value);
-    // Belum ada filter periode -> tulis eksplisit bulan berjalan supaya ikut terbawa antar menu.
-    if (!params.get("period") && currentMonth) {
-      params.set("period", currentMonth);
-    }
-    pushParams(params);
   }
 
   function selectMonth(month: string) {
@@ -131,146 +92,128 @@ export default function TopBar() {
     .join("")
     .toUpperCase();
 
-  // Tab navigasi = menu utama yang sama dengan rail ikon (navConfig), per peran.
+  // Tab navigasi = menu utama yang sama dengan rel ikon (navConfig), per peran.
   // T-013 batch 15: hanya filter Toko + Periode yang terbawa (bukan tab/param halaman lain).
   const withQs = (href: string) => hrefWithFilter(href, searchParams);
   const menu = menuForRole(sessionLoading ? undefined : role);
   const tabItems = menu.map((m) => ({ key: m.href, label: m.label, href: withQs(m.href) }));
   const activeTab = menu.find((m) => isNavActive(pathname, m.href))?.href ?? null;
 
-  const fieldClass =
-    "rounded-full border-0 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-brand-300";
-  const iconBtnClass =
-    "grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-500 transition hover:text-brand-500";
+  // Menu akun (avatar bulat): nama, peran, Keluar. Tutup saat klik di luar / Escape / pindah halaman.
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+  useEffect(() => setAccountOpen(false), [pathname]);
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!accountRef.current?.contains(e.target as Node)) setAccountOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setAccountOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [accountOpen]);
 
-  // Filter toko baru boleh dirender setelah sesi + daftar toko siap
-  // (opsi "Semua Toko" tergantung role) — sebelum itu tampilkan skeleton, bukan tebakan.
-  const filterReady = !sessionLoading && storesLoaded;
-
+  // T-013 batch 18 (Kaca Lembut). >= 820px: logo | pil menu | chip periode, lonceng, avatar (satu baris).
+  // < 820px: baris 1 logo + lonceng + avatar; baris 2 pil menu (geser horizontal); baris 3 chip periode.
   return (
-    <header className="border-b border-neutral-200 bg-white">
-      {/* Baris 1: logo + tab navigasi + kontrol user. Di < lg tab turun ke baris sendiri (order-last). */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={sidebarOpen ? "Tutup menu" : "Buka menu"}
-          aria-expanded={sidebarOpen}
-          aria-controls="app-sidebar"
-          className={`${iconBtnClass} lg:hidden`}
-        >
-          <Icon name="menu" size={18} />
-        </button>
+    <header className="relative z-20 flex flex-wrap items-center gap-3 px-4 pb-4 pt-4 sm:px-6">
+      <Link
+        href={withQs("/dashboard")}
+        aria-label="Shopee Multi-Toko — ke Dashboard"
+        className="order-1 flex shrink-0 items-center gap-2.5 rounded-full"
+      >
+        <span className="grid h-11 w-11 place-items-center rounded-full bg-pill text-white">
+          <Icon name="store" size={20} strokeWidth={2} />
+        </span>
+        <span className="hidden text-[19px] font-bold leading-tight text-ink 2xl:block">
+          Shopee <span className="text-accent-text">Multi-Toko</span>
+        </span>
+      </Link>
 
-        <Link
-          href={withQs("/dashboard")}
-          aria-label="Shopee Multi-Toko — ke Dashboard"
-          className="flex shrink-0 items-center gap-2.5"
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-neutral-950 text-white">
-            <Icon name="store" size={18} strokeWidth={2} />
-          </span>
-          <span className="hidden text-[15px] font-bold leading-tight text-neutral-950 2xl:block">
-            Shopee <span className="text-neutral-400">Multi-Toko</span>
-          </span>
-        </Link>
+      <TopNavTabs
+        items={tabItems}
+        activeKey={activeTab}
+        className="order-3 w-full min-[820px]:order-2 min-[820px]:w-auto min-[820px]:flex-1"
+      />
 
-        <TopNavTabs
-          items={tabItems}
-          activeKey={activeTab}
-          className="order-last w-full lg:order-none lg:min-w-0 lg:w-auto lg:flex-1"
-        />
-
-        <div className="ml-auto flex items-center gap-2">
-          <AlertBell />
-
-          <div className="mx-1 h-6 w-px bg-gray-200" />
-
-          {sessionLoading ? (
-            <div className="flex items-center gap-2.5">
-              <Skeleton className="h-9 w-9 rounded-full" />
-              <div className="hidden flex-col gap-1 xl:flex">
-                <Skeleton className="h-3.5 w-24" />
-                <Skeleton className="h-2.5 w-14" />
-              </div>
-              <Skeleton className="h-9 w-9 rounded-full" />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-neutral-950 text-xs font-bold text-white">
-                {initials || "U"}
-              </span>
-              <div className="hidden leading-tight xl:block">
-                <div className="text-sm font-semibold text-gray-800">{name}</div>
-                <div className="text-xs text-gray-400">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                title="Keluar"
-                aria-label="Keluar"
-                className={iconBtnClass}
-              >
-                <Icon name="logout" size={18} />
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Chip periode: satu pemilih Periode (bulan) beserta rentang aslinya. */}
+      <div className="order-4 flex min-w-0 max-w-full items-center min-[820px]:order-3">
+        {!periodApplies ? (
+          <span className="chip font-semibold text-muted">Semua periode</span>
+        ) : selectedPeriod == null ? (
+          <Skeleton className="h-11 w-56" />
+        ) : (
+          <label className="relative block max-w-full">
+            <span className="sr-only">Periode</span>
+            <select
+              value={selectedPeriod}
+              onChange={(e) => selectMonth(e.target.value)}
+              title={`Periode cut-off tgl ${(cutoffDay ?? 25) + 1}–${cutoffDay ?? 25} (WIB)`}
+              className="chip max-w-full cursor-pointer appearance-none pr-10"
+            >
+              {selectedPeriod === INVALID_PERIOD && (
+                <option value={INVALID_PERIOD} disabled>
+                  Periode tidak valid: {periodParam}
+                </option>
+              )}
+              {monthOptions.map((m) => (
+                <option key={m} value={m}>
+                  {monthLabel(m)}
+                </option>
+              ))}
+            </select>
+            <Icon
+              name="chevronDown"
+              size={16}
+              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-ink"
+            />
+          </label>
+        )}
       </div>
 
-      {/* Baris 2: filter Toko + satu pemilih Periode (bulan) beserta rentang aslinya. */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-neutral-100 px-4 py-2 sm:px-6">
-        {!filterReady ? (
-          <Skeleton className="h-9 w-40 rounded-full" />
-        ) : stores.length === 0 ? (
-          role === "OWNER" ? (
-            <a
-              href="/pengaturan?tab=toko"
-              className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 hover:bg-amber-100"
+      <div className="order-2 ml-auto flex items-center gap-2 min-[820px]:order-4 min-[820px]:ml-0">
+        <AlertBell />
+
+        {sessionLoading ? (
+          <Skeleton className="h-11 w-11" />
+        ) : (
+          <div ref={accountRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setAccountOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              aria-label={`Akun: ${name || "pengguna"}`}
+              className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-accent to-accent2 text-sm font-bold text-white"
             >
-              Belum ada toko, tambahkan di Pengaturan &gt; Toko
-            </a>
-          ) : (session?.user as any)?.invalid ? null : (
-            <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-              Akun kamu belum dihubungkan ke toko. Hubungi Owner.
-            </span>
-          )
-        ) : (
-          <select value={storeId} onChange={(e) => updateParam("storeId", e.target.value)} className={fieldClass}>
-            {role === "OWNER" && <option value="all">Semua Toko ({stores.length})</option>}
-            {stores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.code} - {s.name}
-              </option>
-            ))}
-          </select>
-        )}
-        {!periodApplies ? (
-          <span className="text-xs text-gray-500">Semua periode (On Proses tidak mengikuti filter Periode)</span>
-        ) : selectedPeriod == null ? (
-          <Skeleton className="h-9 w-40 rounded-full" />
-        ) : (
-          <>
-          <select
-            value={selectedPeriod}
-            onChange={(e) => selectMonth(e.target.value)}
-            aria-label="Periode"
-            title={`Periode cut-off tgl ${(cutoffDay ?? 25) + 1}–${cutoffDay ?? 25} (WIB)`}
-            className={`${fieldClass} max-w-full`}
-          >
-            {selectedPeriod === INVALID_PERIOD && (
-              <option value={INVALID_PERIOD} disabled>
-                Periode tidak valid: {periodParam}
-              </option>
+              {initials || "U"}
+            </button>
+            {accountOpen && (
+              <div
+                role="menu"
+                aria-label="Menu akun"
+                className="absolute right-0 top-full z-50 mt-2 w-60 rounded-2xl border border-white bg-white p-2 shadow-glass"
+              >
+                <div className="px-3 py-2">
+                  <div className="truncate text-sm font-semibold text-ink">{name}</div>
+                  <div className="text-xs text-muted">{role === "OWNER" ? "Owner" : "Admin Toko"}</div>
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 text-sm font-semibold text-ink hover:bg-ink/5"
+                >
+                  <Icon name="logout" size={18} />
+                  Keluar
+                </button>
+              </div>
             )}
-            {monthOptions.map((m) => (
-              <option key={m} value={m}>
-                {monthLabel(m)}
-              </option>
-            ))}
-          </select>
-          {/* Rentang sudah jadi nama opsi -> tidak ditulis dobel; cukup keterangan dasar tanggalnya. */}
-          <span className="text-xs leading-tight text-gray-400">{basisNote}</span>
-          </>
+          </div>
         )}
       </div>
     </header>

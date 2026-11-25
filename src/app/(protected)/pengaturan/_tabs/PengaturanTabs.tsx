@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import SlidingTabs from "@/components/SlidingTabs";
+import PageHeader from "@/components/PageHeader";
 import { PENGATURAN_TABS, hrefWithFilter, pickTab } from "@/components/navConfig";
 import TokoTab from "./TokoTab";
 import ProdukTab from "./ProdukTab";
@@ -40,10 +41,15 @@ export default function PengaturanTabs() {
   }));
   const Content = CONTENT[tab];
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto">
-        <SlidingTabs ariaLabel="Pengaturan" items={items} activeKey={tab} size="sm" />
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Pengaturan"
+        controls={
+          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <SlidingTabs ariaLabel="Pengaturan" items={items} activeKey={tab} size="sm" variant="tab" />
+          </div>
+        }
+      />
       <Content />
     </div>
   );

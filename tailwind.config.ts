@@ -42,14 +42,22 @@ const config: Config = {
         //  - text    = teks di atas bg soft, atau angka berwarna di atas putih (kontras >= 4,7:1)
         // Catatan: teks di atas DEFAULT solid — putih utk success/danger, gelap (neutral-900) utk warning
         // karena kuning mustard + putih hanya ~1,8:1.
-        success: { DEFAULT: "#176552", bg: "#E6EFEC", text: "#176552" },
+        // T-013 batch 18 (gaya Kaca Lembut): warna status disamakan dengan palet baru. `text` dipilih
+        // supaya >= 4,5:1 di atas kartu kaca/putih DAN di atas latar `bg`-nya sendiri.
+        success: { DEFAULT: "#128A5B", bg: "#E3F2EC", text: "#0F7A50" },
         warning: { DEFAULT: "#E8B84A", bg: "#FBF0D9", text: "#8A6416" },
-        danger: { DEFAULT: "#C06558", bg: "#F6E4E0", text: "#8F4238" },
-        info: { DEFAULT: "#4F9E88", bg: "#E6F2EE", text: "#2F6A5A" },
-        canvas: {
-          DEFAULT: "var(--color-canvas)",
-          mono: "var(--color-canvas-mono)", // latar shell monokrom (redesign murmura)
-        },
+        danger: { DEFAULT: "#D6453D", bg: "#FBE7E5", text: "#B8352E" },
+        info: { DEFAULT: "#17A398", bg: "#E3F4F3", text: "#0B6F67" },
+        // Teks utama / sekunder. muted #667180 = 4,8-5:1 di atas kartu kaca/putih. Teks yang duduk
+        // LANGSUNG di atas latar gradasi memakai muted-deep (#5F6977, >= 4,8:1) karena #667180 di
+        // gradasi hanya 4,3:1.
+        ink: "#10141A",
+        muted: { DEFAULT: "#667180", deep: "#5F6977" },
+        // Aksen teal + aksen kedua ungu. accent.text = teal gelap untuk teks (teal #17A398 hanya 3:1).
+        accent: { DEFAULT: "#17A398", soft: "#E3F4F3", text: "#0B6F67" },
+        accent2: "#8B7CF6",
+        // Tombol utama & menu aktif: pil hitam.
+        pill: "#0B0D10",
         card: {
           DEFAULT: "var(--color-card)",
           border: "var(--color-card-border)",
@@ -57,9 +65,7 @@ const config: Config = {
         sidebar: {
           DEFAULT: "var(--color-sidebar-bg)",
           hover: "var(--color-sidebar-hover)",
-          border: "var(--color-sidebar-border)",
           text: "var(--color-sidebar-text)",
-          muted: "var(--color-sidebar-muted)",
           active: "var(--color-sidebar-active)",
           activeText: "var(--color-sidebar-active-text)",
         },
@@ -67,10 +73,12 @@ const config: Config = {
       boxShadow: {
         card: "0 1px 3px rgba(16,24,40,0.04), 0 8px 24px rgba(16,24,40,0.06)",
         "card-lg": "0 4px 12px rgba(16,24,40,0.06), 0 16px 40px rgba(16,24,40,0.08)",
+        glass: "0 8px 30px rgba(40,60,90,0.08)",
       },
       borderRadius: {
         "2xl": "1rem",
         "3xl": "1.5rem",
+        glass: "22px",
       },
     },
   },
