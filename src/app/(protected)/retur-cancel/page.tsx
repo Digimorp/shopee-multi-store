@@ -9,6 +9,7 @@ import ExportButtons from "@/components/ExportButtons";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import OrderEditModal, { type OrderEditRow } from "@/components/OrderEditModal";
 import { formatDate, formatRupiah, formatNumber } from "@/lib/format";
+import { returLoss } from "@/lib/returLoss";
 
 export default function ReturCancelPage() {
   const searchParams = useSearchParams();
@@ -75,6 +76,11 @@ export default function ReturCancelPage() {
         <SummaryCard tone="danger" label="Retur Rusak (unit)" value={formatNumber(summary?.rusak?.unit ?? 0)} />
         <SummaryCard tone="danger" label="Beban Kerugian HPP" value={formatRupiah(summary?.rusak?.kerugianHpp ?? 0)} />
       </div>
+      {summary?.rusak?.tanpaHpp?.baris > 0 && (
+        <p className="inline-block rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          {formatNumber(summary.rusak.tanpaHpp.baris)} baris retur rusak tanpa HPP (kerugian tidak dihitung)
+        </p>
+      )}
       {summary?.belumDiklasifikasi?.unit > 0 && (
         <p className="text-xs text-amber-700">
           {formatNumber(summary.belumDiklasifikasi.unit)} unit retur belum diklasifikasi (Bagus/Rusak) — tandai di tabel
@@ -140,7 +146,12 @@ export default function ReturCancelPage() {
                 },
                 {
                   header: "Beban Kerugian HPP",
-                  render: (r: any) => (r.returCondition === "DAMAGED" ? formatRupiah(r.hppSnapshot * r.qty) : "-"),
+                  // T-013 butir 16: retur rusak tanpa HPP -> "-" (kerugian tidak diketahui), bukan Rp 0.
+                  render: (r: any) => {
+                    if (r.returCondition !== "DAMAGED") return "-";
+                    const v = returLoss(r);
+                    return v == null ? "-" : formatRupiah(v);
+                  },
                 },
               ]
             : []),

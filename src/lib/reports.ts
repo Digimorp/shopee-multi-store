@@ -12,6 +12,7 @@ import {
   type AgenTally,
 } from "@/lib/profit";
 import { reconcile, buildActualLookup, allocateActual } from "@/lib/reconciliation";
+import { returLoss, sumReturLoss } from "@/lib/returLoss";
 
 export type ColKind = "text" | "int" | "money" | "pct";
 export type ReportColumn = { key: string; header: string; width: number; align?: "left" | "right"; kind?: ColKind };
@@ -44,6 +45,8 @@ const ymd = (d: Date) => d.toISOString().slice(0, 10);
 /** Format 1 sel untuk output PDF/teks berdasarkan kind kolom. */
 export function formatCell(value: any, kind: ColKind = "text"): string {
   if (value == null) return "";
+  // Penanda teks di kolom angka (mis. "-" = tidak diketahui) tampil apa adanya, bukan "Rp 0".
+  if (typeof value === "string" && kind !== "text") return value;
   if (kind === "money") return rupiah(Number(value));
   if (kind === "int") return int(Number(value));
   if (kind === "pct") return `${(Number(value) * 100).toFixed(1)}%`;
@@ -265,7 +268,8 @@ export async function returnsSummary(f: ReportFilter) {
     rusak: {
       count: damaged.length,
       unit: sumQty(damaged),
-      kerugianHpp: damaged.reduce((s, o) => s + o.hppSnapshot * o.qty, 0),
+      // T-013 butir 16: retur rusak tanpa HPP tidak dijumlah (kerugian tidak diketahui), dihitung di tanpaHpp.
+      ...sumReturLoss(damaged),
     },
     belumDiklasifikasi: { count: belum.length, unit: sumQty(belum) },
   };
@@ -294,7 +298,8 @@ export async function datasetReturns(f: ReportFilter): Promise<ReportDataset> {
     qty: o.qty,
     status: o.status === OrderStatus.CANCEL ? "Batal" : "Retur",
     kondisi: kondisi(o),
-    kerugianHpp: o.status === OrderStatus.RETUR && o.returCondition === "DAMAGED" ? o.hppSnapshot * o.qty : 0,
+    // T-013 butir 16: retur rusak tanpa HPP -> "-" (tidak diketahui), bukan 0.
+    kerugianHpp: returLoss(o) ?? "-",
   }));
   const s = await returnsSummary(f);
   return {
@@ -317,6 +322,9 @@ export async function datasetReturns(f: ReportFilter): Promise<ReportDataset> {
       { label: "Retur layak restok (unit)", value: int(s.layakRestok.unit) },
       { label: "Retur rusak (unit)", value: int(s.rusak.unit) },
       { label: "Beban kerugian HPP (retur rusak)", value: rupiah(s.rusak.kerugianHpp) },
+      ...(s.rusak.tanpaHpp.baris > 0
+        ? [{ label: "Retur rusak tanpa HPP (kerugian tidak dihitung)", value: `${int(s.rusak.tanpaHpp.baris)} baris` }]
+        : []),
       { label: "Retur belum diklasifikasi (unit)", value: int(s.belumDiklasifikasi.unit) },
     ],
   };
