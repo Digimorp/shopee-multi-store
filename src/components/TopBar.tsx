@@ -7,6 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { getCurrentPeriodMonth } from "@/lib/period";
 import { Icon } from "@/components/icons";
 import AlertBell from "@/components/AlertBell";
+import BrandLogo from "@/components/BrandLogo";
 import TopNavTabs from "@/components/TopNavTabs";
 import { menuForRole, hrefWithFilter, isNavActive } from "@/components/navConfig";
 import { useCutoffDay } from "@/components/StoreChips";
@@ -123,15 +124,13 @@ export default function TopBar() {
     <header className="relative z-20 flex flex-wrap items-center gap-3 px-4 pb-4 pt-4 sm:px-6">
       <Link
         href={withQs("/dashboard")}
-        aria-label="Shopee Multi-Toko — ke Dashboard"
-        className="order-1 flex shrink-0 items-center gap-2.5 rounded-full"
+        aria-label="Aplikasi Marketplace — ke Dashboard"
+        className="order-1 flex shrink-0 items-center gap-3 rounded-xl"
       >
-        <span className="grid h-11 w-11 place-items-center rounded-full bg-pill text-white">
-          <Icon name="store" size={20} strokeWidth={2} />
-        </span>
-        <span className="hidden text-[19px] font-bold leading-tight text-ink 2xl:block">
-          Shopee <span className="text-accent-text">Multi-Toko</span>
-        </span>
+        {/* T-013 batch 20: logo Penerbit Insan Kamil. Nama aplikasi baru tampil >= 1400px (keputusan Founder):
+            di 1280 teks ~172px membuat menu tinggal 454px padahal 5 menu butuh ~554px -> 2 menu masuk "Lainnya". */}
+        <BrandLogo size="sm" />
+        <span className="hidden whitespace-nowrap text-[17px] font-bold leading-tight text-ink min-[1400px]:block">Aplikasi Marketplace</span>
       </Link>
 
       <TopNavTabs

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Icon } from "@/components/icons";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,13 +31,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       {/* T-013 batch 18: kartu kaca di atas latar gradasi (body). */}
       <div className="glass w-full max-w-sm p-7">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-pill text-white">
-            <Icon name="store" size={20} strokeWidth={2} />
-          </span>
+        {/* T-013 batch 20: logo Penerbit Insan Kamil di tengah atas, nama aplikasi = "Aplikasi Marketplace". */}
+        <div className="mb-5 flex flex-col items-center gap-3 text-center">
+          <BrandLogo size="lg" priority />
           <div className="leading-tight">
-            <div className="text-base font-bold text-ink">Shopee Multi-Toko</div>
-            <div className="text-xs text-muted">Sistem Input & Laporan Penjualan</div>
+            <h1 className="text-xl font-bold text-ink">Aplikasi Marketplace</h1>
+            <div className="mt-1 text-xs text-muted">Sistem Input & Laporan Penjualan</div>
           </div>
         </div>
 

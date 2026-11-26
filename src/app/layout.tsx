@@ -13,8 +13,9 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Sistem Input & Laporan Penjualan Shopee Multi-Toko",
-  description: "Management input & laporan penjualan Shopee multi-toko",
+  // T-013 batch 20: belum ada pola template judul per halaman, jadi satu judul untuk semua halaman.
+  title: "Aplikasi Marketplace",
+  description: "Input & laporan penjualan marketplace multi-toko",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
