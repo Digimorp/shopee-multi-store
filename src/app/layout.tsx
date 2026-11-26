@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Source_Sans_3 } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
-// T-013 batch 17: font humanis yang nyaman dibaca lama (teks & tabel padat, punya angka tabular).
-// Satu-satunya keluarga font yang dimuat.
-const sourceSans = Source_Sans_3({
+// T-013 batch 19: Plus Jakarta Sans (lebar, terbuka, ramah). Satu-satunya keluarga font yang dimuat.
+// Bobot 400 (isi), 500, 600 (label/sub-judul), 700 (judul) -- font ini punya semuanya.
+const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={sourceSans.variable}>
+    <html lang="id" className={fontSans.variable}>
       <body className="font-sans">
         <Providers>{children}</Providers>
       </body>

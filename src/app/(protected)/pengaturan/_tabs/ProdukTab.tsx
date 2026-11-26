@@ -131,7 +131,7 @@ export default function SettingsProductsPage() {
 
       <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 card p-6">
         <span className="text-sm text-gray-600">Import Master SKU via Excel (kolom: SKU, Nama Produk, HPP, Harga Katalog):</span>
-        <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className="text-sm" />
+        <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className="min-w-0 max-w-full text-sm" />
         <button type="submit" className="btn-ghost">
           Import
         </button>

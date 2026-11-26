@@ -4,7 +4,7 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
-      // T-013 batch 17: Source Sans 3 = satu-satunya sans. Cadangan: font sistem.
+      // T-013 batch 19: Plus Jakarta Sans = satu-satunya sans. Cadangan: font sistem.
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", '"Segoe UI"', "Roboto", "sans-serif"],
       },
@@ -13,10 +13,6 @@ const config: Config = {
         xs: ["0.8125rem", { lineHeight: "1.5" }], // 13px -- label kecil (minimum)
         sm: ["0.9375rem", { lineHeight: "1.5" }], // 15px -- teks isi padat & tabel
         base: ["1rem", { lineHeight: "1.5" }], // 16px -- teks isi
-      },
-      // Font hanya punya 400/600/700: "medium" (label) dipetakan ke 600, bukan disintesis.
-      fontWeight: {
-        medium: "600",
       },
       colors: {
         // Aksen utama: hijau tua/forest green — dipakai tombol, link, focus ring, hover.
