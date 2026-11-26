@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/rbac";
+import { productListScope } from "@/lib/productAccess";
 
 // Riwayat perubahan HPP / Harga Katalog produk (audit log). Read-only.
+// T-013 batch 21: dibatasi sama seperti daftar produk (?storeId=; Admin hanya tokonya, tanpa warisan).
 export async function GET(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -11,8 +13,12 @@ export async function GET(req: NextRequest) {
   const sku = searchParams.get("sku");
   const take = Math.min(200, Number(searchParams.get("limit") ?? 50));
 
+  const scope = await productListScope(user, searchParams.get("storeId"));
+  if ("error" in scope) return NextResponse.json({ error: scope.error }, { status: scope.status });
+  if (scope.empty) return NextResponse.json({ logs: [] });
+
   const logs = await prisma.productPriceLog.findMany({
-    where: sku ? { sku } : undefined,
+    where: { ...(sku ? { sku } : {}), product: scope.where },
     orderBy: { createdAt: "desc" },
     take,
     include: { changedBy: { select: { name: true, email: true } } },

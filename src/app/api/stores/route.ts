@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser, getAccessibleStoreIds } from "@/lib/rbac";
+import { getSessionUser, getAccessibleStoreIds, assertStoreAccess } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 
 export async function GET() {
@@ -29,17 +29,28 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user || user.role !== "OWNER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   if (!body.id) return NextResponse.json({ error: "id wajib" }, { status: 400 });
+
+  // T-013 batch 21: Admin Toko boleh mengubah NAMA TAMPILAN toko yang dikuasakan saja (kode & status
+  // aktif tetap; tambah/hapus toko tetap Owner). Owner: seperti sebelumnya.
+  const isOwner = user.role === "OWNER";
+  if (!isOwner) {
+    const ok = await assertStoreAccess(user, String(body.id));
+    if (ok.length !== 1 || ok[0] !== body.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (typeof body.name !== "string" || !body.name.trim()) {
+      return NextResponse.json({ error: "Nama toko wajib diisi" }, { status: 400 });
+    }
+  }
 
   const existing = await prisma.store.findUnique({ where: { id: body.id } });
   if (!existing) return NextResponse.json({ error: "Toko tidak ditemukan" }, { status: 404 });
 
   const store = await prisma.store.update({
     where: { id: body.id },
-    data: { name: body.name, code: body.code, isActive: body.isActive },
+    data: isOwner ? { name: body.name, code: body.code, isActive: body.isActive } : { name: String(body.name).trim() },
   });
 
   await logAudit({
