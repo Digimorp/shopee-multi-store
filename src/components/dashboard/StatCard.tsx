@@ -8,8 +8,8 @@
 const DOT = {
   neutral: null,
   success: "bg-success",
-  warning: "bg-orange-500",
-  danger: "bg-rose-500",
+  warning: "bg-warning",
+  danger: "bg-danger",
 } as const;
 
 export default function StatCard({
@@ -28,20 +28,20 @@ export default function StatCard({
 }) {
   const dot = DOT[tone];
   return (
-    <div className="card p-6">
+    <div className="card p-5 sm:p-6">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
+        <p className="text-xs font-semibold text-muted">{label}</p>
         {dot && <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />}
       </div>
       {/* Nominal rupiah tidak boleh terpotong: lebih baik turun baris daripada truncate. */}
       <p
-        className={`mt-3 break-words text-3xl font-bold leading-tight tabular-nums ${
-          negative ? "text-rose-600" : "text-neutral-950"
+        className={`mt-2 break-words text-[28px] font-bold leading-tight tabular-nums ${
+          negative ? "text-danger-text" : "text-ink"
         }`}
       >
         {value}
       </p>
-      {sub && <p className="mt-2 text-xs text-neutral-400">{sub}</p>}
+      {sub && <p className="mt-1 text-xs text-muted">{sub}</p>}
     </div>
   );
 }

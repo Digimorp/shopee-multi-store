@@ -1,21 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { parseISO, startOfWeek, format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Icon } from "@/components/icons";
-import SlidingTabs from "@/components/SlidingTabs";
+import ChartTooltip from "@/components/dashboard/ChartTooltip";
 import { formatAxisShort, formatRupiah } from "@/lib/format";
 import type { TrendPoint } from "@/components/TrendChart";
 
-type Bucket = "daily" | "weekly" | "monthly" | "yearly";
-const TABS: { key: Bucket; label: string }[] = [
+export type Bucket = "daily" | "weekly" | "monthly" | "yearly";
+/** Pilihan satuan waktu grafik -- dipakai segmented control di baris kontrol Dashboard. */
+export const BUCKET_TABS: { key: Bucket; label: string }[] = [
   { key: "daily", label: "Harian" },
   { key: "weekly", label: "Mingguan" },
   { key: "monthly", label: "Bulanan" },
   { key: "yearly", label: "Tahunan" },
 ];
+
+const AXIS = { fontSize: 13, fill: "#667180" };
+const TEAL = "#17A398";
+const VIOLET = "#8B7CF6";
 
 function bucketKey(dateStr: string, b: Bucket): string {
   if (b === "yearly") return dateStr.slice(0, 4);
@@ -30,21 +34,26 @@ function axisLabel(key: string, b: Bucket): string {
   return format(parseISO(key), "d MMM", { locale: idLocale });
 }
 
+/**
+ * T-013 batch 18 (Kaca Lembut): kartu grafik Omzet Pesanan. Garis teal tebal + area gradasi lembut
+ * (Omzet), garis ungu putus-putus (Profit HPP), sumbu #667180, tooltip gelap. Data & agregasi sama
+ * dengan sebelumnya; satuan waktu dipilih di segmented control halaman (prop `bucket`).
+ */
 export default function AreaTrendCard({
   trend,
   summary,
   loading,
   error = false,
   periodLabel,
+  bucket,
 }: {
   trend: TrendPoint[];
   summary: any;
   loading: boolean;
   error?: boolean;
   periodLabel: string;
+  bucket: Bucket;
 }) {
-  const [bucket, setBucket] = useState<Bucket>("daily");
-
   const data = useMemo(() => {
     const map = new Map<string, { label: string; omzet: number; profit: number }>();
     for (const p of trend) {
@@ -60,88 +69,81 @@ export default function AreaTrendCard({
   const totalOmzet = summary?.totalOmzetBruto ?? 0;
 
   return (
-    <div className="card p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium text-neutral-500">Total Omzet Pesanan</p>
-          <p className="mt-1 text-3xl font-bold tabular-nums text-neutral-950">{summary ? formatRupiah(totalOmzet) : "-" /* T-013 temuan QA 8: tanpa data -> "-", bukan "Rp 0" */}</p>
-          <p className="mt-0.5 text-xs text-neutral-400">Periode {periodLabel}</p>
-        </div>
-        <div className="flex w-full flex-col items-end gap-2 sm:w-auto">
-          <SlidingTabs
-            ariaLabel="Satuan waktu grafik"
-            size="sm"
-            stretch
-            className="w-full sm:w-auto"
-            items={TABS.map((t) => ({ key: t.key, label: t.label }))}
-            activeKey={bucket}
-            onSelect={(k) => setBucket(k as Bucket)}
-          />
-          <button className="btn-primary px-3 py-1.5 text-xs">
-            <Icon name="arrowRight" size={14} />
-            Lihat Ringkasan
-          </button>
-        </div>
-      </div>
-
-      {/* Legenda: dua seri sama-sama netral, jadi perlu label eksplisit (hitam = omzet, abu = profit). */}
-      <div className="mt-5 flex items-center gap-4 text-xs text-neutral-500">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-neutral-950" />
-          Omzet
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-neutral-400" />
-          Profit HPP
-        </span>
-      </div>
+    <div className="card p-5 sm:p-6">
+      <h2 className="text-base font-bold text-ink">Omzet Pesanan</h2>
+      <p className="text-xs text-muted">Periode {periodLabel}</p>
+      <p className="num mt-2 break-words text-[32px] font-bold leading-tight text-ink">
+        {summary ? formatRupiah(totalOmzet) : "-" /* T-013 temuan QA 8: tanpa data -> "-", bukan "Rp 0" */}
+      </p>
 
       <div className="mt-3 h-[240px]">
         {loading ? (
-          <div className="grid h-full place-items-center text-sm text-neutral-400">Memuat…</div>
+          <div className="grid h-full place-items-center text-sm text-muted">Memuat…</div>
         ) : error && data.length === 0 ? (
-          <div className="grid h-full place-items-center text-sm text-amber-600">Gagal memuat data grafik.</div>
+          <div className="grid h-full place-items-center text-sm text-amber-700">Gagal memuat data grafik.</div>
         ) : data.length === 0 ? (
-          <div className="grid h-full place-items-center text-sm text-neutral-400">Belum ada data pada periode ini.</div>
+          <div className="grid h-full place-items-center text-sm text-muted">Belum ada data pada periode ini.</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%" debounce={150}>
             <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gOmzet" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0a0a0a" stopOpacity={0.12} />
-                  <stop offset="100%" stopColor="#0a0a0a" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gProfit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a3a3a3" stopOpacity={0.18} />
-                  <stop offset="100%" stopColor="#a3a3a3" stopOpacity={0} />
+                  <stop offset="0%" stopColor={TEAL} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={TEAL} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="4 4" stroke="#efefef" vertical={false} />
+              <CartesianGrid strokeDasharray="3 4" stroke="#667180" strokeOpacity={0.25} vertical={false} />
               <XAxis
                 dataKey="label"
                 tickFormatter={(v) => axisLabel(v, bucket)}
-                tick={{ fontSize: 13, fill: "#a3a3a3" }}
+                tick={AXIS}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
                 minTickGap={28}
               />
-              <YAxis
-                tick={{ fontSize: 13, fill: "#a3a3a3" }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(v) => formatAxisShort(v)}
-                width={46}
-              />
+              <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(v) => formatAxisShort(v)} width={46} />
               <Tooltip
-                formatter={(v: number) => formatRupiah(v)}
-                contentStyle={{ borderRadius: 12, border: "1px solid #e5e5e5", fontSize: 13, boxShadow: "none" }}
+                content={<ChartTooltip labelFormatter={(v) => axisLabel(String(v), bucket)} />}
+                cursor={{ stroke: "#10141A", strokeOpacity: 0.35 }}
               />
-              <Area isAnimationActive={false} type="monotone" dataKey="omzet" name="Omzet" stroke="#0a0a0a" strokeWidth={2} fill="url(#gOmzet)" />
-              <Area isAnimationActive={false} type="monotone" dataKey="profit" name="Profit HPP" stroke="#a3a3a3" strokeWidth={2} fill="url(#gProfit)" />
+              <Area
+                isAnimationActive={false}
+                type="monotone"
+                dataKey="omzet"
+                name="Omzet"
+                stroke={TEAL}
+                strokeWidth={3.5}
+                strokeLinecap="round"
+                fill="url(#gOmzet)"
+                activeDot={{ r: 5, fill: "#fff", stroke: TEAL, strokeWidth: 3 }}
+              />
+              <Area
+                isAnimationActive={false}
+                type="monotone"
+                dataKey="profit"
+                name="Profit HPP"
+                stroke={VIOLET}
+                strokeWidth={2.5}
+                strokeDasharray="6 5"
+                fill="none"
+                activeDot={{ r: 4, fill: "#fff", stroke: VIOLET, strokeWidth: 2 }}
+              />
             </AreaChart>
           </ResponsiveContainer>
         )}
+      </div>
+
+      {/* Legenda: dua seri, label eksplisit. */}
+      <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[3px] bg-accent" />
+          Omzet
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[3px] bg-accent2" />
+          Profit HPP
+        </span>
       </div>
     </div>
   );

@@ -43,25 +43,25 @@ export default function RecentOrdersCard() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="card p-6">
+    <div className="card p-5 sm:p-6">
       <div>
-        <p className="text-sm font-semibold text-gray-800">Pesanan Terbaru</p>
-        <p className="text-xs text-gray-400">{formatNumber(total)} pesanan pada periode ini</p>
+        <h2 className="text-base font-bold text-ink">Pesanan Terbaru</h2>
+        <p className="text-xs text-muted">{formatNumber(total)} pesanan pada periode ini</p>
       </div>
 
       <div className="mt-4">
         {rows.length === 0 ? (
-          <p className="py-10 text-center text-sm text-gray-400">{loading ? "Memuat…" : "Belum ada pesanan."}</p>
+          <p className="py-10 text-center text-sm text-muted">{loading ? "Memuat…" : "Belum ada pesanan."}</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-ink/[0.06]">
             {rows.map((r) => (
               <li
                 key={r.id}
                 className="flex flex-col gap-2 py-3 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-gray-900">{r.orderSn}</p>
-                  <p className="break-words text-xs text-gray-500">
+                  <p className="truncate text-sm font-semibold text-ink">{r.orderSn}</p>
+                  <p className="break-words text-xs text-muted">
                     {formatDate(r.orderCreatedAt)} · {r.store?.code} · {r.productName} · Qty {r.qty}
                   </p>
                 </div>
@@ -77,8 +77,8 @@ export default function RecentOrdersCard() {
         )}
 
         {totalPages > 1 && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-card-border pt-3">
-            <span className="text-xs text-gray-400">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ink/[0.06] pt-3">
+            <span className="text-xs text-muted">
               Halaman {page} dari {totalPages}
             </span>
             <PageNav page={page} totalPages={totalPages} onChange={changePage} />

@@ -14,7 +14,7 @@ export default function TopProductsTable({ byOmzet, byQty }: { byOmzet: ProductR
 
   return (
     <div>
-      <div className="mb-3 flex gap-2">
+      <div className="seg mb-3" role="group" aria-label="Urutkan produk">
         <button
           onClick={() => setTab("omzet")}
           className={`tab-pill ${tab === "omzet" ? "tab-pill-active" : "tab-pill-idle"}`}

@@ -4,27 +4,17 @@ import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { formatNumber } from "@/lib/format";
 
-// Floating panel (strata di atas card data yang flat): hampir putih polos, dengan gradasi diagonal
-// SANGAT tipis dan dingin — abu-mint pucat #DFEDEB (kiri atas) ke putih hangat #F9FAF7 (kanan
-// bawah), diukur dari video referensi. Tanpa saturasi tinggi: dari jauh terbaca putih, baru
-// terasa "ada sesuatu" kalau dilihat dekat. Bayangan panjang yang lembut yang membuatnya mengambang.
-// Subtitle (satu-satunya teks yang langsung di atas gradasi) memakai neutral-600: di atas mint
-// pucat kontrasnya ~6,5:1, sedangkan neutral-500 hanya ~3,9:1. Teks di dalam tile tak terpengaruh
-// karena tile hampir putih (white/80).
-// SENGAJA tidak memakai class `.card` — di bawah `.theme-mono`, `.card` memaksa box-shadow:none.
-// `self-start` mencegah panel ikut melar setinggi daftar Pesanan Terbaru di sebelahnya, dan
-// `lg:sticky` membuatnya tetap terlihat (mengambang) selagi daftar pesanan di-scroll.
-const PANEL =
-  "self-start rounded-3xl bg-gradient-to-br from-[#DFEDEB] to-[#F9FAF7] p-6 ring-1 ring-black/5 " +
-  "shadow-[0_28px_56px_-18px_rgba(10,10,10,0.34),0_10px_24px_-10px_rgba(10,10,10,0.14)] lg:sticky lg:top-6";
+// `self-start` mencegah panel ikut melar setinggi daftar di sebelahnya; `lg:sticky` membuatnya tetap terlihat.
+// T-013 batch 18 (Kaca Lembut): panel = kartu kaca bersama (.card); tile = putih hampir penuh.
+const PANEL = "card self-start p-5 sm:p-6 lg:sticky lg:top-6";
 
-const TILE = "rounded-2xl bg-white/80 px-4 py-3.5 ring-1 ring-black/[0.04] shadow-[0_1px_2px_rgba(10,10,10,0.04)]";
+const TILE = "rounded-2xl bg-white/85 px-4 py-3.5 ring-1 ring-ink/[0.05]";
 
 function Note({ tone = "muted", children }: { tone?: "muted" | "error"; children: React.ReactNode }) {
   return (
     <p
       className={`rounded-2xl bg-white/60 px-4 py-8 text-center text-sm ring-1 ring-black/[0.04] ${
-        tone === "error" ? "text-amber-600" : "text-neutral-400"
+        tone === "error" ? "text-amber-700" : "text-muted"
       }`}
     >
       {children}
@@ -43,8 +33,8 @@ export default function ActivityCard({
 }) {
   return (
     <div className={PANEL}>
-      <p className="text-sm font-semibold text-neutral-900">Aktivitas Terbaru</p>
-      <p className="mt-0.5 text-xs text-neutral-600">Riwayat impor data pesanan</p>
+      <h2 className="text-base font-bold text-ink">Aktivitas Terbaru</h2>
+      <p className="mt-0.5 text-xs text-muted">Riwayat impor data pesanan</p>
 
       <div className="mt-5">
         {loading ? (
@@ -60,7 +50,7 @@ export default function ActivityCard({
               return (
                 <li key={l.id ?? i} className={TILE}>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="min-w-0 truncate text-sm font-semibold text-neutral-900">{l.store?.code ?? "-"}</p>
+                    <p className="min-w-0 truncate text-sm font-semibold text-ink">{l.store?.code ?? "-"}</p>
                     <span
                       className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${
                         failed
@@ -72,7 +62,7 @@ export default function ActivityCard({
                     </span>
                   </div>
 
-                  <p className="mt-1.5 text-xs text-neutral-600">
+                  <p className="mt-1.5 text-xs text-muted">
                     {formatNumber(l.successRows ?? 0)} baris pesanan diimpor
                     {failed && <span className="font-medium text-amber-700"> · {formatNumber(l.failedRows)} dilewati</span>}
                   </p>
@@ -80,11 +70,11 @@ export default function ActivityCard({
                   <div className="mt-2.5 flex items-center justify-between gap-3">
                     <span
                       title={l.fileName}
-                      className="min-w-0 truncate rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500"
+                      className="min-w-0 truncate rounded-full bg-ink/[0.05] px-2.5 py-1 text-xs text-muted"
                     >
                       {l.fileName}
                     </span>
-                    <span className="shrink-0 text-xs text-neutral-400">
+                    <span className="shrink-0 text-xs text-muted">
                       {l.createdAt
                         ? formatDistanceToNow(new Date(l.createdAt), { addSuffix: true, locale: idLocale })
                         : ""}

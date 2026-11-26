@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import ChartTooltip from "@/components/dashboard/ChartTooltip";
 import { formatRupiah } from "@/lib/format";
 
-// Monokrom flat: skala abu-abu solid menurut peringkat omzet toko (paling gelap = terbesar),
-// dipisah celah paddingAngle; "Lainnya" paling terang.
-const RAMP = ["#0a0a0a", "#404040", "#737373", "#a3a3a3", "#c4c4c4", "#dcdcdc"];
-const OTHERS_COLOR = "#ececec";
+// T-013 batch 18 (Kaca Lembut): palet teal/ungu menurut peringkat omzet toko (terbesar = teal),
+// dipisah celah paddingAngle; "Lainnya" abu muda. Nama + persen tetap ditulis di legenda (warna bukan satu-satunya penanda).
+const RAMP = ["#17A398", "#8B7CF6", "#0B6F67", "#B9E5E0", "#C9C1FB", "#667180"];
+const OTHERS_COLOR = "#DDE2E8";
 const sliceColor = (name: string, i: number) => (name === "Lainnya" ? OTHERS_COLOR : RAMP[i % RAMP.length]);
 
 export default function DonutCard({
@@ -32,16 +33,16 @@ export default function DonutCard({
   }, [rows]);
 
   return (
-    <div className="card p-6">
-      <p className="text-sm font-semibold text-gray-800">Distribusi Omzet per Toko</p>
-      <p className="text-xs text-gray-400">Berdasarkan periode & filter aktif</p>
+    <div className="card p-5 sm:p-6">
+      <h2 className="text-base font-bold text-ink">Distribusi Omzet per Toko</h2>
+      <p className="text-xs text-muted">Berdasarkan periode & filter aktif</p>
 
       {loading ? (
-        <div className="grid h-[220px] place-items-center text-sm text-gray-400">Memuat…</div>
+        <div className="grid h-[220px] place-items-center text-sm text-muted">Memuat…</div>
       ) : error && slices.length === 0 ? (
-        <div className="grid h-[220px] place-items-center text-sm text-amber-600">Gagal memuat data.</div>
+        <div className="grid h-[220px] place-items-center text-sm text-amber-700">Gagal memuat data.</div>
       ) : slices.length === 0 ? (
-        <div className="grid h-[220px] place-items-center text-sm text-gray-400">Belum ada omzet pada periode ini.</div>
+        <div className="grid h-[220px] place-items-center text-sm text-muted">Belum ada omzet pada periode ini.</div>
       ) : (
         <>
           <div className="relative mx-auto mt-2 h-[180px] w-[180px]">
@@ -52,24 +53,25 @@ export default function DonutCard({
                     <Cell key={i} fill={sliceColor(s.name, i)} />
                   ))}
                 </Pie>
+                <Tooltip content={<ChartTooltip />} />
               </PieChart>
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 grid place-items-center">
               <div className="text-center">
-                <p className="text-xs text-gray-400">Total</p>
-                <p className="text-sm font-bold text-gray-900">{formatRupiah(total)}</p>
+                <p className="text-xs text-muted">Total</p>
+                <p className="num text-sm font-bold text-ink">{formatRupiah(total)}</p>
               </div>
             </div>
           </div>
 
           <ul className="mt-4 space-y-2">
             {slices.map((s, i) => (
-              <li key={i} className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2 text-gray-600">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: sliceColor(s.name, i) }} />
-                  {s.name}
+              <li key={i} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex min-w-0 items-center gap-2 text-ink">
+                  <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: sliceColor(s.name, i) }} />
+                  <span className="break-words">{s.name}</span>
                 </span>
-                <span className="font-semibold text-gray-800">
+                <span className="num shrink-0 font-semibold text-ink">
                   {total ? ((s.value / total) * 100).toFixed(1) : "0.0"}%
                 </span>
               </li>
