@@ -83,7 +83,7 @@ async function main() {
     }
   }
 
-  // Master produk contoh — GLOBAL (berlaku semua toko)
+  // Master produk contoh — T-013 batch 21: produk milik toko (produk baru wajib storeId), di toko pertama.
   const sampleProducts = [
     { sku: "SKU-001", name: "Kabel Data Type-C 1m", hpp: 8000, catalogPrice: 25000 },
     { sku: "SKU-002", name: "Powerbank 10000mAh", hpp: 65000, catalogPrice: 150000 },
@@ -91,9 +91,9 @@ async function main() {
   ];
   for (const p of sampleProducts) {
     await prisma.product.upsert({
-      where: { sku: p.sku },
+      where: { storeId_sku: { storeId: stores[0].id, sku: p.sku } },
       update: {},
-      create: p,
+      create: { ...p, storeId: stores[0].id },
     });
   }
 

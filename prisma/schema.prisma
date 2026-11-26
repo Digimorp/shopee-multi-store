@@ -98,6 +98,7 @@ model Store {
   orders        Order[]
   uploads       UploadLog[]
   incomeImports IncomeImport[]
+  products      Product[]
 
   @@map("stores")
 }
@@ -113,11 +114,14 @@ model UserStore {
   @@map("user_stores")
 }
 
-// Master produk GLOBAL — 1 SKU = 1 HPP + 1 harga katalog, berlaku untuk semua toko.
-// Hanya OWNER yang boleh mengubah master ini (lihat api/products).
+// Master produk PER TOKO (T-013 batch 21) — 1 SKU per toko = 1 HPP + 1 harga katalog.
+// storeId NULL = produk LAMA global (warisan): hanya cadangan pencocokan upload, hanya Owner yang
+// boleh mengedit/menghapusnya. Produk BARU wajib punya storeId (divalidasi di API).
 model Product {
   id           String            @id @default(cuid())
-  sku          String            @unique
+  storeId      String?
+  store        Store?            @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  sku          String
   name         String
   hpp          Float // HPP / Modal per unit
   catalogPrice Float // Harga katalog agen (sebelum diskon 50%)
@@ -127,6 +131,8 @@ model Product {
   orders       Order[]
   priceLogs    ProductPriceLog[]
 
+  @@unique([storeId, sku])
+  @@index([storeId])
   @@map("products")
 }
 
