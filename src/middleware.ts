@@ -1,9 +1,10 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-// T-013 batch 15: Pengaturan (bertab) khusus Owner; /settings/* lama tetap dijaga (kini redirect).
+// T-013 batch 15: /settings/* lama tetap dijaga (kini redirect).
+// T-013 batch 21: /pengaturan dibuka untuk Admin Toko (tab Toko + Produk & HPP); tab Owner dijaga di
+// halaman /pengaturan (server, role dari DB) -- bukan di sini, karena tab ada di query (?tab=).
 const OWNER_ONLY_PREFIXES = [
-  "/pengaturan",
   "/settings/users",
   "/settings/stores",
   "/settings/products",

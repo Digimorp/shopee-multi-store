@@ -18,6 +18,7 @@ import {
   filterQuery,
   LEGACY_ROUTES,
   legacyRedirectUrl,
+  pengaturanTabsForRole,
 } from "@/components/navConfig";
 
 // T-013 batch 15 (bagian B): menu 5 item, tab Bulanan/Pengaturan, redirect route lama.
@@ -26,9 +27,16 @@ describe("menu per peran", () => {
     expect(menuForRole("OWNER").map((m) => m.label)).toEqual(["Dashboard", "Upload Data", "On Proses", "Bulanan", "Pengaturan"]);
     expect(MENU).toHaveLength(5);
   });
-  it("Admin Toko & sesi belum dimuat tidak melihat Pengaturan", () => {
-    for (const role of ["STORE_ADMIN", undefined, null]) {
-      expect(menuForRole(role).map((m) => m.href)).toEqual(["/dashboard", "/input", "/on-proses", "/bulanan"]);
+  // T-013 batch 21 (keputusan Founder): Admin Toko juga melihat Pengaturan (tabnya dibatasi, lihat bawah).
+  it("Admin Toko & sesi belum dimuat juga melihat Pengaturan", () => {
+    for (const role of ["ADMIN_TOKO", undefined, null]) {
+      expect(menuForRole(role).map((m) => m.href)).toEqual(["/dashboard", "/input", "/on-proses", "/bulanan", "/pengaturan"]);
+    }
+  });
+  it("tab Pengaturan per peran: Owner 5 tab, Admin Toko hanya Toko + Produk & HPP", () => {
+    expect(pengaturanTabsForRole("OWNER").map((t) => t.key)).toEqual(["toko", "produk", "user", "aturan", "log"]);
+    for (const role of ["ADMIN_TOKO", undefined, null]) {
+      expect(pengaturanTabsForRole(role).map((t) => t.key)).toEqual(["toko", "produk"]);
     }
   });
 });

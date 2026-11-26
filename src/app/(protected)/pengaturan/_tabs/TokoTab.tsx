@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import DataTable from "@/components/DataTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-export default function SettingsStoresPage() {
+// T-013 batch 21: Admin Toko melihat toko miliknya saja (API sudah menyaring) dan hanya boleh mengubah
+// NAMA TAMPILAN -- tanpa tambah, nonaktifkan, atau ubah kode toko.
+export default function SettingsStoresPage({ role = "OWNER" }: { role?: "OWNER" | "ADMIN_TOKO" }) {
+  const isOwner = role === "OWNER";
   const [stores, setStores] = useState<any[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [form, setForm] = useState({ code: "", name: "" });
   const [editing, setEditing] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({ code: "", name: "" });
@@ -15,7 +19,11 @@ export default function SettingsStoresPage() {
   const [deactivateBusy, setDeactivateBusy] = useState(false);
 
   function load() {
-    fetch("/api/stores").then((r) => r.json()).then((d) => setStores(d.stores ?? []));
+    fetch("/api/stores")
+      .then((r) => r.json())
+      .then((d) => setStores(d.stores ?? []))
+      .catch(() => setStores([]))
+      .finally(() => setLoaded(true));
   }
   useEffect(load, []);
 
@@ -52,7 +60,9 @@ export default function SettingsStoresPage() {
     const res = await fetch("/api/stores", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: editing.id, name: editForm.name, code: editForm.code, isActive: editing.isActive }),
+      body: JSON.stringify(
+        isOwner ? { id: editing.id, name: editForm.name, code: editForm.code, isActive: editing.isActive } : { id: editing.id, name: editForm.name }
+      ),
     });
     setEditSaving(false);
     if (!res.ok) {
@@ -75,8 +85,15 @@ export default function SettingsStoresPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-ink">Toko</h2>
-      <p className="text-sm text-muted">Kelola daftar toko Shopee yang dikelola perusahaan.</p>
+      <p className="text-sm text-muted">
+        {isOwner ? "Kelola daftar toko Shopee yang dikelola perusahaan." : "Toko yang dihubungkan ke akun ini. Kamu bisa mengubah nama tampilannya."}
+      </p>
 
+      {!isOwner && loaded && stores.length === 0 ? (
+        <div className="card p-6 text-sm text-ink">Akun ini belum dihubungkan ke toko. Hubungi Owner.</div>
+      ) : (
+      <>
+      {isOwner && (
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 card p-6">
         <input required placeholder="Kode (mis. TOKO15)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
         <input required placeholder="Nama Toko" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" />
@@ -84,11 +101,12 @@ export default function SettingsStoresPage() {
           Tambah Toko
         </button>
       </form>
+      )}
 
       <DataTable
         rowKey={(r: any) => r.id}
         rows={stores}
-        emptyText="Belum ada toko. Tambahkan toko pertama lewat form di atas."
+        emptyText={isOwner ? "Belum ada toko. Tambahkan toko pertama lewat form di atas." : "Memuat…"}
         columns={[
           { header: "Kode", render: (r) => r.code },
           { header: "Nama Toko", render: (r) => r.name },
@@ -97,33 +115,39 @@ export default function SettingsStoresPage() {
             header: "Aksi",
             render: (r) => (
               <div className="flex gap-1.5">
-                <button onClick={() => openEdit(r)} className="btn-chip">
-                  Edit
+                <button onClick={() => openEdit(r)} className="btn-chip" aria-label={`Ubah ${r.name}`}>
+                  {isOwner ? "Edit" : "Ubah nama"}
                 </button>
-                <button
-                  onClick={() => (r.isActive ? setDeactivating(r) : toggleActive(r))}
-                  className={`btn-chip ${r.isActive ? "btn-chip-danger" : ""}`}
-                >
-                  {r.isActive ? "Nonaktifkan" : "Aktifkan"}
-                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => (r.isActive ? setDeactivating(r) : toggleActive(r))}
+                    className={`btn-chip ${r.isActive ? "btn-chip-danger" : ""}`}
+                  >
+                    {r.isActive ? "Nonaktifkan" : "Aktifkan"}
+                  </button>
+                )}
               </div>
             ),
           },
         ]}
       />
+      </>
+      )}
 
       {editing && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-4" onMouseDown={() => setEditing(null)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card-lg" onMouseDown={(e) => e.stopPropagation()}>
-            <p className="text-sm font-semibold text-ink">Edit Toko</p>
+            <p className="text-sm font-semibold text-ink">{isOwner ? "Edit Toko" : `Ubah nama toko ${editing.code}`}</p>
             {editErr && <p className="mt-2 text-sm text-danger-text">{editErr}</p>}
             <div className="mt-3 grid gap-3">
-              <input
-                placeholder="Kode"
-                value={editForm.code}
-                onChange={(e) => setEditForm({ ...editForm, code: e.target.value })}
-                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
-              />
+              {isOwner && (
+                <input
+                  placeholder="Kode"
+                  value={editForm.code}
+                  onChange={(e) => setEditForm({ ...editForm, code: e.target.value })}
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                />
+              )}
               <input
                 placeholder="Nama Toko"
                 value={editForm.name}

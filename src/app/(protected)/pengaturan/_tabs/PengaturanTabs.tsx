@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import SlidingTabs from "@/components/SlidingTabs";
 import PageHeader from "@/components/PageHeader";
-import { PENGATURAN_TABS, hrefWithFilter, pickTab } from "@/components/navConfig";
+import { hrefWithFilter, pengaturanTabsForRole, pickTab } from "@/components/navConfig";
 import TokoTab from "./TokoTab";
 import ProdukTab from "./ProdukTab";
 import UserTab from "./UserTab";
@@ -23,7 +23,8 @@ function AturanTab() {
   );
 }
 
-const CONTENT: Record<string, () => JSX.Element> = {
+type Role = "OWNER" | "ADMIN_TOKO";
+const CONTENT: Record<string, (p: { role: Role }) => JSX.Element> = {
   toko: TokoTab,
   produk: ProdukTab,
   user: UserTab,
@@ -31,10 +32,12 @@ const CONTENT: Record<string, () => JSX.Element> = {
   log: LogTab,
 };
 
-export default function PengaturanTabs() {
+// T-013 batch 21: tab per peran (role dari server, sudah dicek di DB). Admin Toko: Toko + Produk & HPP.
+export default function PengaturanTabs({ role }: { role: Role }) {
   const searchParams = useSearchParams();
-  const tab = pickTab(PENGATURAN_TABS, searchParams.get("tab"));
-  const items = PENGATURAN_TABS.map((t) => ({
+  const tabs = pengaturanTabsForRole(role);
+  const tab = pickTab(tabs, searchParams.get("tab"));
+  const items = tabs.map((t) => ({
     key: t.key,
     label: t.label,
     href: hrefWithFilter("/pengaturan", searchParams, { tab: t.key }),
@@ -50,7 +53,7 @@ export default function PengaturanTabs() {
           </div>
         }
       />
-      <Content />
+      <Content role={role} />
     </div>
   );
 }

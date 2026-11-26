@@ -10,14 +10,15 @@ export const MENU: NavItem[] = [
   { href: "/input", label: "Upload Data", icon: "upload" },
   { href: "/on-proses", label: "On Proses", icon: "hourglass" },
   { href: "/bulanan", label: "Bulanan", icon: "calendar" },
-  { href: "/pengaturan", label: "Pengaturan", icon: "sliders", ownerOnly: true },
+  // T-013 batch 21: Pengaturan juga untuk Admin Toko (tab dibatasi per peran, lihat pengaturanTabsForRole).
+  { href: "/pengaturan", label: "Pengaturan", icon: "sliders" },
 ];
 
 /** Menu yang boleh dilihat peran ini. Peran belum diketahui (sesi dimuat) -> tanpa menu Owner. */
 export const menuForRole = (role: string | undefined | null): NavItem[] =>
   MENU.filter((m) => !m.ownerOnly || role === "OWNER");
 
-export type TabDef = { key: string; label: string };
+export type TabDef = { key: string; label: string; ownerOnly?: boolean };
 
 /** Tab halaman Bulanan (urut). Tab pertama = default. Semua mengikuti filter Periode + Toko. */
 export const BULANAN_TABS: TabDef[] = [
@@ -28,14 +29,21 @@ export const BULANAN_TABS: TabDef[] = [
   { key: "profit", label: "Profit & Barang Keluar" },
 ];
 
-/** Tab halaman Pengaturan (Owner saja). */
+/**
+ * Tab halaman Pengaturan. T-013 batch 21: Admin Toko hanya Toko + Produk & HPP; User, Aturan, Log Aktivitas
+ * tetap Owner (dicek juga di SERVER: halaman /pengaturan dan API-nya).
+ */
 export const PENGATURAN_TABS: TabDef[] = [
   { key: "toko", label: "Toko" },
   { key: "produk", label: "Produk & HPP" },
-  { key: "user", label: "User" },
-  { key: "aturan", label: "Aturan" },
-  { key: "log", label: "Log Aktivitas" },
+  { key: "user", label: "User", ownerOnly: true },
+  { key: "aturan", label: "Aturan", ownerOnly: true },
+  { key: "log", label: "Log Aktivitas", ownerOnly: true },
 ];
+
+/** Tab Pengaturan yang boleh dibuka peran ini. Peran tidak dikenal -> hanya tab non-Owner. */
+export const pengaturanTabsForRole = (role: string | undefined | null): TabDef[] =>
+  PENGATURAN_TABS.filter((t) => !t.ownerOnly || role === "OWNER");
 
 export const pickTab = (tabs: TabDef[], key: string | null | undefined) =>
   tabs.find((t) => t.key === key)?.key ?? tabs[0].key;
