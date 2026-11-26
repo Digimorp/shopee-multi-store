@@ -5,7 +5,7 @@ import { parseShopeeFile } from "@/lib/parseShopee";
 import { classifyStatus, DEFAULT_STATUS_RULES, type StatusRule } from "@/lib/classification";
 import { calcProfitHpp, calcProfitAgen } from "@/lib/profit";
 import { getPeriodForDateWib } from "@/lib/period";
-import { canApplyStatus, createLineMatcher, chunk, lineOmzet } from "@/lib/uploadUpsert";
+import { canApplyStatus, createLineMatcher, createProductMatcher, chunk, lineOmzet } from "@/lib/uploadUpsert";
 import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -44,14 +44,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Master produk global — cocokkan via Nomor Referensi SKU, lalu SKU Induk, lalu nama produk.
-  const products = await prisma.product.findMany();
-  const productMap = new Map(products.map((p) => [p.sku, p]));
-  const productByName = new Map(products.map((p) => [p.name.trim().toLowerCase(), p]));
-  const matchProduct = (row: (typeof rows)[number]) =>
-    productMap.get(row.sku) ||
-    (row.skuInduk ? productMap.get(row.skuInduk) : undefined) ||
-    productByName.get(row.productName.trim().toLowerCase());
+  // T-013 batch 21: Master Produk PER TOKO. Hanya produk toko ini + produk warisan (storeId NULL) yang
+  // diambil; urutan cocok: toko ini (SKU/SKU Induk, lalu nama) -> warisan (aturan sama). Lihat createProductMatcher.
+  const products = await prisma.product.findMany({ where: { OR: [{ storeId }, { storeId: null }] } });
+  const matchProduct = createProductMatcher(products, storeId);
 
   // AI Anomaly Check DINONAKTIFKAN (T-013): analyzeUploadAnomalies tidak dipanggil lagi saat
   // upload. File src/lib/aiAnomalyCheck.ts sengaja dibiarkan (tidak dihapus).

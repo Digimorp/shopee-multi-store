@@ -130,3 +130,27 @@ export function chunk<T>(arr: T[], size: number): T[][] {
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
+
+/**
+ * T-013 batch 21: pencocokan baris pesanan ke Master Produk PER TOKO. Urutan:
+ *   (1) produk toko ini berdasarkan SKU (Nomor Referensi SKU), lalu SKU Induk;
+ *   (2) produk toko ini berdasarkan nama produk;
+ *   (3) cadangan terakhir: produk warisan (storeId NULL/undefined) dengan aturan SKU -> SKU Induk -> nama.
+ * Produk toko LAIN tidak pernah dipakai (dibuang sejak awal, walau query DB sudah menyaringnya).
+ */
+export type MatchableProduct = { storeId?: string | null; sku: string; name: string };
+
+export function createProductMatcher<P extends MatchableProduct>(products: P[], storeId: string) {
+  const index = (list: P[]) => ({
+    bySku: new Map(list.map((p) => [p.sku, p])),
+    byName: new Map(list.map((p) => [p.name.trim().toLowerCase(), p])),
+  });
+  const own = index(products.filter((p) => p.storeId === storeId));
+  const legacy = index(products.filter((p) => p.storeId == null));
+  const bySku = (ix: ReturnType<typeof index>, row: { sku: string; skuInduk: string }) =>
+    ix.bySku.get(row.sku) || (row.skuInduk ? ix.bySku.get(row.skuInduk) : undefined);
+  return (row: { sku: string; skuInduk: string; productName: string }): P | undefined => {
+    const name = row.productName.trim().toLowerCase();
+    return bySku(own, row) || own.byName.get(name) || bySku(legacy, row) || legacy.byName.get(name);
+  };
+}
