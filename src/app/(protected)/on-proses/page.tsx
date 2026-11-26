@@ -81,12 +81,12 @@ export default function OnProsesPage() {
       </div>
 
       {data && (
-        <div className="card p-4">
-          <p className="mb-2 text-xs font-medium text-gray-500">Kelompok per status &amp; umur (klik untuk menyaring)</p>
+        <div className="card p-5 sm:p-6">
+          <p className="mb-3 text-xs font-semibold text-muted">Kelompok per status &amp; umur (klik untuk menyaring)</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {ON_PROSES_GROUPS.map((st) => (
               <div key={st}>
-                <p className="mb-1 text-sm font-semibold text-gray-800">{STATUS_LABEL[st]}</p>
+                <h2 className="mb-2 text-base font-bold text-ink">{STATUS_LABEL[st]}</h2>
                 <div className="flex flex-wrap gap-2">
                   {AGE_BUCKETS.map((b) => {
                     const g = data.groups.find((x) => x.group === st && x.bucket === b);
@@ -96,12 +96,13 @@ export default function OnProsesPage() {
                         key={b}
                         type="button"
                         onClick={() => setPick(active ? null : { group: st, bucket: b })}
-                        className={`rounded-xl border px-3 py-1.5 text-left text-xs ${
-                          active ? "border-neutral-900 bg-neutral-900 text-white" : "border-gray-200 bg-white text-gray-700"
+                        aria-pressed={active}
+                        className={`min-h-11 rounded-2xl border px-3.5 py-2 text-left text-xs transition ${
+                          active ? "border-pill bg-pill text-white" : "border-white bg-white/80 text-ink hover:bg-white"
                         }`}
                       >
-                        <span className="block font-medium">{BUCKET_LABEL[b]}</span>
-                        <span>
+                        <span className="block font-semibold">{BUCKET_LABEL[b]}</span>
+                        <span className="num">
                           {formatNumber(g?.count ?? 0)} pesanan · {formatRupiah(g?.omzet ?? 0)}
                         </span>
                       </button>
@@ -121,7 +122,7 @@ export default function OnProsesPage() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Cari No. Pesanan"
           aria-label="Cari No. Pesanan"
-          className="w-full max-w-xs rounded-full border border-gray-200 px-4 py-2 text-sm"
+          className="min-h-11 w-full max-w-xs rounded-full border border-ink/10 bg-white px-4 text-sm text-ink placeholder:text-muted"
         />
         {pick && (
           <button type="button" onClick={() => setPick(null)} className="btn-chip">
@@ -135,7 +136,7 @@ export default function OnProsesPage() {
           Akun ini belum dihubungkan ke toko. Hubungi Owner.
         </p>
       ) : error ? (
-        <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">Data On Proses gagal dimuat.</p>
+        <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger-text">Data On Proses gagal dimuat.</p>
       ) : (
         <DataTable<OnProsesRow>
           rowKey={(r) => `${r.storeCode}|${r.orderSn}`}

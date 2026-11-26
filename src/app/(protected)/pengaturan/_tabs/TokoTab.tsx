@@ -74,8 +74,8 @@ export default function SettingsStoresPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Toko</h1>
-      <p className="text-sm text-gray-500">Kelola daftar toko Shopee yang dikelola perusahaan.</p>
+      <h2 className="text-xl font-bold text-ink">Toko</h2>
+      <p className="text-sm text-muted">Kelola daftar toko Shopee yang dikelola perusahaan.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 card p-6">
         <input required placeholder="Kode (mis. TOKO15)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" />
@@ -115,8 +115,8 @@ export default function SettingsStoresPage() {
       {editing && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-4" onMouseDown={() => setEditing(null)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card-lg" onMouseDown={(e) => e.stopPropagation()}>
-            <p className="text-sm font-semibold text-gray-800">Edit Toko</p>
-            {editErr && <p className="mt-2 text-sm text-rose-600">{editErr}</p>}
+            <p className="text-sm font-semibold text-ink">Edit Toko</p>
+            {editErr && <p className="mt-2 text-sm text-danger-text">{editErr}</p>}
             <div className="mt-3 grid gap-3">
               <input
                 placeholder="Kode"

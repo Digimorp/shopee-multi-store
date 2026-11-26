@@ -27,9 +27,9 @@ function List({
 }) {
   return (
     <div className="card p-6">
-      <p className="mb-3 text-sm font-semibold text-gray-800">{title}</p>
+      <p className="mb-3 text-sm font-semibold text-ink">{title}</p>
       {items.length === 0 ? (
-        <div className="py-4 text-center text-gray-400">
+        <div className="py-4 text-center text-muted">
           {dash && <p className="text-lg font-bold">-</p>}
           <p className="text-sm">{emptyText}</p>
         </div>
@@ -38,10 +38,10 @@ function List({
           {items.map((r, i) => (
             <li key={r.toko} className="flex items-center gap-3">
               <RankBadge rank={i + 1} />
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">{r.toko}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{r.toko}</span>
               <span
                 className={`shrink-0 text-sm font-bold ${
-                  r.profitHpp > 0 ? "text-success-text" : r.profitHpp < 0 ? "text-rose-600" : "text-gray-400"
+                  r.profitHpp > 0 ? "text-success-text" : r.profitHpp < 0 ? "text-danger-text" : "text-muted"
                 }`}
               >
                 {formatRupiah(r.profitHpp)}

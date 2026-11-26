@@ -61,7 +61,7 @@ export default function InputPage() {
       <UploadForm stores={stores} onDone={loadLogs} />
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Upload Laporan Pesanan</h2>
+        <h2 className="mb-2 text-sm font-semibold text-ink">Riwayat Upload Laporan Pesanan</h2>
         <DataTable
           rowKey={(r: any) => r.id}
           rows={logs}
@@ -78,7 +78,7 @@ export default function InputPage() {
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-800">Riwayat Upload Income Report</h2>
+        <h2 className="mb-2 text-sm font-semibold text-ink">Riwayat Upload Income Report</h2>
         <DataTable
           rowKey={(r: any) => r.id}
           rows={incomeImports}
@@ -95,9 +95,9 @@ export default function InputPage() {
               header: "Status",
               render: (r) =>
                 r.isDeleted ? (
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-600">dihapus</span>
+                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-danger-text">dihapus</span>
                 ) : r.isSuperseded ? (
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">kadaluarsa</span>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-muted">kadaluarsa</span>
                 ) : (
                   <span className="rounded-full bg-success-bg px-2 py-0.5 text-xs text-success-text">aktif</span>
                 ),
@@ -106,7 +106,7 @@ export default function InputPage() {
               header: "Aksi",
               render: (r) =>
                 r.isDeleted ? (
-                  <span className="text-gray-300">—</span>
+                  <span className="text-muted">—</span>
                 ) : (
                   <button
                     onClick={() => {

@@ -143,7 +143,7 @@ export default function RekonsiliasiPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Uang Cair</h1>
+          <h2 className="text-xl font-bold text-ink">Uang Cair</h2>
           {/* T-013: ditulis sesuai perilaku kode saat ini — reconcile() memfilter Order.orderCreatedAt,
               bukan tanggal dana dilepas. Lihat src/lib/reconciliation.ts. */}
           <p className="my-1 inline-block rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-800">
@@ -151,7 +151,7 @@ export default function RekonsiliasiPage() {
             itu), BUKAN tanggal dana dilepas. Kolom &quot;Tanggal&quot; di tabel pesanan = tanggal pesanan dibuat; di
             tabel Adjustment = tanggal dana dilepas, dan Adjustment tampil semua tanpa filter tanggal.
           </p>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted">
             Bandingkan <strong>estimasi</strong> (nilai kotor pesanan) vs <strong>aktual</strong> (Income Report Shopee),
             key = No. Pesanan. Status &quot;Cair Final&quot; terkunci setelah H+{cfg.finalLockDays}.
             {payoutRatio < 0.98 && (
@@ -181,8 +181,8 @@ export default function RekonsiliasiPage() {
       {/* Reconciliation Rate */}
       <div className="card p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-gray-800">Reconciliation Rate</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm font-semibold text-ink">Reconciliation Rate</p>
+          <p className="text-sm text-muted">
             {reconLoading ? "…" : `${(rate.matchPct * 100).toFixed(1)}% cair`} dari {formatNumber(rate.total)} order
           </p>
         </div>
@@ -194,15 +194,15 @@ export default function RekonsiliasiPage() {
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-lg font-bold text-success-text">{formatNumber(rate.match)}</p>
-            <p className="text-xs text-gray-400">CAIR ({pct(rate.match)}%)</p>
+            <p className="text-xs text-muted">CAIR ({pct(rate.match)}%)</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-amber-600">{formatNumber(rate.selisih)}</p>
-            <p className="text-xs text-gray-400">SELISIH ({pct(rate.selisih)}%)</p>
+            <p className="text-lg font-bold text-amber-700">{formatNumber(rate.selisih)}</p>
+            <p className="text-xs text-muted">SELISIH ({pct(rate.selisih)}%)</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-rose-600">{formatNumber(rate.belumKetemu)}</p>
-            <p className="text-xs text-gray-400">BELUM KETEMU ({pct(rate.belumKetemu)}%)</p>
+            <p className="text-lg font-bold text-danger-text">{formatNumber(rate.belumKetemu)}</p>
+            <p className="text-xs text-muted">BELUM KETEMU ({pct(rate.belumKetemu)}%)</p>
           </div>
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function RekonsiliasiPage() {
 
       {/* Tab gabungan: cashflow (Cair/Pending/Transit) + rekonsiliasi (Selisih/Belum Ketemu/Semua Order) */}
       <div>
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="seg mb-3" role="group" aria-label="Jenis daftar">
           {ALL_TABS.map((t) => (
             <button
               key={t.key}
@@ -266,7 +266,7 @@ export default function RekonsiliasiPage() {
               />
             </div>
             {tab === "cair" && (
-              <p className="mb-3 text-xs text-gray-400">
+              <p className="mb-3 text-xs text-muted">
                 Kolom <strong>Estimasi</strong> = hitungan dari data Pesanan. <strong>Aktual</strong> = dari Income
                 Report yang sudah di-match. Baris kuning = &quot;Sampai&quot; &gt; 7 hari belum cair, kemungkinan retur
                 pending.
@@ -306,13 +306,13 @@ export default function RekonsiliasiPage() {
                   header: "Aktual",
                   render: (r) => {
                     const a = lineAktual.get(r.id);
-                    if (a == null) return <span className="text-gray-300">— belum</span>;
+                    if (a == null) return <span className="text-muted">— belum</span>;
                     const order = reconMap.get(r.orderSn);
                     // Order multi-SKU: tampilkan porsi baris ini + payout order utuh sebagai konteks.
                     return (multiLineOrders.get(r.orderSn) ?? 1) > 1 ? (
                       <span title={`Alokasi proporsional dari payout order ${formatRupiah(order?.aktual ?? 0)}`}>
                         {formatRupiah(a)}
-                        <span className="block text-xs text-gray-400">dari {formatRupiah(order?.aktual ?? 0)}</span>
+                        <span className="block text-xs text-muted">dari {formatRupiah(order?.aktual ?? 0)}</span>
                       </span>
                     ) : (
                       formatRupiah(a)
@@ -323,14 +323,14 @@ export default function RekonsiliasiPage() {
                   header: "Status Cair",
                   render: (r) => {
                     const rc = reconMap.get(r.orderSn);
-                    return rc ? <SettleBadge status={rc.settleStatus} /> : <span className="text-gray-300">—</span>;
+                    return rc ? <SettleBadge status={rc.settleStatus} /> : <span className="text-muted">—</span>;
                   },
                 },
                 {
                   header: "Tahap",
                   render: (r) => {
                     const rc = reconMap.get(r.orderSn);
-                    return rc ? <StageBadge stage={rc.stage} /> : <span className="text-gray-300">—</span>;
+                    return rc ? <StageBadge stage={rc.stage} /> : <span className="text-muted">—</span>;
                   },
                 },
               ]}
@@ -360,14 +360,14 @@ export default function RekonsiliasiPage() {
               { header: "Toko", render: (r) => r.storeCode },
               { header: "Produk", render: (r) => <span className="cell-wrap">{r.productName}</span> },
               { header: "Estimasi", render: (r) => formatRupiah(r.estimasi) },
-              { header: "Aktual", render: (r) => (r.aktual == null ? <span className="text-gray-300">—</span> : formatRupiah(r.aktual)) },
+              { header: "Aktual", render: (r) => (r.aktual == null ? <span className="text-muted">—</span> : formatRupiah(r.aktual)) },
               {
                 header: "Selisih",
                 render: (r) =>
                   r.selisih == null ? (
-                    <span className="text-gray-300">—</span>
+                    <span className="text-muted">—</span>
                   ) : (
-                    <span className={r.selisih < 0 ? "text-rose-600" : r.selisih > 0 ? "text-success-text" : "text-gray-500"}>
+                    <span className={r.selisih < 0 ? "text-danger-text" : r.selisih > 0 ? "text-success-text" : "text-muted"}>
                       {formatRupiah(r.selisih)}
                     </span>
                   ),
@@ -381,7 +381,7 @@ export default function RekonsiliasiPage() {
                   r.flags?.length ? (
                     <span className="text-xs text-amber-700">{r.flags.join(", ")}</span>
                   ) : (
-                    <span className="text-gray-300">—</span>
+                    <span className="text-muted">—</span>
                   ),
               },
             ]}
@@ -391,8 +391,8 @@ export default function RekonsiliasiPage() {
 
       {/* Adjustment Shopee (non-order) — selalu tampil terlepas dari tab yang aktif */}
       <div>
-        <h2 className="mb-1 text-sm font-semibold text-gray-800">Adjustment Shopee (non-order)</h2>
-        <p className="mb-2 text-xs text-gray-400">
+        <h2 className="mb-1 text-sm font-semibold text-ink">Adjustment Shopee (non-order)</h2>
+        <p className="mb-2 text-xs text-muted">
           Kompensasi / sengketa / reimbursement promo — tidak dipaksa match ke No. Pesanan.
         </p>
         <DataTable
@@ -406,7 +406,7 @@ export default function RekonsiliasiPage() {
             {
               header: "Jumlah",
               render: (r) => (
-                <span className={r.amount < 0 ? "text-rose-600" : "text-success-text"}>{formatRupiah(r.amount)}</span>
+                <span className={r.amount < 0 ? "text-danger-text" : "text-success-text"}>{formatRupiah(r.amount)}</span>
               ),
             },
           ]}

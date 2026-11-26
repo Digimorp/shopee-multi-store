@@ -112,8 +112,8 @@ export default function SettingsProductsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Produk & HPP</h1>
-      <p className="text-sm text-gray-500">
+      <h2 className="text-xl font-bold text-ink">Produk & HPP</h2>
+      <p className="text-sm text-muted">
         Master SKU <strong>global</strong> — 1 SKU = 1 HPP (Modal) + 1 Harga Katalog Agen (sebelum diskon 50%),
         berlaku untuk semua toko. Hanya Owner yang bisa mengubah.
       </p>
@@ -126,7 +126,7 @@ export default function SettingsProductsPage() {
         <button type="submit" className="sm:col-span-5 btn-primary">
           Simpan Produk
         </button>
-        {err && <span className="sm:col-span-5 text-sm text-rose-600">{err}</span>}
+        {err && <span className="sm:col-span-5 text-sm text-danger-text">{err}</span>}
       </form>
 
       <form onSubmit={handleImport} className="flex flex-wrap items-center gap-2 card p-6">
@@ -177,8 +177,8 @@ export default function SettingsProductsPage() {
       {editing && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-4" onMouseDown={() => setEditing(null)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card-lg" onMouseDown={(e) => e.stopPropagation()}>
-            <p className="text-sm font-semibold text-gray-800">Edit Produk — {editing.sku}</p>
-            {editErr && <p className="mt-2 text-sm text-rose-600">{editErr}</p>}
+            <p className="text-sm font-semibold text-ink">Edit Produk — {editing.sku}</p>
+            {editErr && <p className="mt-2 text-sm text-danger-text">{editErr}</p>}
             <div className="mt-3 grid gap-3">
               <input
                 placeholder="Nama Produk"
@@ -224,8 +224,8 @@ export default function SettingsProductsPage() {
       )}
 
       <div>
-        <h2 className="mb-1 mt-2 text-sm font-semibold text-gray-800">Riwayat Perubahan HPP / Harga Katalog</h2>
-        <p className="mb-2 text-xs text-gray-400">
+        <h2 className="mb-1 mt-2 text-sm font-semibold text-ink">Riwayat Perubahan HPP / Harga Katalog</h2>
+        <p className="mb-2 text-xs text-muted">
           Dicatat otomatis tiap HPP atau Harga Katalog sebuah SKU berubah (manual maupun import).
         </p>
         <DataTable
@@ -240,10 +240,10 @@ export default function SettingsProductsPage() {
               header: "HPP",
               render: (r) =>
                 r.oldHpp === r.newHpp ? (
-                  <span className="text-gray-400">{formatRupiah(r.newHpp)}</span>
+                  <span className="text-muted">{formatRupiah(r.newHpp)}</span>
                 ) : (
                   <span>
-                    <span className="text-gray-400 line-through">{formatRupiah(r.oldHpp)}</span>{" "}
+                    <span className="text-muted line-through">{formatRupiah(r.oldHpp)}</span>{" "}
                     <span className="font-semibold text-brand-600">→ {formatRupiah(r.newHpp)}</span>
                   </span>
                 ),
@@ -252,10 +252,10 @@ export default function SettingsProductsPage() {
               header: "Harga Katalog",
               render: (r) =>
                 r.oldCatalog === r.newCatalog ? (
-                  <span className="text-gray-400">{formatRupiah(r.newCatalog)}</span>
+                  <span className="text-muted">{formatRupiah(r.newCatalog)}</span>
                 ) : (
                   <span>
-                    <span className="text-gray-400 line-through">{formatRupiah(r.oldCatalog)}</span>{" "}
+                    <span className="text-muted line-through">{formatRupiah(r.oldCatalog)}</span>{" "}
                     <span className="font-semibold text-brand-600">→ {formatRupiah(r.newCatalog)}</span>
                   </span>
                 ),

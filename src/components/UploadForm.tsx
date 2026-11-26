@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import type { StoreOption } from "@/types";
 import AiAnomalyPanel from "@/components/AiAnomalyPanel";
 import HppUnknownBanner from "@/components/HppUnknownBanner";
+import { Icon } from "@/components/icons";
 import { detectFromBuffer, UPLOAD_KIND_LABEL, type UploadKind } from "@/lib/detectUploadFile";
 
 /**
@@ -58,6 +59,7 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputKey, setInputKey] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
 
   async function onPick(list: FileList | null) {
     setError(null);
@@ -127,21 +129,17 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
 
   if (stores.length === 0) {
     return (
-      <div className="card p-6">
-        <p className="mb-1 text-sm font-semibold text-gray-800">Upload Data</p>
-        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-          {isOwner ? (
-            <>
-              Belum ada toko,{" "}
-              <a href="/pengaturan?tab=toko" className="font-medium underline hover:no-underline">
-                tambahkan di Pengaturan &gt; Toko
-              </a>{" "}
-              dulu sebelum upload.
-            </>
-          ) : sessionInvalid ? null : (
-            "Akun kamu belum dihubungkan ke toko. Hubungi Owner."
-          )}
-        </div>
+      <div className="card flex flex-col items-start gap-4 p-6 sm:p-8">
+        {isOwner ? (
+          <>
+            <p className="text-base text-ink">Belum ada toko. Tambahkan toko dulu sebelum upload.</p>
+            <a href="/pengaturan?tab=toko" className="btn-primary">
+              Tambah toko
+            </a>
+          </>
+        ) : sessionInvalid ? null : (
+          <p className="text-base text-ink">Akun kamu belum dihubungkan ke toko. Hubungi Owner.</p>
+        )}
       </div>
     );
   }
@@ -149,19 +147,20 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
   const canSubmit = !loading && !!storeId && items.some((it) => it.kind && it.status === "siap");
 
   return (
-    <form onSubmit={handleSubmit} className="card p-6">
-      <p className="mb-1 text-sm font-semibold text-gray-800">Upload Data</p>
-      <p className="mb-3 text-xs text-gray-500">
+    <form onSubmit={handleSubmit} className="card p-5 sm:p-6">
+      <h2 className="mb-1 text-base font-bold text-ink">Unggah file</h2>
+      <p className="mb-4 text-xs text-muted">
         Laporan Pesanan = Order.all dari Shopee (termasuk file On Proses). Income Report = Saldo Penghasilan. Boleh
         pilih 1-2 file sekaligus; jenis file dikenali otomatis.
       </p>
-      <div className="mb-3 grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">Toko</label>
+      <div className="mb-4 space-y-4">
+        <div className="max-w-sm">
+          <label htmlFor="upload-store" className="mb-1 block text-xs font-semibold text-muted">Toko</label>
           <select
+            id="upload-store"
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-full border border-ink/10 bg-white px-4 text-sm text-ink"
           >
             <option value="">-- pilih toko --</option>
             {stores.map((s) => (
@@ -171,48 +170,67 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
             ))}
           </select>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">File (.xlsx / .xls / .csv, maks. 2)</label>
+        {/* T-013 batch 18: kotak taruh-file bergaris putus-putus (klik untuk memilih, atau tarik file ke sini). */}
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            if (!loading) onPick(e.dataTransfer.files);
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-glass border-2 border-dashed px-4 py-8 text-center transition focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2 focus-within:outline-accent ${
+            dragOver ? "border-accent bg-accent-soft" : "border-ink/20 bg-white/60 hover:bg-white/80"
+          }`}
+        >
+          <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-white text-accent-text shadow-glass">
+            <Icon name="upload" size={20} />
+          </span>
+          <span className="text-sm font-semibold text-ink">Tarik file ke sini atau klik untuk memilih</span>
+          <span className="text-xs text-muted">.xlsx / .xls / .csv, maksimal 2 file</span>
           <input
             key={inputKey}
             type="file"
             multiple
             accept=".xlsx,.xls,.csv"
             onChange={(e) => onPick(e.target.files)}
-            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className="sr-only"
           />
-        </div>
+        </label>
       </div>
 
       {items.length > 0 && (
         <ul className="mb-3 space-y-2">
           {items.map((it, i) => (
-            <li key={i} className="rounded-xl border border-gray-200 px-3 py-2 text-sm" data-upload-file>
+            <li key={i} className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 text-sm" data-upload-file>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="min-w-0 flex-1 truncate font-medium text-gray-800">{it.file.name}</span>
+                <span className="min-w-0 flex-1 truncate font-medium text-ink">{it.file.name}</span>
                 {it.detected ? (
-                  <label className="flex items-center gap-1 text-xs text-gray-600">
+                  <label className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-success-bg pl-3 pr-1 text-xs font-semibold text-success-text">
                     {it.kind === it.detected ? "Terdeteksi:" : "Dipilih manual:"}
                     <select
                       value={it.kind ?? ""}
                       disabled={loading || it.status !== "siap"}
                       onChange={(e) => setKind(i, e.target.value as UploadKind)}
-                      className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
+                      className="min-h-9 rounded-full border-0 bg-white/80 px-2 text-xs font-semibold text-success-text"
                     >
                       <option value="pesanan">{UPLOAD_KIND_LABEL.pesanan}</option>
                       <option value="income">{UPLOAD_KIND_LABEL.income}</option>
                     </select>
                   </label>
                 ) : (
-                  <span className="text-xs font-medium text-rose-600">Tidak dikenali</span>
+                  <span className="inline-flex items-center rounded-full bg-danger-bg px-3 py-1 text-xs font-semibold text-danger-text">Tidak dikenali</span>
                 )}
               </div>
-              {!it.detected && <p className="mt-1 text-xs text-rose-600">{it.message}</p>}
-              {it.status === "proses" && <p className="mt-1 text-xs text-gray-500">Memproses…</p>}
+              {!it.detected && <p className="mt-1 text-xs text-danger-text">{it.message}</p>}
+              {it.status === "proses" && <p className="mt-1 text-xs text-muted">Memproses…</p>}
               {it.status === "berhasil" && (
                 <p className="mt-1 rounded-lg bg-success-bg px-2 py-1 text-xs text-success-text">{it.resultText}</p>
               )}
-              {it.status === "gagal" && <p className="mt-1 rounded-lg bg-rose-50 px-2 py-1 text-xs text-rose-700">{it.error}</p>}
+              {it.status === "gagal" && <p className="mt-1 rounded-lg bg-danger-bg px-2 py-1 text-xs text-danger-text">{it.error}</p>}
               {it.status === "berhasil" && it.kind === "pesanan" && (
                 <>
                   <HppUnknownBanner hppUnknown={it.result?.hppUnknown} />
@@ -231,7 +249,7 @@ export default function UploadForm({ stores, onDone }: { stores: StoreOption[]; 
       <button type="submit" disabled={!canSubmit} className="btn-primary disabled:opacity-50">
         {loading ? "Memproses..." : "Upload & Proses"}
       </button>
-      {error && <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+      {error && <p className="mt-3 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger-text">{error}</p>}
     </form>
   );
 }

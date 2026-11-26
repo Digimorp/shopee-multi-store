@@ -98,8 +98,8 @@ export default function SettingsUsersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">User</h1>
-      <p className="text-sm text-gray-500">
+      <h2 className="text-xl font-bold text-ink">User</h2>
+      <p className="text-sm text-muted">
         Owner menambah Admin Toko dan mengatur pembagian toko. Klik <strong>Edit</strong> di tabel untuk mengubah nama,
         role, assignment toko, atau reset password admin yang sudah ada.
       </p>
@@ -157,9 +157,9 @@ export default function SettingsUsersPage() {
             header: "Toko",
             render: (r) =>
               r.role === "OWNER" ? (
-                <span className="text-gray-400">semua</span>
+                <span className="text-muted">semua</span>
               ) : (
-                r.stores.map((s: any) => s.code).join(", ") || <span className="text-amber-600">belum ada</span>
+                r.stores.map((s: any) => s.code).join(", ") || <span className="text-amber-700">belum ada</span>
               ),
           },
           { header: "Status", render: (r) => (r.isActive ? "Aktif" : "Nonaktif") },
@@ -188,7 +188,7 @@ export default function SettingsUsersPage() {
             className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-card-lg"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <p className="text-sm font-semibold text-gray-800">Edit user — {edit.email}</p>
+            <p className="text-sm font-semibold text-ink">Edit user — {edit.email}</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <input
                 placeholder="Nama"
@@ -224,7 +224,7 @@ export default function SettingsUsersPage() {
                     >
                       pilih semua
                     </button>
-                    <button onClick={() => setEdit({ ...edit, storeIds: [] })} className="text-gray-500 hover:underline">
+                    <button onClick={() => setEdit({ ...edit, storeIds: [] })} className="text-muted hover:underline">
                       kosongkan
                     </button>
                   </div>

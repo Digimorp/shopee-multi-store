@@ -8,9 +8,9 @@ import { settlementBreakdown, type SettlementLine } from "@/lib/settlement";
 
 type ReconOrder = { orderSn: string; estimasi: number; aktual: number | null; settleStatus: string; storeCode: string };
 
-const money = (v: number | null) => (v == null ? <span className="text-gray-300">— belum cair</span> : formatRupiah(v));
+const money = (v: number | null) => (v == null ? <span className="text-muted">— belum cair</span> : formatRupiah(v));
 const signed = (v: number | null) =>
-  v == null ? <span className="text-gray-300">—</span> : <span className={v < 0 ? "text-rose-600" : ""}>{formatRupiah(v)}</span>;
+  v == null ? <span className="text-muted">—</span> : <span className={v < 0 ? "text-danger-text" : ""}>{formatRupiah(v)}</span>;
 
 /**
  * Popup Settlement Details: breakdown per baris SKU dalam 1 No. Pesanan. Pola overlay sama dengan
@@ -57,30 +57,30 @@ export default function SettlementDetailModal({
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p id="settlement-title" className="text-sm font-semibold text-gray-800">
+            <p id="settlement-title" className="text-sm font-semibold text-ink">
               Settlement Details · {order.orderSn}
             </p>
-            <p className="mt-0.5 text-xs text-gray-400">
+            <p className="mt-0.5 text-xs text-muted">
               {order.storeCode} · Payout order {order.aktual == null ? "belum ada" : formatRupiah(order.aktual)} dari estimasi{" "}
               {formatRupiah(order.estimasi)}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <SettleBadge status={order.settleStatus} />
-            <button onClick={onClose} aria-label="Tutup" className="text-gray-300 hover:text-gray-500">
+            <button onClick={onClose} aria-label="Tutup" className="grid h-11 w-11 place-items-center rounded-full text-muted hover:bg-ink/5 hover:text-ink">
               <Icon name="x" size={18} />
             </button>
           </div>
         </div>
 
         {error ? (
-          <p className="py-8 text-center text-sm text-rose-600">Gagal memuat baris pesanan.</p>
+          <p className="py-8 text-center text-sm text-danger-text">Gagal memuat baris pesanan.</p>
         ) : !data ? (
-          <p className="py-8 text-center text-sm text-gray-400">Memuat…</p>
+          <p className="py-8 text-center text-sm text-muted">Memuat…</p>
         ) : (
           <div className="mt-4 overflow-x-auto rounded-xl border border-gray-100">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-400">
+              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wider text-muted">
                 <tr>
                   <th className="px-3 py-2 font-semibold">Produk</th>
                   <th className="px-3 py-2 text-right font-semibold">Qty</th>
@@ -96,7 +96,7 @@ export default function SettlementDetailModal({
                   <tr key={r.id}>
                     <td className="px-3 py-2">
                       <span className="cell-wrap">{r.productName}</span>
-                      {r.sku && <span className="text-xs text-gray-400">{r.sku}</span>}
+                      {r.sku && <span className="text-xs text-muted">{r.sku}</span>}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatNumber(r.qty)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatRupiah(r.grossOmzet)}</td>
@@ -107,7 +107,7 @@ export default function SettlementDetailModal({
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t border-gray-200 font-semibold text-gray-900">
+              <tfoot className="border-t border-gray-200 font-semibold text-ink">
                 <tr>
                   <td className="px-3 py-2" colSpan={2}>
                     Total order
@@ -123,7 +123,7 @@ export default function SettlementDetailModal({
           </div>
         )}
 
-        <p className="mt-3 text-xs text-gray-400">
+        <p className="mt-3 text-xs text-muted">
           Payout Shopee dicatat per No. Pesanan, jadi Uang Cair per SKU = porsi proporsional dari payout order. Profit HPP =
           Uang Cair − HPP × qty. Selisih = Profit Agen − Profit HPP (rumus sama dengan Laporan Profit).
         </p>

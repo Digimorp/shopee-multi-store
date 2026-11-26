@@ -58,10 +58,6 @@ const config: Config = {
         accent2: "#8B7CF6",
         // Tombol utama & menu aktif: pil hitam.
         pill: "#0B0D10",
-        card: {
-          DEFAULT: "var(--color-card)",
-          border: "var(--color-card-border)",
-        },
         sidebar: {
           DEFAULT: "var(--color-sidebar-bg)",
           hover: "var(--color-sidebar-hover)",

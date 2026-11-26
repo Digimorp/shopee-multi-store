@@ -28,47 +28,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-7 shadow-card-lg">
+    <div className="flex min-h-screen items-center justify-center px-4">
+      {/* T-013 batch 18: kartu kaca di atas latar gradasi (body). */}
+      <div className="glass w-full max-w-sm p-7">
         <div className="mb-5 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-600 text-white shadow-[0_6px_16px_rgba(23,48,31,0.3)]">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-pill text-white">
             <Icon name="store" size={20} strokeWidth={2} />
           </span>
           <div className="leading-tight">
-            <div className="text-base font-bold text-gray-900">Shopee Multi-Toko</div>
-            <div className="text-xs text-gray-400">Sistem Input & Laporan Penjualan</div>
+            <div className="text-base font-bold text-ink">Shopee Multi-Toko</div>
+            <div className="text-xs text-muted">Sistem Input & Laporan Penjualan</div>
           </div>
         </div>
 
-        <p className="mb-5 text-sm text-gray-500">Masuk untuk mengelola input &amp; laporan penjualan.</p>
+        <p className="mb-5 text-sm text-muted">Masuk untuk mengelola input &amp; laporan penjualan.</p>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-500">Email</label>
+            <label htmlFor="login-email" className="mb-1 block text-xs font-semibold text-muted">Email</label>
             <input
+              id="login-email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-canvas px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="min-h-11 w-full rounded-full border border-ink/10 bg-white px-4 text-sm text-ink placeholder:text-muted"
               placeholder="owner@company.com"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-500">Password</label>
+            <label htmlFor="login-password" className="mb-1 block text-xs font-semibold text-muted">Password</label>
             <input
+              id="login-password"
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-canvas px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="min-h-11 w-full rounded-full border border-ink/10 bg-white px-4 text-sm text-ink placeholder:text-muted"
               placeholder="••••••••"
             />
           </div>
 
-          {error && <p className="text-sm text-rose-600">{error}</p>}
+          {error && <p className="text-sm text-danger-text">{error}</p>}
 
-          <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
+          <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? "Memproses…" : "Masuk"}
           </button>
         </form>

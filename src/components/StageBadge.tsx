@@ -45,7 +45,7 @@ export function SettleBadge({ status }: { status: string }) {
 // warning memakai teks gelap karena mustard + putih hanya ~1,8:1 (neutral-900 di atasnya 9,7:1).
 const RECON: Record<string, string> = {
   MATCH: "bg-success text-white",
-  SELISIH: "bg-warning text-neutral-900",
+  SELISIH: "bg-warning text-ink",
   BELUM_KETEMU: "bg-danger text-white",
 };
 

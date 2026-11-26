@@ -37,10 +37,10 @@ export default function Toast({
         <Icon name={error ? "x" : "check"} size={16} strokeWidth={2.2} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-800">{toast.title}</p>
-        {toast.detail && <p className="mt-0.5 text-xs text-gray-500">{toast.detail}</p>}
+        <p className="text-sm font-semibold text-ink">{toast.title}</p>
+        {toast.detail && <p className="mt-0.5 text-xs text-muted">{toast.detail}</p>}
       </div>
-      <button onClick={onClose} aria-label="Tutup notifikasi" className="text-gray-300 hover:text-gray-500">
+      <button onClick={onClose} aria-label="Tutup notifikasi" className="grid h-11 w-11 place-items-center rounded-full text-muted hover:bg-ink/5 hover:text-ink">
         <Icon name="x" size={16} />
       </button>
     </div>

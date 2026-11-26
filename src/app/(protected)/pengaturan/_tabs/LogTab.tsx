@@ -36,8 +36,8 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Log Aktivitas</h1>
-      <p className="text-sm text-gray-500">
+      <h2 className="text-xl font-bold text-ink">Log Aktivitas</h2>
+      <p className="text-sm text-muted">
         Riwayat semua aksi Edit &amp; Delete pada data Pesanan, Income Report, Master Produk, User, Toko, dan Mapping
         Status — siapa mengubah apa, kapan, dan alasannya (kalau ada). Data yang dihapus tetap ada di database, hanya
         disembunyikan dari listing.
@@ -73,7 +73,7 @@ export default function AuditLogPage() {
         </select>
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-muted">
         {loading ? "Memuat…" : `Menampilkan ${logs.length} dari ${total} log`}
       </p>
 
@@ -85,14 +85,14 @@ export default function AuditLogPage() {
         columns={[
           { header: "Waktu", render: (r) => formatDateTime(r.createdAt) },
           { header: "Aksi", render: (r) => (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.action === "DELETE" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.action === "DELETE" ? "bg-rose-100 text-danger-text" : "bg-amber-100 text-amber-700"}`}>
               {r.action === "DELETE" ? "Delete" : "Edit"}
             </span>
           ) },
           { header: "Tabel", render: (r) => r.entityType },
           { header: "Data", render: (r) => <span className="max-w-[160px] truncate block">{r.entityLabel}</span> },
           { header: "Oleh", render: (r) => `${r.actorName} (${r.actorRole === "OWNER" ? "Owner" : "Admin Toko"})` },
-          { header: "Alasan", render: (r) => r.reason ?? <span className="text-gray-300">—</span> },
+          { header: "Alasan", render: (r) => r.reason ?? <span className="text-muted">—</span> },
           {
             header: "Detail",
             render: (r) => (
@@ -112,13 +112,13 @@ export default function AuditLogPage() {
             return (
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <p className="mb-1 text-xs font-semibold text-gray-500">Sebelum</p>
+                  <p className="mb-1 text-xs font-semibold text-muted">Sebelum</p>
                   <pre className="max-h-60 overflow-auto rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
                     {r.before ? JSON.stringify(r.before, null, 2) : "-"}
                   </pre>
                 </div>
                 <div>
-                  <p className="mb-1 text-xs font-semibold text-gray-500">Sesudah</p>
+                  <p className="mb-1 text-xs font-semibold text-muted">Sesudah</p>
                   <pre className="max-h-60 overflow-auto rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
                     {r.after ? JSON.stringify(r.after, null, 2) : "-"}
                   </pre>

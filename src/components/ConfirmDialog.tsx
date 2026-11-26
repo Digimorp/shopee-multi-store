@@ -36,11 +36,11 @@ export default function ConfirmDialog({
         className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card-lg"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <p className="text-sm font-semibold text-gray-800">{title}</p>
+        <p className="text-sm font-semibold text-ink">{title}</p>
         <p className="mt-2 text-sm text-gray-600">{message}</p>
 
         {strongWarning && (
-          <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+          <div className="mt-3 rounded-xl border border-danger/30 bg-danger-bg px-3 py-2 text-xs font-medium text-danger-text">
             {strongWarning}
           </div>
         )}
@@ -48,7 +48,7 @@ export default function ConfirmDialog({
         {requireReason && (
           <div className="mt-3">
             <label className="mb-1 block text-xs font-medium text-gray-600">
-              Alasan <span className="text-rose-600">*wajib diisi</span>
+              Alasan <span className="text-danger-text">*wajib diisi</span>
             </label>
             <textarea
               value={reason}

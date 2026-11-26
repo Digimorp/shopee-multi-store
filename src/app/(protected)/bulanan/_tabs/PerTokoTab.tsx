@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import DataTable from "@/components/DataTable";
+import ChartTooltip from "@/components/dashboard/ChartTooltip";
 import ExportButtons from "@/components/ExportButtons";
 import LeaderboardToko from "@/components/LeaderboardToko";
 import TanpaHppNote, { sumTanpaHpp } from "@/components/TanpaHppNote";
@@ -34,39 +35,40 @@ export default function PerformaTokoPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-gray-900">Per Toko</h1>
+        <h2 className="text-xl font-bold text-ink">Per Toko</h2>
         <ExportButtons report="performa-toko" />
       </div>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted">
         Perbandingan omzet, uang cair, dan profit per toko pada periode terpilih. Untuk melihat tren harian satu toko,
         pilih toko itu di filter atas lalu buka Dashboard.
       </p>
 
       <LeaderboardToko rows={rows} />
 
-      <div className="card p-6">
-        <p className="mb-3 text-sm font-semibold text-gray-800">Omzet &amp; Profit per Toko</p>
+      <div className="card p-5 sm:p-6">
+        <h3 className="mb-3 text-base font-bold text-ink">Omzet &amp; Profit per Toko</h3>
         {chartData.length === 0 ? (
-          <div className="flex h-64 items-center justify-center text-sm text-gray-400">Belum ada data pada periode ini.</div>
+          <div className="flex h-64 items-center justify-center text-sm text-muted">Belum ada data pada periode ini.</div>
         ) : (
           <ResponsiveContainer width="100%" height={300} debounce={150}>
             <BarChart data={chartData} barGap={4} barCategoryGap={18}>
-              <CartesianGrid strokeDasharray="4 4" stroke="#f1f1f4" vertical={false} />
-              <XAxis dataKey="toko" tick={{ fontSize: 13, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 4" stroke="#667180" strokeOpacity={0.25} vertical={false} />
+              <XAxis dataKey="toko" tick={{ fontSize: 13, fill: "#667180" }} tickLine={false} axisLine={false} />
               <YAxis
-                tick={{ fontSize: 13, fill: "#9ca3af" }}
+                tick={{ fontSize: 13, fill: "#667180" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => formatAxisShort(v)}
               />
-              <Tooltip
-                formatter={(v: unknown) => (typeof v === "number" ? formatRupiah(v) : "-")}
-                contentStyle={{ borderRadius: 12, border: "1px solid #eee", fontSize: 13 }}
-                cursor={{ fill: "#f5f5f5" /* = --color-brand-100 (globals.css) */ }}
+              {/* T-013 batch 18: tooltip gelap (sama dengan Dashboard), batang teal/ungu, teks legenda #667180. */}
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(16,20,26,0.05)" }} />
+              <Legend
+                iconType="circle"
+                wrapperStyle={{ fontSize: 13 }}
+                formatter={(v: string) => <span style={{ color: "#667180" }}>{v}</span>}
               />
-              <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
-              <Bar isAnimationActive={false} dataKey="Omzet" fill="#0a0a0a" /* = --color-brand-600, sama dgn Omzet di AreaTrendCard */ radius={[6, 6, 0, 0]} />
-              <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#a3a3a3" radius={[6, 6, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Omzet" fill="#17A398" radius={[6, 6, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Profit HPP" fill="#8B7CF6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

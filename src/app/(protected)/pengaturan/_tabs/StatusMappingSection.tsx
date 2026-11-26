@@ -80,14 +80,14 @@ export default function StatusMappingPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-gray-900">Mapping Status Pesanan</h2>
-      <p className="text-sm text-gray-500">
+      <h2 className="text-base font-semibold text-ink">Mapping Status Pesanan</h2>
+      <p className="text-sm text-muted">
         Aturan penerjemahan teks <strong>&quot;Status Pesanan&quot;</strong> dari file Shopee ke 5 kategori internal.
         Pattern dicocokkan sebagai <em>potongan kata</em> (tidak case-sensitive). Kalau beberapa pattern cocok untuk
         satu status, <strong>priority terkecil</strong> yang dipakai. Kalau tabel ini kosong, sistem pakai aturan
         bawaan di <code>src/lib/classification.ts</code>.
       </p>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted">
         Catatan: pembedaan <strong>Selesai (Cair)</strong> vs <strong>Belum Cair</strong> tidak diatur di sini —
         ditentukan otomatis dari ada/tidaknya kolom &quot;Waktu Dana Dilepaskan&quot;.
       </p>
@@ -127,7 +127,7 @@ export default function StatusMappingPage() {
         <button type="submit" className="btn-primary">
           Simpan
         </button>
-        {err && <span className="sm:col-span-6 text-sm text-red-600">{err}</span>}
+        {err && <span className="sm:col-span-6 text-sm text-danger-text">{err}</span>}
       </form>
 
       <DataTable
@@ -153,7 +153,7 @@ export default function StatusMappingPage() {
                   </button>
                 </div>
               ) : (
-                <span className="text-gray-300">—</span>
+                <span className="text-muted">—</span>
               ),
           },
         ]}
@@ -162,7 +162,7 @@ export default function StatusMappingPage() {
       {editing && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-4" onMouseDown={() => setEditing(null)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card-lg" onMouseDown={(e) => e.stopPropagation()}>
-            <p className="text-sm font-semibold text-gray-800">
+            <p className="text-sm font-semibold text-ink">
               Edit Mapping — <code className="text-xs">{editing.pattern}</code>
             </p>
             <div className="mt-3 grid gap-3">

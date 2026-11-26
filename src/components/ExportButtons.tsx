@@ -25,12 +25,13 @@ export default function ExportButtons({
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       <button onClick={() => open("xlsx")} className="btn-primary">
         <Icon name="download" size={16} strokeWidth={2} />
         Export Excel
       </button>
-      <button onClick={() => open("pdf")} className="btn-primary">
+      {/* T-013 batch 18: satu tombol hitam (Excel); PDF = tombol sekunder. */}
+      <button onClick={() => open("pdf")} className="btn-ghost">
         <Icon name="fileText" size={16} strokeWidth={2} />
         Export PDF
       </button>

@@ -40,7 +40,7 @@ export default function LaporanProfitPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-gray-900">Profit & Barang Keluar</h1>
+        <h2 className="text-xl font-bold text-ink">Profit & Barang Keluar</h2>
         <ExportButtons report="profit" />
       </div>
 
@@ -49,7 +49,7 @@ export default function LaporanProfitPage() {
         dalam WIB. Laporan Rekapan memakai dasar yang sama (tanggal pesanan, cut-off 26–25, WIB).
       </p>
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted">
         Unit Keluar/Omzet Pesanan/Kontribusi Omzet dihitung dari pesanan <strong>berstatus Selesai</strong>. Uang Cair &amp;
         Profit HPP (Nett) pakai nilai <strong>AKTUAL dari Income Report yang sudah di-match</strong> (bukan estimasi nilai
         pesanan) — pesanan Selesai yang belum ketemu match-nya (lihat tab Uang Cair) belum ikut dihitung
@@ -83,13 +83,13 @@ export default function LaporanProfitPage() {
           negative={(data.summary?.selisih ?? 0) < 0}
         />
       </div>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted">
         {PROFIT_BASIS_NOTE} {UANG_CAIR_PESANAN_LABEL}:{" "}
         {formatRupiah(data.summary?.totalUangCair ?? 0)}.
       </p>
       <TanpaHppNote tanpaHpp={data.summary?.tanpaHpp} />
 
-      <div className="flex gap-2">
+      <div className="seg" role="group">
         <button
           onClick={() => setSortKey("profitHpp")}
           className={`tab-pill ${sortKey === "profitHpp" ? "tab-pill-active" : "tab-pill-idle"}`}
@@ -121,8 +121,8 @@ export default function LaporanProfitPage() {
             header: "Selisih",
             render: (r) => {
               const v = shownSelisih(r);
-              if (typeof v === "string") return <span className="text-gray-400">{v}</span>;
-              return <span className={v >= 0 ? "text-success-text" : "text-red-600"}>{formatRupiah(v)}</span>;
+              if (typeof v === "string") return <span className="text-muted">{v}</span>;
+              return <span className={v >= 0 ? "text-success-text" : "text-danger-text"}>{formatRupiah(v)}</span>;
             },
           },
         ]}

@@ -17,9 +17,6 @@
   /* Latar halaman: gradasi tetap (fixed). */
   --page-bg: linear-gradient(135deg, #e6f5ef 0%, #eceefb 52%, #f7ecf2 100%);
 
-  --color-card: #ffffff;
-  --color-card-border: #e5e5e5;
-
   /* Rel ikon kiri: kapsul hitam, ikon putih (dipakai HANYA oleh Sidebar.tsx). */
   --color-sidebar-bg: #0b0d10;
   --color-sidebar-hover: #1f232a;
@@ -163,7 +160,7 @@ table,
   }
   .btn-chip + .btn-chip-danger,
   .btn-chip-danger + .btn-chip {
-    @apply ml-4;
+    @apply ml-6;
   }
 
   /* Link aksi di baris tabel -- garis bawah polos, area sentuh 44px. */

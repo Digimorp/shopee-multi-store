@@ -65,7 +65,7 @@ export default function ReturCancelPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-gray-900">Retur & Batal</h1>
+        <h2 className="text-xl font-bold text-ink">Retur & Batal</h2>
         <ExportButtons report="retur" />
       </div>
 
@@ -88,7 +88,7 @@ export default function ReturCancelPage() {
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="seg" role="group">
         <button
           onClick={() => setTab("retur")}
           className={`tab-pill ${tab === "retur" ? "tab-pill-active" : "tab-pill-idle"}`}
@@ -103,7 +103,7 @@ export default function ReturCancelPage() {
         </button>
       </div>
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted">
         Menampilkan {orders.length} dari {total} transaksi {tab === "cancel" ? "batal" : "retur"} pada periode & toko terpilih.
       </p>
 
@@ -124,7 +124,7 @@ export default function ReturCancelPage() {
                   header: "Kondisi Barang",
                   render: (r: any) =>
                     r.returCondition ? (
-                      <span className={r.returCondition === "GOOD" ? "text-success-text" : "text-red-600"}>
+                      <span className={r.returCondition === "GOOD" ? "text-success-text" : "text-danger-text"}>
                         {r.returCondition === "GOOD" ? "Bagus - Restok" : "Rusak/Cacat"}
                       </span>
                     ) : (

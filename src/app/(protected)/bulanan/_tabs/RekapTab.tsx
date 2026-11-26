@@ -14,7 +14,7 @@ function UangCairCell({ r }: { r: any }) {
   return (
     <div>
       <div>{formatRupiah(r.uangCairTotal ?? 0)}</div>
-      <div className="max-w-[260px] whitespace-normal text-xs leading-tight text-gray-400">
+      <div className="max-w-[260px] whitespace-normal text-xs leading-tight text-muted">
         {rincianUangCairSub(r.uangCairRincian)}
       </div>
     </div>
@@ -35,8 +35,8 @@ export default function LaporanRekapPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Rekap</h1>
-      <p className="text-sm text-gray-500">
+      <h2 className="text-xl font-bold text-ink">Rekap</h2>
+      <p className="text-sm text-muted">
         Rekap bulanan mengikuti siklus cut-off (tgl 26 s/d tgl 25). Komparasi menunjukkan selisih omzet vs bulan
         tepat sebelumnya.
       </p>
@@ -47,7 +47,7 @@ export default function LaporanRekapPage() {
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-2">
+        <div className="seg" role="group">
           <button
             onClick={() => setType("monthly")}
             className={`tab-pill ${type === "monthly" ? "tab-pill-active" : "tab-pill-idle"}`}
@@ -78,9 +78,9 @@ export default function LaporanRekapPage() {
               // bulan tepat sebelumnya tidak ada data -> "-" (bukan 0%)
               render: (r) =>
                 r.deltaOmzet == null ? (
-                  <span className="text-gray-400">-</span>
+                  <span className="text-muted">-</span>
                 ) : (
-                  <span className={r.deltaOmzet >= 0 ? "text-success-text" : "text-red-600"}>
+                  <span className={r.deltaOmzet >= 0 ? "text-success-text" : "text-danger-text"}>
                     {r.deltaOmzet >= 0 ? "▲" : "▼"} {formatRupiah(Math.abs(r.deltaOmzet))}
                     {r.deltaPct == null ? "" : ` (${r.deltaPct.toFixed(1)}%)`}
                   </span>
@@ -100,7 +100,7 @@ export default function LaporanRekapPage() {
           ]}
         />
       )}
-      <p className="text-xs text-gray-500">{PROFIT_BASIS_NOTE}</p>
+      <p className="text-xs text-muted">{PROFIT_BASIS_NOTE}</p>
       <TanpaHppNote tanpaHpp={sumTanpaHpp(rows)} />
     </div>
   );

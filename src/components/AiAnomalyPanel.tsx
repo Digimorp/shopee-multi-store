@@ -7,7 +7,7 @@ import type { Anomaly } from "@/lib/aiAnomalyCheck";
 // Badge solid: putih di atas danger (4,0:1); warning pakai teks gelap karena putih di atas mustard ~1,8:1.
 const SEVERITY_STYLE: Record<string, { badge: string; row: string; label: string; rank: number }> = {
   high: { badge: "bg-danger text-white", row: "border-danger/30 bg-danger-bg", label: "Tinggi", rank: 3 },
-  medium: { badge: "bg-warning text-neutral-900", row: "border-warning/40 bg-warning-bg", label: "Sedang", rank: 2 },
+  medium: { badge: "bg-warning text-ink", row: "border-warning/40 bg-warning-bg", label: "Sedang", rank: 2 },
   low: { badge: "bg-gray-400 text-white", row: "border-gray-200 bg-gray-50", label: "Rendah", rank: 1 },
 };
 
@@ -30,7 +30,7 @@ export default function AiAnomalyPanel({
 
   if (aiCheckSkipped && anomalies.length === 0) {
     return (
-      <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500">
+      <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-muted">
         Pemeriksaan AI Anomaly Check dilewati (API tidak tersedia saat ini) — data tetap tersimpan seperti biasa.
       </div>
     );
@@ -51,19 +51,19 @@ export default function AiAnomalyPanel({
         onClick={() => setExpanded((v) => !v)}
         className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-gray-800">
+        <span className="flex items-center gap-2 text-sm font-medium text-ink">
           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${style.badge}`}>
             {style.label}
           </span>
           ⚠ {anomalies.length} potensi anomali terdeteksi
         </span>
-        <span className="shrink-0 text-xs text-gray-500">{expanded ? "Sembunyikan ▲" : "Lihat detail ▼"}</span>
+        <span className="shrink-0 text-xs text-muted">{expanded ? "Sembunyikan ▲" : "Lihat detail ▼"}</span>
       </button>
 
       {expanded && (
         <div className="border-t border-inherit px-3 pb-3 pt-2">
           {summary && <p className="mb-2 text-xs text-gray-600">{summary}</p>}
-          <p className="mb-2 text-xs text-gray-500">
+          <p className="mb-2 text-xs text-muted">
             Data sudah tersimpan seperti biasa — ini hanya informasi. Cek baris di bawah, lalu gunakan fitur Edit/Delete kalau perlu.
           </p>
           <ul className="space-y-1.5">
@@ -75,14 +75,14 @@ export default function AiAnomalyPanel({
                     {rowStyle.label}
                   </span>
                   <span className="font-medium text-gray-700">{a.rowRef}</span>
-                  <span className="text-gray-400"> · {a.field} — </span>
+                  <span className="text-muted"> · {a.field} — </span>
                   <span className="text-gray-600">{a.message}</span>
                 </li>
               );
             })}
           </ul>
           {aiCheckSkipped && (
-            <p className="mt-2 text-xs text-gray-400">
+            <p className="mt-2 text-xs text-muted">
               Catatan: pemeriksaan AI tidak selesai penuh (fallback ke pemeriksaan statistik lokal) — anomali di atas mungkin belum lengkap.
             </p>
           )}

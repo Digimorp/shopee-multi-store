@@ -16,7 +16,7 @@ export type TrendPoint = { date: string; omzet: number; profit: number };
 
 export default function TrendChart({ data }: { data: TrendPoint[] }) {
   if (data.length === 0) {
-    return <div className="flex h-72 items-center justify-center text-sm text-gray-400">Belum ada data pada periode ini.</div>;
+    return <div className="flex h-72 items-center justify-center text-sm text-muted">Belum ada data pada periode ini.</div>;
   }
 
   return (

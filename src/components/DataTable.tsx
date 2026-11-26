@@ -16,6 +16,15 @@ export type ServerPagination = {
   onPageChange: (page: number) => void;
 };
 
+// Sel angka: "Rp 1.234", "-Rp 5", "1.234", "12,5%", "12 hari", "3 pesanan". "-" / "—" / kosong = netral (null).
+const NUM_RE = /^[-−]?\s*(Rp\s?)?[-−]?[\d.,]+\s?(%|hari|pesanan|unit|baris)?$/i;
+function isNumericCell(v: React.ReactNode): boolean | null {
+  if (typeof v === "number") return true;
+  if (v == null || v === "" || v === "-" || v === "—") return null;
+  if (typeof v === "string") return NUM_RE.test(v.trim());
+  return false;
+}
+
 const DEFAULT_PAGE_SIZE = 50;
 
 /** Jendela nomor halaman terpotong dengan "..." — mis. [1, "...", 4, 5, 6, "...", 12]. */
@@ -42,13 +51,13 @@ export function PageNav({ page, totalPages, onChange }: { page: number; totalPag
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
         aria-label="Halaman sebelumnya"
-        className="grid h-8 w-8 place-items-center rounded-lg border border-card-border text-gray-500 hover:enabled:border-brand-300 hover:enabled:text-brand-600 disabled:opacity-40"
+        className="grid h-11 w-11 place-items-center rounded-full border border-ink/10 bg-white text-muted hover:enabled:border-brand-300 hover:enabled:text-brand-600 disabled:opacity-40"
       >
         <Icon name="arrowRight" size={14} className="rotate-180" />
       </button>
       {pageWindow(page, totalPages).map((p, i) =>
         p === "..." ? (
-          <span key={`e${i}`} className="px-1 text-xs text-gray-400">
+          <span key={`e${i}`} className="px-1 text-xs text-muted">
             …
           </span>
         ) : (
@@ -57,8 +66,8 @@ export function PageNav({ page, totalPages, onChange }: { page: number; totalPag
             key={p}
             onClick={() => onChange(p)}
             aria-current={p === page}
-            className={`grid h-8 min-w-8 place-items-center rounded-lg px-1.5 text-xs font-medium transition ${
-              p === page ? "bg-brand-600 text-white" : "border border-card-border text-gray-500 hover:border-brand-300 hover:text-brand-600"
+            className={`grid h-11 min-w-11 place-items-center rounded-full px-2 text-xs font-medium transition ${
+              p === page ? "bg-pill text-white" : "border border-ink/10 bg-white text-muted hover:border-brand-300 hover:text-brand-600"
             }`}
           >
             {p}
@@ -70,7 +79,7 @@ export function PageNav({ page, totalPages, onChange }: { page: number; totalPag
         disabled={page >= totalPages}
         onClick={() => onChange(page + 1)}
         aria-label="Halaman berikutnya"
-        className="grid h-8 w-8 place-items-center rounded-lg border border-card-border text-gray-500 hover:enabled:border-brand-300 hover:enabled:text-brand-600 disabled:opacity-40"
+        className="grid h-11 w-11 place-items-center rounded-full border border-ink/10 bg-white text-muted hover:enabled:border-brand-300 hover:enabled:text-brand-600 disabled:opacity-40"
       >
         <Icon name="arrowRight" size={14} />
       </button>
@@ -119,35 +128,45 @@ export default function DataTable<T>({
     else setClientPage(next);
   };
 
+  // T-013 batch 18: kolom angka (Rp, jumlah, persen, "12 hari") otomatis rata kanan -- dideteksi dari isi
+  // sel di halaman ini, jadi tidak perlu menandai kolom satu per satu. Tampilan saja.
+  const cells = pagedRows.map((row) => columns.map((c) => c.render(row)));
+  const numericCol = columns.map(
+    (_, i) =>
+      cells.length > 0 &&
+      cells.some((r) => isNumericCell(r[i]) === true) &&
+      cells.every((r) => isNumericCell(r[i]) !== false)
+  );
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
+    <div className="panel overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <table className="table-base min-w-full text-sm">
           <thead>
-            <tr className="border-b border-card-border bg-brand-50/40">
+            <tr className="border-b border-ink/[0.06]">
               {columns.map((c, i) => (
-                <th
-                  key={i}
-                  className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400"
-                >
+                <th key={i} className={numericCol[i] ? "!text-right" : undefined}>
                   {c.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody>
             {pagedRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-gray-400">
+                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-muted">
                   {emptyText}
                 </td>
               </tr>
             ) : (
               pagedRows.map((row, idx) => (
-                <tr key={rowKey(row, idx)} className="transition hover:bg-brand-50/40">
+                <tr key={rowKey(row, idx)} className="transition hover:bg-accent-soft/40">
                   {columns.map((c, i) => (
-                    <td key={i} className={`whitespace-nowrap px-4 py-3 text-gray-700 ${c.className ?? ""}`}>
-                      {c.render(row)}
+                    <td
+                      key={i}
+                      className={`whitespace-nowrap px-4 py-3 text-ink ${numericCol[i] ? "text-right" : ""} ${c.className ?? ""}`}
+                    >
+                      {cells[idx][i]}
                     </td>
                   ))}
                 </tr>
@@ -158,8 +177,8 @@ export default function DataTable<T>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-card-border px-4 py-3">
-          <span className="text-xs text-gray-400">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-ink/[0.06] px-4 py-3">
+          <span className="text-xs text-muted">
             Halaman {page} dari {totalPages}
             {!serverPagination ? ` · ${rows.length} baris` : ""}
           </span>

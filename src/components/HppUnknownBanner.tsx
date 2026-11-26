@@ -22,7 +22,7 @@ function ItemList({ title, items }: { title: string; items?: HppUnknownItem[] })
       <ul className="mt-1 max-h-40 list-disc overflow-auto pl-5">
         {items.map((x) => (
           <li key={`${title}-${x.sku}`}>
-            {x.sku} <span className="text-amber-600">({formatNumber(x.rows)} baris)</span>
+            {x.sku} <span className="text-amber-700">({formatNumber(x.rows)} baris)</span>
           </li>
         ))}
       </ul>

@@ -63,11 +63,11 @@ export default function OrderEditModal({
   return (
     <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-4" onMouseDown={onClose}>
       <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-card-lg" onMouseDown={(e) => e.stopPropagation()}>
-        <p className="text-sm font-semibold text-gray-800">Edit Pesanan — {order.orderSn}</p>
-        <p className="mt-0.5 text-xs text-gray-400">No. Pesanan tidak bisa diubah (kunci pencocokan Rekonsiliasi).</p>
+        <p className="text-sm font-semibold text-ink">Edit Pesanan — {order.orderSn}</p>
+        <p className="mt-0.5 text-xs text-muted">No. Pesanan tidak bisa diubah (kunci pencocokan Rekonsiliasi).</p>
 
         {error && (
-          <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+          <div className="mt-3 rounded-xl border border-danger/30 bg-danger-bg px-3 py-2 text-xs font-medium text-danger-text">
             {error}
           </div>
         )}
@@ -115,7 +115,7 @@ export default function OrderEditModal({
 
         <div className="mt-3">
           <label className="mb-1 block text-xs font-medium text-gray-600">
-            Alasan Perubahan {needsReason && <span className="text-rose-600">*wajib diisi (order sudah direkonsiliasi)</span>}
+            Alasan Perubahan {needsReason && <span className="text-danger-text">*wajib diisi (order sudah direkonsiliasi)</span>}
           </label>
           <textarea
             value={form.reason}
